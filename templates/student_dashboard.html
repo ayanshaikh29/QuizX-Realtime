@@ -1,32 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Student Dashboard</title>
+<meta charset="UTF-8">
+<title>QuizX | Student Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
+<style>
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+
+/* HEADER */
+.header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:28px;
+    border-radius:0 0 22px 22px;
+}
+
+/* CARD */
+.card-box{
+    background:white;
+    border-radius:20px;
+    padding:26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+.btn-green{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    font-weight:700;
+    border-radius:30px;
+    padding:12px;
+    border:none;
+}
+</style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-primary bg-primary">
-    <div class="container-fluid">
-        <span class="navbar-brand text-white">Student Dashboard</span>
-        <a href="/logout" class="btn btn-warning">Logout</a>
+<!-- HEADER -->
+<div class="header text-center">
+    <h4>🎓 Student Dashboard</h4>
+    <p class="mb-0">Welcome, {{ user }}</p>
+</div>
+
+<div class="container mt-5">
+
+<div class="row g-4">
+
+    <!-- JOIN BY CODE -->
+    <div class="col-md-6">
+        <div class="card-box">
+            <h5 class="fw-bold mb-3">🔑 Join Quiz by Code</h5>
+
+            <form method="POST" action="/join">
+                <input name="code" class="form-control mb-3"
+                       placeholder="Enter 6-digit quiz code"
+                       required>
+
+                <button class="btn-green w-100">
+                    🚀 Join Quiz
+                </button>
+            </form>
+        </div>
     </div>
-</nav>
 
-<div class="container mt-4">
+    <!-- VIEW LIVE QUIZZES -->
+    <div class="col-md-6">
+        <div class="card-box text-center">
+            <h5 class="fw-bold mb-3">📚 Available Live Quizzes</h5>
+            <p class="text-muted">
+                View quizzes that are currently live
+            </p>
 
-    <div class="alert alert-info">
-        Welcome, <b>{{ user }}</b> (Student)
+            <a href="/student/quizzes" class="btn btn-outline-success w-100">
+                View Live Quizzes
+            </a>
+        </div>
     </div>
 
-    <div class="card p-4 shadow-sm">
-        <h4>Your Courses</h4>
-        <p>Course details will appear here.</p>
-    </div>
+</div>
 
 </div>
 

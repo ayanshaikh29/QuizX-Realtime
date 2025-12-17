@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuizX | Add Questions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+.header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:25px;
+    border-radius:0 0 22px 22px;
+}
+.form-wrapper{
+    max-width:900px;
+    margin:auto;
+}
+.question-card{
+    background:white;
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+    margin-bottom:25px;
+}
+.editor{
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:14px;
+    min-height:80px;
+}
+.toolbar button{
+    border:none;
+    background:#eef6ea;
+    padding:6px 12px;
+    border-radius:8px;
+    font-weight:700;
+    margin-right:6px;
+}
+.option{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+.option input[type=text]{
+    border-radius:12px;
+}
+.btn-green{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    border-radius:30px;
+    padding:12px 28px;
+    font-weight:700;
+    border:none;
+}
+.btn-outline-green{
+    border:2px solid #6fbf4a;
+    color:#6fbf4a;
+    border-radius:30px;
+    padding:10px 26px;
+    font-weight:700;
+    background:transparent;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header text-center">
+    <h4>📝 Add Questions</h4>
+    <p class="mb-0">Quiz: <b>{{ quiz.title }}</b></p>
+</div>
+
+<div class="container mt-5 form-wrapper">
+
+{% if quiz.is_locked %}
+<div class="alert alert-warning text-center">
+    Quiz is locked. No more questions can be added.
+</div>
+<a href="/admin/quizzes" class="btn-outline-green">Back</a>
+
+{% else %}
+
+<form method="POST">
+
+<div id="questions-container">
+
+<!-- QUESTION TEMPLATE -->
+<div class="question-card">
+    <label class="fw-bold">Question</label>
+
+    <div class="toolbar mb-2">
+        <button type="button" onclick="format('bold')"><b>B</b></button>
+        <button type="button" onclick="format('italic')"><i>I</i></button>
+    </div>
+
+    <div class="editor" contenteditable="true"
+         oninput="syncQuestion(this)"></div>
+
+    <input type="hidden" name="question[]">
+
+    <label class="fw-bold mt-4">Options</label>
+
+    {% for i in range(1,5) %}
+    <div class="option">
+        <input type="radio" name="answer_0" value="{{ i }}" required>
+        <input type="text" name="option{{ i }}_0" class="form-control" placeholder="Option {{ i }}" required>
+    </div>
+    {% endfor %}
+</div>
+
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="d-flex justify-content-between mt-4">
+    <button type="button" onclick="addQuestion()" class="btn-outline-green">
+        ➕ Add Another Question
+    </button>
+
+    <button class="btn-green">
+        ✅ Save All Questions
+    </button>
+</div>
+
+</form>
+
+<div class="text-center mt-4">
+    <a href="/admin/end-questions/{{ quiz.id }}"
+       onclick="return confirm('Lock this quiz?')"
+       class="btn-outline-green">
+        End Questions
+    </a>
+</div>
+
+{% endif %}
+</div>
+
+<script>
+let qIndex = 1;
+
+function format(cmd){
+    document.execCommand(cmd,false,null);
+}
+
+function syncQuestion(div){
+    div.nextElementSibling.value = div.innerHTML;
+}
+
+function addQuestion(){
+    const container = document.getElementById("questions-container");
+    const first = container.children[0];
+    const clone = first.cloneNode(true);
+
+    clone.querySelector(".editor").innerHTML = "";
+    clone.querySelector("input[name='question[]']").value = "";
+
+    clone.querySelectorAll("input").forEach(i=>{
+        if(i.type==="radio"){
+            i.name = "answer_"+qIndex;
+            i.checked=false;
+        }
+        if(i.type==="text"){
+            i.name = i.name.replace("_0","_"+qIndex);
+            i.value="";
+        }
+    });
+
+    container.appendChild(clone);
+    qIndex++;
+}
+</script>
+
+</body>
+</html>

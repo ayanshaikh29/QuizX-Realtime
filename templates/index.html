@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QuizX | Realtime Web Quiz Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            color: #2b2b2b;
+            line-height: 1.6;
+        }
+
+        /* ================= NAVBAR ================= */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 8%;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .logo-box img {
+            height: 80px;
+        }
+
+        .nav-btns a {
+            margin-left: 18px;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #2b2b2b;
+            transition: 0.3s;
+        }
+
+        .nav-btns a.primary {
+            background: #6fbf4a;
+            color: white;
+        }
+
+        .nav-btns a:hover {
+            background: #eaf5e5;
+        }
+
+        /* ================= HERO ================= */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8%;
+        }
+
+        .hero-text {
+            max-width: 540px;
+            animation: fadeUp 1s ease;
+        }
+
+        .hero-text h1 {
+            font-size: 54px;
+            margin-bottom: 20px;
+        }
+
+        .hero-text span {
+            color: #6fbf4a;
+        }
+
+        .hero-text p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 35px;
+        }
+
+        .hero-buttons a {
+            padding: 14px 36px;
+            margin-right: 15px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: #6fbf4a;
+            color: white;
+        }
+
+        .btn-outline {
+            border: 2px solid #6fbf4a;
+            color: #6fbf4a;
+        }
+
+        .hero-buttons a:hover {
+            transform: translateY(-3px);
+        }
+
+        /* ================= FEATURES ================= */
+        .features {
+            padding: 90px 8%;
+            background: #f9fafb;
+            text-align: center;
+        }
+
+        .features h2 {
+            font-size: 36px;
+            margin-bottom: 50px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+        }
+
+        .feature-card h3 {
+            margin-bottom: 12px;
+            color: #6fbf4a;
+        }
+
+        /* ================= HOW IT WORKS ================= */
+        .steps {
+            padding: 90px 8%;
+        }
+
+        .steps h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 50px;
+        }
+
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+
+        .step {
+            padding: 25px;
+            border-left: 5px solid #6fbf4a;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+
+        /* ================= USE CASES ================= */
+        .use-cases {
+            padding: 90px 8%;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .use-cases h2 {
+            font-size: 36px;
+            margin-bottom: 40px;
+        }
+
+        .cases {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .case {
+            background: #f9fafb;
+            padding: 25px 30px;
+            border-radius: 14px;
+            min-width: 220px;
+            font-weight: 600;
+        }
+
+        /* ================= CTA ================= */
+        .cta {
+            padding: 80px 8%;
+            text-align: center;
+            background: linear-gradient(120deg, #6fbf4a, #8ed36a);
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .cta a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 14px 40px;
+            background: white;
+            color: #2b2b2b;
+            border-radius: 30px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        /* ================= FOOTER ================= */
+        footer {
+            padding: 25px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 80px;
+            }
+            .hero-text h1 {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="logo-box">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX Logo">
+    </div>
+    <div class="nav-btns">
+        <a href="/login">Login</a>
+        <a href="/register" class="primary">Get Started</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <h1>Powering <span>Realtime Quizzes</span><br>for Smart Engagement</h1>
+        <p>
+            QuizX helps you create live interactive quizzes, track instant scores,
+            and engage audiences in classrooms, meetings, and online events.
+        </p>
+        <div class="hero-buttons">
+            <a href="/register" class="btn-primary">Create Quiz</a>
+            <a href="/login" class="btn-outline">Join Quiz</a>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+    <h2>Why Choose QuizX?</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h3>Realtime Results</h3>
+            <p>Instant score updates for all participants without page refresh.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Live Participation</h3>
+            <p>Students join quizzes live and answer in realtime.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Admin Control</h3>
+            <p>Create, lock, and publish quizzes with full control.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Secure Login</h3>
+            <p>Role-based access for Admin and Students.</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="steps">
+    <h2>How It Works</h2>
+    <div class="step-grid">
+        <div class="step">1️⃣ Admin creates a quiz and adds questions</div>
+        <div class="step">2️⃣ Quiz is published and goes live</div>
+        <div class="step">3️⃣ Students join and attempt quiz</div>
+        <div class="step">4️⃣ Results are shown instantly</div>
+    </div>
+</section>
+
+<!-- USE CASES -->
+<section class="use-cases">
+    <h2>Perfect For</h2>
+    <div class="cases">
+        <div class="case">🎓 Classrooms</div>
+        <div class="case">🏢 Corporate Training</div>
+        <div class="case">🎤 Live Events</div>
+        <div class="case">💻 Online Learning</div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+    <h2>Start Your First Live Quiz Today</h2>
+    <a href="/register">Get Started for Free</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    © 2025 QuizX • Realtime Web Quiz Application
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QuizX | Attempt Quiz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f6f8fb;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* HEADER */
+        .page-header {
+            background: linear-gradient(120deg, #6fbf4a, #8ed36a);
+            color: white;
+            padding: 26px;
+            border-radius: 0 0 22px 22px;
+        }
+
+        /* TIMER */
+        .timer-box {
+            background: #fff7ed;
+            border: 2px dashed #fb923c;
+            color: #9a3412;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        /* QUESTION CARD */
+        .question-card {
+            background: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* OPTIONS */
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 2px solid #eef2f7;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .option:hover {
+            border-color: #6fbf4a;
+            background: #f0faec;
+        }
+
+        .option input {
+            accent-color: #6fbf4a;
+            transform: scale(1.3);
+        }
+
+        /* SUBMIT BAR */
+        .submit-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.08);
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .btn-green {
+            background: linear-gradient(120deg, #6fbf4a, #8ed36a);
+            color: white;
+            font-weight: 700;
+            border-radius: 30px;
+            padding: 14px 40px;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="page-header text-center">
+    <h4>🧠 Live Quiz</h4>
+    <p class="mb-0">Answer before time runs out</p>
+</div>
+
+<div class="container mt-4 mb-5">
+
+    {% if paused %}
+    <!-- 🔴 PAUSED STATE -->
+    <div class="alert alert-warning text-center fw-bold">
+        ⏸ Quiz Paused by Admin<br>
+        Please wait...
+    </div>
+
+    <script>
+        setTimeout(() => location.reload(), 5000);
+    </script>
+
+    {% else %}
+
+    <!-- TIMER -->
+    <div class="timer-box">
+        ⏱ Time Left: <span id="timer">--:--</span>
+    </div>
+
+    <form method="POST">
+
+        {% for q in questions %}
+        <div class="question-card">
+            <div class="question-text">
+                {{ loop.index }}. {{ q.question }}
+            </div>
+
+            <label class="option">
+                <input type="radio" name="{{ q.id }}" value="{{ q.option1 }}" required>
+                {{ q.option1 }}
+            </label>
+
+            <label class="option">
+                <input type="radio" name="{{ q.id }}" value="{{ q.option2 }}">
+                {{ q.option2 }}
+            </label>
+
+            <label class="option">
+                <input type="radio" name="{{ q.id }}" value="{{ q.option3 }}">
+                {{ q.option3 }}
+            </label>
+
+            <label class="option">
+                <input type="radio" name="{{ q.id }}" value="{{ q.option4 }}">
+                {{ q.option4 }}
+            </label>
+        </div>
+        {% endfor %}
+
+        <!-- SUBMIT -->
+        <div class="submit-bar">
+            <button class="btn-green">
+                🚀 Submit Quiz
+            </button>
+        </div>
+
+    </form>
+
+    {% endif %}
+
+</div>
+
+{% if not paused %}
+<!-- TIMER SCRIPT -->
+<script>
+let time = {{ remaining_seconds | default(0) }};
+const timerEl = document.getElementById("timer");
+
+const interval = setInterval(() => {
+    if (time <= 0) {
+        clearInterval(interval);
+        alert("⏰ Time over! Quiz auto-submitted.");
+        document.querySelector("form").submit();
+    }
+
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${m}:${s.toString().padStart(2,'0')}`;
+    time--;
+}, 1000);
+</script>
+{% endif %}
+
+</body>
+</html>
