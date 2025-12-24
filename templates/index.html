@@ -17,60 +17,171 @@
         }
 
         body {
-            background: #ffffff;
+            background: #f8fff6; /* Very light green tint for freshness */
             color: #2b2b2b;
             line-height: 1.6;
         }
 
         /* ================= NAVBAR ================= */
         nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 8%;
+            padding: 16px 8%;
             border-bottom: 1px solid #eef2f7;
+            z-index: 1000;
+            transition: box-shadow 0.3s;
+        }
+
+        nav.scrolled {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .logo-box img {
-            height: 80px;
+            height: 55px;
+        }
+
+        .logo-box span {
+            font-weight: 700;
+            font-size: 24px;
+            color: #6fbf4a;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 600;
+            color: #444;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: #6fbf4a;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #6fbf4a;
         }
 
         .nav-btns a {
-            margin-left: 18px;
             padding: 10px 24px;
             border-radius: 30px;
             font-weight: 600;
             text-decoration: none;
-            color: #2b2b2b;
-            transition: 0.3s;
+            transition: all 0.3s;
         }
 
-        .nav-btns a.primary {
+        .btn-login {
+            color: #444;
+            border: 1px solid #ddd;
+        }
+
+        .btn-login:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-primary {
             background: #6fbf4a;
             color: white;
         }
 
-        .nav-btns a:hover {
-            background: #eaf5e5;
+        .btn-primary:hover {
+            background: #5aa83f;
+            transform: translateY(-2px);
+        }
+
+        /* Mobile Menu */
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
         }
 
         /* ================= HERO ================= */
         .hero {
-            min-height: 90vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 8%;
+            padding: 120px 8% 80px;
+            background: linear-gradient(90deg, #f8fff6, #e6f3e0, #d4edda, #f8fff6);
+            background-size: 300% 100%;
+            animation: heroGradient 12s ease-in-out infinite alternate;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes heroGradient {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 80%, rgba(111,191,74,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(142,211,106,0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(111,191,74,0.04) 0%, transparent 50%);
+            animation: heroBlobs 20s ease-in-out infinite;
+        }
+
+        @keyframes heroBlobs {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.1) rotate(180deg); opacity: 0.8; }
+        }
+
+        .hero-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 60px;
+            position: relative;
+            z-index: 2;
         }
 
         .hero-text {
-            max-width: 540px;
-            animation: fadeUp 1s ease;
+            max-width: 560px;
+            animation: fadeUp 1.2s ease;
         }
 
         .hero-text h1 {
-            font-size: 54px;
-            margin-bottom: 20px;
+            font-size: 58px;
+            margin-bottom: 24px;
+            line-height: 1.2;
         }
 
         .hero-text span {
@@ -78,18 +189,19 @@
         }
 
         .hero-text p {
-            font-size: 18px;
+            font-size: 19px;
             color: #555;
-            margin-bottom: 35px;
+            margin-bottom: 40px;
         }
 
         .hero-buttons a {
-            padding: 14px 36px;
-            margin-right: 15px;
+            padding: 16px 38px;
+            margin-right: 18px;
             border-radius: 30px;
             font-weight: 600;
             text-decoration: none;
             transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(111,191,74,0.2);
         }
 
         .btn-primary {
@@ -100,238 +212,432 @@
         .btn-outline {
             border: 2px solid #6fbf4a;
             color: #6fbf4a;
+            background: transparent;
         }
 
         .hero-buttons a:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(111,191,74,0.3);
+        }
+
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            animation: float 6s ease-in-out infinite;
         }
 
         /* ================= FEATURES ================= */
         .features {
-            padding: 90px 8%;
+            padding: 120px 8%;
             background: #f9fafb;
             text-align: center;
         }
 
-        .features h2 {
-            font-size: 36px;
-            margin-bottom: 50px;
+        .section-title {
+            font-size: 42px;
+            margin-bottom: 20px;
+            color: #2b2b2b;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 60px;
         }
 
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
         }
 
         .feature-card {
             background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            transition: 0.3s;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            transition: all 0.4s;
         }
 
         .feature-card:hover {
-            transform: translateY(-6px);
+            transform: translateY(-12px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
         }
 
         .feature-card h3 {
-            margin-bottom: 12px;
+            font-size: 24px;
+            margin-bottom: 16px;
             color: #6fbf4a;
+        }
+
+        /* ================= TESTIMONIALS ================= */
+        .testimonials {
+            padding: 100px 8%;
+            background: white;
+            text-align: center;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .testimonial-card {
+            background: #f9fafb;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .testimonial-card p {
+            font-style: italic;
+            font-size: 17px;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .testimonial-card h4 {
+            font-weight: 600;
+            color: #6fbf4a;
+            font-size: 16px;
         }
 
         /* ================= HOW IT WORKS ================= */
         .steps {
-            padding: 90px 8%;
+            padding: 120px 8%;
+            background: #f9fafb;
         }
 
         .steps h2 {
             text-align: center;
-            font-size: 36px;
-            margin-bottom: 50px;
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+
+        .steps .section-subtitle {
+            text-align: center;
+            margin-bottom: 80px;
         }
 
         .step-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 30px;
+            gap: 40px;
         }
 
         .step {
-            padding: 25px;
-            border-left: 5px solid #6fbf4a;
-            background: #f9fafb;
-            border-radius: 12px;
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+
+        .step:hover {
+            transform: translateY(-8px);
+        }
+
+        .step-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #6fbf4a;
+            margin-bottom: 10px;
         }
 
         /* ================= USE CASES ================= */
         .use-cases {
-            padding: 90px 8%;
-            background: #ffffff;
+            padding: 100px 8%;
             text-align: center;
-        }
-
-        .use-cases h2 {
-            font-size: 36px;
-            margin-bottom: 40px;
+            background: white;
         }
 
         .cases {
-            display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 40px;
+            display: flex;
             flex-wrap: wrap;
         }
 
         .case {
+            font-size: 18px;
+            padding: 30px 40px;
+            transition: 0.3s;
             background: #f9fafb;
-            padding: 25px 30px;
             border-radius: 14px;
-            min-width: 220px;
-            font-weight: 600;
+        }
+
+        .case:hover {
+            transform: scale(1.05);
         }
 
         /* ================= CTA ================= */
         .cta {
-            padding: 80px 8%;
+            padding: 120px 8%;
             text-align: center;
-            background: linear-gradient(120deg, #6fbf4a, #8ed36a);
+            background: linear-gradient(135deg, #6fbf4a, #8ed36a);
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('https://www.creativefabrica.com/wp-content/uploads/2023/05/31/3d-Emerald-Green-Wave-Background-Graphics-71039277-1-1-580x387.png') center/cover no-repeat;
+            opacity: 0.15;
+            animation: waveMove 20s linear infinite;
         }
 
         .cta h2 {
-            font-size: 40px;
+            font-size: 48px;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta p {
+            font-size: 20px;
+            margin: 20px 0 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            z-index: 1;
         }
 
         .cta a {
             display: inline-block;
-            margin-top: 20px;
-            padding: 14px 40px;
+            padding: 18px 48px;
             background: white;
             color: #2b2b2b;
-            border-radius: 30px;
+            border-radius: 50px;
             font-weight: 700;
+            font-size: 18px;
             text-decoration: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.4s;
+            position: relative;
+            z-index: 1;
         }
 
-        /* ================= FOOTER ================= */
+        .cta a:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        @keyframes waveMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 100%; }
+        }
+
         footer {
-            padding: 25px;
+            padding: 40px;
             text-align: center;
-            color: #777;
-            font-size: 14px;
+            background: #1e293b;
+            color: #e2e8f0;
+            font-size: 15px;
         }
 
         @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
         /* RESPONSIVE */
         @media (max-width: 900px) {
-            .hero {
+            .menu-toggle { display: block; }
+            .nav-links { 
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 20px;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+            .nav-links.active { display: flex; }
+
+            .hero-content {
                 flex-direction: column;
                 text-align: center;
-                padding-top: 80px;
             }
-            .hero-text h1 {
-                font-size: 40px;
-            }
+
+            .hero-text h1 { font-size: 42px; }
+            .hero-image { margin-top: 40px; }
+
+            .cta h2 { font-size: 38px; }
         }
     </style>
 </head>
-
 <body>
 
 <!-- NAVBAR -->
-<nav>
+<nav id="navbar">
     <div class="logo-box">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX Logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX">
+        
     </div>
+
+    <div class="menu-toggle" id="menuToggle">☰</div>
+
+    <div class="nav-links" id="navLinks">
+        <a href="/">Home</a>
+        <a href="#features">Features</a>
+        <a href="#steps">How it Works</a>
+        <a href="/about">About</a>
+    </div>
+
     <div class="nav-btns">
-        <a href="/login">Login</a>
-        <a href="/register" class="primary">Get Started</a>
+        <a href="/login" class="btn-login">Login</a>
+        <a href="/register" class="btn-primary">Get Started</a>
     </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-    <div class="hero-text">
-        <h1>Powering <span>Realtime Quizzes</span><br>for Smart Engagement</h1>
-        <p>
-            QuizX helps you create live interactive quizzes, track instant scores,
-            and engage audiences in classrooms, meetings, and online events.
-        </p>
-        <div class="hero-buttons">
-            <a href="/register" class="btn-primary">Create Quiz</a>
-            <a href="/login" class="btn-outline">Join Quiz</a>
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1>Powering <span>Realtime Quizzes</span><br>for Smart Engagement</h1>
+            <p>
+                QuizX is the ultimate realtime web quiz platform that transforms learning and engagement.
+                Create interactive live quizzes, see instant results, live leaderboards, and keep your audience hooked — perfect for classrooms, corporate training, and events.
+            </p>
+            <div class="hero-buttons">
+                <a href="/register" class="btn-primary">Create Your First Quiz</a>
+                <a href="/join" class="btn-outline">Join a Quiz Now</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <!-- You can add a hero illustration here if you want -->
         </div>
     </div>
 </section>
 
 <!-- FEATURES -->
-<section class="features">
-    <h2>Why Choose QuizX?</h2>
+<section class="features" id="features">
+    <h2 class="section-title">Powerful Features That Make QuizX Stand Out</h2>
+    <p class="section-subtitle">Everything you need to create engaging, realtime quizzes with ease.</p>
     <div class="feature-grid">
         <div class="feature-card">
             <h3>Realtime Results</h3>
-            <p>Instant score updates for all participants without page refresh.</p>
+            <p>Live leaderboard updates instantly as participants answer — no refresh needed.</p>
         </div>
         <div class="feature-card">
             <h3>Live Participation</h3>
-            <p>Students join quizzes live and answer in realtime.</p>
+            <p>Students join instantly with a simple code and compete in realtime.</p>
         </div>
         <div class="feature-card">
-            <h3>Admin Control</h3>
-            <p>Create, lock, and publish quizzes with full control.</p>
+            <h3>Full Admin Control</h3>
+            <p>Start, pause, reveal answers, or end quizzes with complete control.</p>
         </div>
         <div class="feature-card">
-            <h3>Secure Login</h3>
-            <p>Role-based access for Admin and Students.</p>
+            <h3>Secure & Role-Based</h3>
+            <p>Separate logins for admins and students with secure authentication.</p>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+    <h2 class="section-title">Loved by Teachers & Trainers Worldwide</h2>
+    <p class="section-subtitle">See what our users say about QuizX.</p>
+    <div class="testimonial-grid">
+        <div class="testimonial-card">
+            <p>"QuizX has completely transformed my classroom engagement. Students love the live competition!"</p>
+            <h4>— Sarah Johnson, High School Teacher</h4>
+        </div>
+        <div class="testimonial-card">
+            <p>"Perfect for corporate training sessions. Realtime feedback helps us assess understanding instantly."</p>
+            <h4>— Mike Chen, Corporate Trainer</h4>
+        </div>
+        <div class="testimonial-card">
+            <p>"Easy to use and super engaging. My online workshops have never been more interactive."</p>
+            <h4>— Emma Rodriguez, Online Educator</h4>
         </div>
     </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="steps">
-    <h2>How It Works</h2>
+<section class="steps" id="steps">
+    <h2 class="section-title">How QuizX Works</h2>
+    <p class="section-subtitle">Get started in minutes — simple, powerful, and fun.</p>
     <div class="step-grid">
-        <div class="step">1️⃣ Admin creates a quiz and adds questions</div>
-        <div class="step">2️⃣ Quiz is published and goes live</div>
-        <div class="step">3️⃣ Students join and attempt quiz</div>
-        <div class="step">4️⃣ Results are shown instantly</div>
+        <div class="step">
+            <div class="step-number">1</div>
+            <p><strong>Create a Quiz</strong><br>Add questions, set timer, and customize.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <p><strong>Go Live</strong><br>Publish and share the unique join code.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <p><strong>Participants Join</strong><br>Students enter code and start answering live.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">4</div>
+            <p><strong>See Results Instantly</strong><br>Live leaderboard and detailed analytics.</p>
+        </div>
     </div>
 </section>
 
 <!-- USE CASES -->
 <section class="use-cases">
-    <h2>Perfect For</h2>
+    <h2 class="section-title">Perfect For Every Scenario</h2>
     <div class="cases">
-        <div class="case">🎓 Classrooms</div>
-        <div class="case">🏢 Corporate Training</div>
-        <div class="case">🎤 Live Events</div>
-        <div class="case">💻 Online Learning</div>
+        <div class="case">Classrooms & Schools</div>
+        <div class="case">Corporate Training</div>
+        <div class="case">Live Events & Webinars</div>
+        <div class="case">Online Courses & Tutoring</div>
+        <div class="case">Team Building Activities</div>
     </div>
 </section>
 
 <!-- CTA -->
 <section class="cta">
-    <h2>Start Your First Live Quiz Today</h2>
-    <a href="/register">Get Started for Free</a>
+    <h2>Ready to Transform Your Teaching & Training?</h2>
+    <p>Join thousands of educators and trainers who are making learning interactive and fun with QuizX.</p>
+    <a href="/register">Get Started for Free — No Credit Card Required</a>
 </section>
 
-<!-- FOOTER -->
 <footer>
-    © 2025 QuizX • Realtime Web Quiz Application
+    © 2025 QuizX • Realtime Web Quiz Application • All Rights Reserved
 </footer>
+
+<script>
+    // Mobile menu toggle
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('active');
+    });
+
+    // Navbar shadow on scroll
+    window.addEventListener('scroll', () => {
+        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    });
+</script>
 
 </body>
 </html>
