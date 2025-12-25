@@ -1,16 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>QuizX | Student Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>QuizX | Student Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- External CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
+<style>
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+
+/* HEADER */
+.header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:28px;
+    border-radius:0 0 22px 22px;
+}
+
+ /* ================= NAVBAR ================= */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+           
+            align-items: center;
+            padding: 16px 8%;
+            border-bottom: 1px solid #eef2f7;
+            z-index: 1000;
+            transition: box-shadow 0.3s;
+        }
+
+        nav.scrolled {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 102px;
+        }
+
+        .logo-box img {
+            height: 55px;
+        }
+
+        .logo-box span {
+            font-weight: 700;
+            font-size: 24px;
+            color: #6fbf4a;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+    	    position: absolute;
+    	    left: 50%;
+    	    transform: translateX(-50%);
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 600;
+            color: #444;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: #6fbf4a;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #6fbf4a;
+        }
+
+        .nav-btns a {
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #6fbf4a;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5aa83f;
+            transform: translateY(-2px);
+        }
+
+        /* Mobile Menu */
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+
+/* CARD */
+.card-box{
+    background:white;
+    border-radius:20px;
+    padding:26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+.btn-green{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    font-weight:700;
+    border-radius:30px;
+    padding:12px;
+    border:none;
+}
+</style>
 </head>
+
 <body>
 
 <!-- HEADER -->
@@ -20,36 +147,61 @@
 </div>
 
 <div class="container mt-5">
-    <div class="row g-4">
 
-        <!-- JOIN BY CODE -->
-        <div class="col-md-6">
-            <div class="card-box">
-                <h5 class="fw-bold mb-3">🔑 Join Quiz by Code</h5>
-                <form method="POST" action="/join">
-                    <input name="code" class="form-control mb-3"
-                           placeholder="Enter 6-digit quiz code" required>
-                    <button class="btn-green w-100">
-                        🚀 Join Quiz
-                    </button>
-                </form>
-            </div>
+<div class="row g-4">
+
+    <!-- JOIN BY CODE -->
+    <div class="col-md-6">
+        <div class="card-box">
+            <h5 class="fw-bold mb-3">🔑 Join Quiz by Code</h5>
+
+            <form method="POST" action="/join">
+                <input name="code" class="form-control mb-3"
+                       placeholder="Enter 6-digit quiz code"
+                       required>
+
+                <button class="btn-green w-100">
+                    🚀 Join Quiz
+                </button>
+            </form>
         </div>
-
-        <!-- VIEW LIVE QUIZZES -->
-        <div class="col-md-6">
-            <div class="card-box text-center">
-                <h5 class="fw-bold mb-3">📚 Available Live Quizzes</h5>
-                <p class="text-muted">
-                    View quizzes that are currently live
-                </p>
-                <a href="/student/quizzes" class="btn btn-outline-success w-100">
-                    View Live Quizzes
-                </a>
-            </div>
-        </div>
-
     </div>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+    <div class="logo-box">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX">
+        
+    </div>
+
+    <div class="menu-toggle" id="menuToggle">☰</div>
+
+    <div class="nav-links" id="navLinks">
+        <a href="/">Home</a>
+        <a href="#features">Features</a>
+        <a href="#steps">How it Works</a>
+        <a href="/about">About</a>
+    </div>
+
+    
+</nav>
+
+    <!-- VIEW LIVE QUIZZES -->
+    <div class="col-md-6">
+        <div class="card-box text-center">
+            <h5 class="fw-bold mb-3">📚 Available Live Quizzes</h5>
+            <p class="text-muted">
+                View quizzes that are currently live
+            </p>
+
+            <a href="/student/quizzes" class="btn btn-outline-success w-100">
+                View Live Quizzes
+            </a>
+        </div>
+    </div>
+
+</div>
+
 </div>
 
 </body>
