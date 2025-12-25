@@ -6,7 +6,7 @@ import random, string
 
 # ================== APP CONFIG ==================
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = "quizx_secret_key_change_later"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -28,7 +28,6 @@ class User(db.Model):
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-
     duration = db.Column(db.Integer)  # minutes
     start_time = db.Column(db.DateTime)
 
@@ -281,7 +280,6 @@ def attempt_quiz(quiz_id):
     end_time += timedelta(seconds=quiz.paused_seconds)
     remaining_seconds = int((end_time - datetime.utcnow()).total_seconds())
 
-    # 🔴 HARD STOP – REALTIME RULE
     if remaining_seconds <= 0:
         quiz.is_active = False
         db.session.commit()

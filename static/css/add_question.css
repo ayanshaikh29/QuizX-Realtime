@@ -1,0 +1,59 @@
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+.header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:25px;
+    border-radius:0 0 22px 22px;
+}
+.form-wrapper{
+    max-width:900px;
+    margin:auto;
+}
+.question-card{
+    background:white;
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+    margin-bottom:25px;
+}
+.editor{
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:14px;
+    min-height:80px;
+}
+.toolbar button{
+    border:none;
+    background:#eef6ea;
+    padding:6px 12px;
+    border-radius:8px;
+    font-weight:700;
+    margin-right:6px;
+}
+.option{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+.option input[type=text]{
+    border-radius:12px;
+}
+.btn-green{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    border-radius:30px;
+    padding:12px 28px;
+    font-weight:700;
+    border:none;
+}
+.btn-outline-green{
+    border:2px solid #6fbf4a;
+    color:#6fbf4a;
+    border-radius:30px;
+    padding:10px 26px;
+    font-weight:700;
+    background:transparent;
+}
