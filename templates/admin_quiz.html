@@ -1,57 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>QuizX | Quiz Management</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>QuizX | Quiz Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-<style>
-body{
-    background:#f6f8fb;
-    font-family:'Inter',sans-serif;
-}
-
-/* HEADER */
-.header{
-    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
-    color:white;
-    padding:28px;
-    border-radius:0 0 22px 22px;
-}
-
-/* CREATE CARD */
-.create-card{
-    background:white;
-    border-radius:20px;
-    padding:28px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.06);
-}
-
-/* QUIZ CARD */
-.quiz-card{
-    background:white;
-    border-radius:18px;
-    padding:22px;
-    box-shadow:0 8px 25px rgba(0,0,0,0.06);
-    margin-bottom:18px;
-}
-
-.quiz-title{
-    font-weight:700;
-    font-size:18px;
-}
-
-.badge-live{background:#22c55e;}
-.badge-paused{background:#facc15;color:#000;}
-.badge-ended{background:#6b7280;}
-.badge-locked{background:#fde047;color:#000;}
-.badge-draft{background:#e5e7eb;color:#000;}
-</style>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_quiz.css') }}">
 </head>
-
 <body>
 
 <!-- HEADER -->
@@ -67,16 +26,11 @@ body{
     <h5 class="fw-bold mb-3">➕ Create New Quiz</h5>
     <form method="POST" class="row g-3">
         <div class="col-md-5">
-            <input name="title" class="form-control"
-                   placeholder="Quiz title" required>
+            <input name="title" class="form-control" placeholder="Quiz title" required>
         </div>
-
         <div class="col-md-4">
-            <input name="duration" type="number" min="1"
-                   class="form-control"
-                   placeholder="Duration (minutes)" required>
+            <input name="duration" type="number" min="1" class="form-control" placeholder="Duration (minutes)" required>
         </div>
-
         <div class="col-md-3 d-grid">
             <button class="btn btn-success">Create Quiz</button>
         </div>
@@ -87,10 +41,8 @@ body{
 {% if quizzes %}
 {% for q in quizzes %}
 <div class="quiz-card">
-
     <div class="quiz-title">{{ q.title }}</div>
 
-    <!-- STATUS -->
     {% if q.is_active and q.is_paused %}
         <span class="badge badge-paused mt-2">Paused</span>
     {% elif q.is_active %}
@@ -103,62 +55,36 @@ body{
         <span class="badge badge-draft mt-2">Draft</span>
     {% endif %}
 
-    <!-- ACTION BUTTONS -->
     <div class="mt-3 d-flex gap-2 flex-wrap">
-
         {% if not q.is_locked and not q.is_active %}
-            <a href="/admin/add-question/{{ q.id }}"
-               class="btn btn-success btn-sm">
-                Add / Edit Questions
-            </a>
+            <a href="/admin/add-question/{{ q.id }}" class="btn btn-success btn-sm">Add / Edit Questions</a>
         {% endif %}
 
         {% if q.is_locked and not q.is_published %}
-            <a href="/admin/publish-quiz/{{ q.id }}"
-               class="btn btn-primary btn-sm">
-                ▶ Start Live
-            </a>
+            <a href="/admin/publish-quiz/{{ q.id }}" class="btn btn-primary btn-sm">▶ Start Live</a>
         {% endif %}
 
         {% if q.is_active and not q.is_paused %}
-            <a href="/admin/pause-quiz/{{ q.id }}"
-               class="btn btn-warning btn-sm">
-                ⏸ Pause
-            </a>
+            <a href="/admin/pause-quiz/{{ q.id }}" class="btn btn-warning btn-sm">⏸ Pause</a>
         {% endif %}
 
         {% if q.is_active and q.is_paused %}
-            <a href="/admin/resume-quiz/{{ q.id }}"
-               class="btn btn-success btn-sm">
-                ▶ Resume
-            </a>
+            <a href="/admin/resume-quiz/{{ q.id }}" class="btn btn-success btn-sm">▶ Resume</a>
         {% endif %}
 
         {% if q.is_active %}
-            <a href="/admin/stop-quiz/{{ q.id }}"
-               onclick="return confirm('Stop this live quiz?')"
-               class="btn btn-danger btn-sm">
-                ⛔ Stop Quiz
-            </a>
+            <a href="/admin/stop-quiz/{{ q.id }}" onclick="return confirm('Stop this live quiz?')" class="btn btn-danger btn-sm">⛔ Stop Quiz</a>
         {% endif %}
     </div>
 
-    <!-- JOIN INFO -->
     {% if q.is_active %}
     <div class="mt-3">
-        <small class="text-muted">Join Code:</small>
-        <b>{{ q.join_code }}</b><br>
-
+        <small class="text-muted">Join Code:</small> <b>{{ q.join_code }}</b><br>
         <small class="text-muted">Link:</small>
-        <a href="/join/{{ q.join_code }}" target="_blank">
-            /join/{{ q.join_code }}
-        </a><br>
-
-        <small class="text-muted">Duration:</small>
-        {{ q.duration }} minutes
+        <a href="/join/{{ q.join_code }}" target="_blank">/join/{{ q.join_code }}</a><br>
+        <small class="text-muted">Duration:</small> {{ q.duration }} minutes
     </div>
     {% endif %}
-
 </div>
 {% endfor %}
 {% else %}

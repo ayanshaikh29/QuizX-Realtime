@@ -1,0 +1,40 @@
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+
+/* HEADER */
+.header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:28px;
+    border-radius:0 0 22px 22px;
+}
+
+/* CREATE CARD */
+.create-card{
+    background:white;
+    border-radius:20px;
+    padding:28px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+
+/* QUIZ CARD */
+.quiz-card{
+    background:white;
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.06);
+    margin-bottom:18px;
+}
+
+.quiz-title{
+    font-weight:700;
+    font-size:18px;
+}
+
+.badge-live{background:#22c55e;}
+.badge-paused{background:#facc15;color:#000;}
+.badge-ended{background:#6b7280;}
+.badge-locked{background:#fde047;color:#000;}
+.badge-draft{background:#e5e7eb;color:#000;}
