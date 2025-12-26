@@ -1,0 +1,46 @@
+body{
+    background:#f6f8fb;
+    font-family:'Inter',sans-serif;
+}
+
+/* HEADER */
+.profile-header{
+    background:linear-gradient(120deg,#6fbf4a,#8ed36a);
+    color:white;
+    padding:28px;
+    border-radius:0 0 22px 22px;
+}
+
+/* CARD */
+.profile-card{
+    background:white;
+    max-width:420px;
+    padding:30px;
+    border-radius:22px;
+    text-align:center;
+    box-shadow:0 12px 35px rgba(0,0,0,0.06);
+}
+
+/* AVATAR */
+.avatar{
+    width:90px;
+    height:90px;
+    margin:auto;
+    border-radius:50%;
+    background:#22c55e;
+    color:white;
+    font-size:36px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* INFO ROW */
+.info-row{
+    display:flex;
+    justify-content:space-between;
+    margin:12px 0;
+    font-weight:600;
+}
+

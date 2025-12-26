@@ -90,7 +90,7 @@ def register():
             return redirect(url_for("login"))
     return render_template("register.html", error=error)
 
-
+# ================== LOGIN ==================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -117,7 +117,7 @@ def login():
 
     return render_template("login.html", error=error)
 
-
+# ================== LOGOUT ==================
 @app.route("/logout")
 def logout():
     session.clear()
@@ -127,6 +127,27 @@ def logout():
 @app.route("/admin/dashboard")
 def admin_dashboard():
     return render_template("admin_dashboard.html")
+
+# ================== PROFILE ==================
+@app.route("/profile")
+def profile():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = User.query.get(session["user_id"])
+    return render_template("profile.html", user=user)
+
+# ================== EDIT_PROFILE ==================
+@app.route("/profile/edit", methods=["GET", "POST"])
+def edit_profile():
+    user = get_current_user()  # however you fetch the logged-in user
+    if request.method == "POST":
+        # Update user info here
+        user.name = request.form['name']
+        user.email = request.form['email']
+        db.session.commit()
+        return redirect(url_for('profile'))
+    return render_template("edit_profile.html", user=user)
 
 
 @app.route("/admin/quizzes", methods=["GET", "POST"])
