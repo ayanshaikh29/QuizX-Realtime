@@ -42,6 +42,7 @@
     <p class="mb-0">Here is your result</p>
 </div>
 
+<!-- YOUR SCORE CARD -->
 <div class="container mt-5">
     <div class="result-card mx-auto" style="max-width: 500px;">
         <h3 class="fw-bold mb-3">Your Score</h3>
@@ -68,8 +69,50 @@
     </div>
 </div>
 
+<!-- F1 LEADERBOARD -->
+<div class="container mt-5">
+    <h4 class="text-center mb-4">🏁 Quiz Leaderboard</h4>
+    <div class="f1-leaderboard" id="f1-leaderboard">
+        {% for r in results %}
+        <div class="f1-row" data-student="{{ r.student }}" style="order: {{ loop.index }}">
+            <div class="position">
+                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+            </div>
+            <div>
+                <div class="driver-name">{{ r.student }}</div>
+                <div class="team">Score: {{ r.score }} / {{ r.total }}</div>
+            </div>
+            <div class="points">{{ r.score }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
 <!-- Bootstrap JS (required for dropdown) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function updateLeaderboard(newResults) {
+    const leaderboard = document.getElementById('f1-leaderboard');
+    newResults.forEach((r, index) => {
+        const row = leaderboard.querySelector(`[data-student="${r.student}"]`);
+        if (row) {
+            row.style.order = index + 1; // Reorder
+            row.querySelector('.points').textContent = r.score; // Update score
+        }
+    });
+}
+
+// Example: Poll server every 5 seconds for updated scores
+setInterval(() => {
+    fetch('/leaderboard-json') // Replace with your API route
+        .then(res => res.json())
+        .then(data => updateLeaderboard(data.results))
+        .catch(err => console.error(err));
+}, 5000);
+</script>
+
 
 </body>
 </html>
