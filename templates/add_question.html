@@ -5,68 +5,101 @@
     <title>QuizX | Add Questions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- External CSS -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/add_question.css') }}">
 </head>
 <body>
 
-<div class="header text-center">
+<div class="header">
     <h4>📝 Add Questions</h4>
     <p class="mb-0">Quiz: <b>{{ quiz.title }}</b></p>
 </div>
 
-<div class="container mt-5 form-wrapper">
+<div class="container form-wrapper">
 
 {% if quiz.is_locked %}
-<div class="alert alert-warning text-center">
-    Quiz is locked. No more questions can be added.
-</div>
-<a href="/admin/quizzes" class="btn-outline-green">Back</a>
+    <div class="alert alert-warning">
+        Quiz is locked. No more questions can be added.
+    </div>
+    <a href="/admin/quizzes" class="btn btn-outline-success back-link">Back to Quizzes</a>
 {% else %}
 
 <form method="POST">
 <div id="questions-container">
+
+    <!-- ================= QUESTION CARD ================= -->
     <div class="question-card">
+
         <label class="fw-bold">Question</label>
-        <div class="toolbar mb-2">
+
+        <div class="toolbar">
             <button type="button" onclick="format('bold')"><b>B</b></button>
             <button type="button" onclick="format('italic')"><i>I</i></button>
         </div>
+
         <div class="editor" contenteditable="true" oninput="syncQuestion(this)"></div>
         <input type="hidden" name="question[]">
 
+        <!-- TIMER -->
+        <label class="fw-bold mt-3">⏱ Time Limit (seconds)</label>
+        <input type="number"
+               name="time_0"
+               class="form-control"
+               min="5"
+               value="30"
+               required>
+
         <label class="fw-bold mt-4">Options</label>
+
         {% for i in range(1,5) %}
         <div class="option">
             <input type="radio" name="answer_0" value="{{ i }}" required>
-            <input type="text" name="option{{ i }}_0" class="form-control" placeholder="Option {{ i }}" required>
+            <input type="text"
+                   name="option{{ i }}_0"
+                   placeholder="Option {{ i }}"
+                   required>
         </div>
         {% endfor %}
+
     </div>
+    <!-- ================= END QUESTION CARD ================= -->
+
 </div>
 
-<div class="d-flex justify-content-between mt-4">
-    <button type="button" onclick="addQuestion()" class="btn-outline-green">➕ Add Another Question</button>
-    <button class="btn-green">✅ Save All Questions</button>
+<div class="action-buttons">
+    <button type="button" onclick="addQuestion()" class="btn btn-outline-success">
+        ➕ Add Another Question
+    </button>
+    <button type="submit" class="btn btn-success">
+        ✅ Save All Questions
+    </button>
 </div>
 </form>
 
-<div class="text-center mt-4">
-    <a href="/admin/end-questions/{{ quiz.id }}" onclick="return confirm('Lock this quiz?')" class="btn-outline-green">
-        End Questions
+<div class="end-questions">
+    <a href="/admin/end-questions/{{ quiz.id }}"
+       onclick="return confirm('Lock this quiz? No more questions can be added after this.')"
+       class="btn btn-outline-danger">
+        🔒 End Questions
     </a>
-</div>
-{% endif %}
+    <div style="margin-top: 12px; font-size: 14px; color: #94a3b8;">
+        Click to lock the quiz and proceed to publishing.
+    </div>
 </div>
 
+{% endif %}
+
+</div>
+
+<!-- ================= SCRIPT ================= -->
 <script>
 let qIndex = 1;
 
 function format(cmd){
-    document.execCommand(cmd,false,null);
+    document.execCommand(cmd, false, null);
 }
 
 function syncQuestion(div){
@@ -78,17 +111,28 @@ function addQuestion(){
     const first = container.children[0];
     const clone = first.cloneNode(true);
 
+    // Reset question text
     clone.querySelector(".editor").innerHTML = "";
     clone.querySelector("input[name='question[]']").value = "";
 
-    clone.querySelectorAll("input").forEach(i=>{
-        if(i.type==="radio"){
-            i.name = "answer_"+qIndex;
-            i.checked=false;
+    clone.querySelectorAll("input").forEach(i => {
+
+        // Radio buttons
+        if(i.type === "radio"){
+            i.name = "answer_" + qIndex;
+            i.checked = false;
         }
-        if(i.type==="text"){
-            i.name = i.name.replace("_0","_"+qIndex);
-            i.value="";
+
+        // Option text inputs
+        if(i.type === "text"){
+            i.name = i.name.replace("_0", "_" + qIndex);
+            i.value = "";
+        }
+
+        // Timer input
+        if(i.type === "number"){
+            i.name = "time_" + qIndex;
+            i.value = 30;
         }
     });
 

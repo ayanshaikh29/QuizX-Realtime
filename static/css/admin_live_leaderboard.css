@@ -1,0 +1,257 @@
+body{
+    margin:0;
+    font-family: Inter, sans-serif;
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4, #ecfdf5);
+    min-height: 100vh;
+}
+.box{
+    max-width:420px;
+    margin:20px auto;
+    background:white;
+    border-radius:18px;
+    box-shadow:0 10px 40px rgba(22,163,74,.15);
+    padding:16px;
+}
+h2{
+    text-align:center;
+    color:#166534;
+    margin-bottom:6px;
+}
+.subtitle{
+    text-align:center;
+    color:#16a34a;
+    font-weight:600;
+    margin-bottom:10px;
+    font-size:14px;
+}
+.participants{
+    text-align:center;
+    color:#16a34a;
+    font-weight:600;
+    margin-bottom:10px;
+}
+
+.points-summary {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 13px;
+}
+.points-summary h5 {
+    margin: 0 0 8px 0;
+    color: #166534;
+    font-size: 15px;
+    text-align: center;
+}
+.points-summary ul {
+    margin: 0;
+    padding-left: 18px;
+    color: #065f46;
+}
+.points-summary li {
+    margin-bottom: 4px;
+}
+.points-summary .sub-list {
+    padding-left: 18px;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.winner{
+    background:linear-gradient(135deg,#22c55e,#16a34a);
+    color:white;
+    padding:14px;
+    border-radius:14px;
+    font-weight:700;
+    margin-bottom:12px;
+    text-align:center;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.row{
+    display:flex;
+    align-items:center;
+    background:#f0fdf4;
+    padding:10px;
+    border-radius:12px;
+    margin-bottom:8px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.5s ease-out;
+}
+.row.animate {
+    opacity: 1;
+    transform: translateX(0);
+}
+.rank{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font-size:13px;
+    font-weight:700;
+    margin-right:8px;
+    color:white;
+    background:#16a34a;
+}
+.avatar{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    background:#dcfce7;
+    display:grid;
+    place-items:center;
+    font-weight:700;
+    color:#166534;
+    margin-right:8px;
+}
+.info{
+    flex:1;
+}
+.name{
+    font-weight:600;
+    color:#065f46;
+}
+.score{
+    font-size:13px;
+    color:#16a34a;
+}
+.points{
+    font-size:15px;
+    font-weight:700;
+    color:#f59e0b;
+}
+.time{
+    font-weight:600;
+    color:#14532d;
+    font-size:13px;
+}
+
+/* QUESTION LEADERBOARD */
+#questionLeaderboard{
+    background:#ecfdf5;
+    border:1px solid #bbf7d0;
+    border-radius:12px;
+    padding:10px;
+    margin-bottom:10px;
+}
+#questionLeaderboard h4{
+    margin:0 0 8px;
+    color:#166534;
+    font-size:15px;
+}
+#questionLeaderboard .qrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 8px;
+    background:white;
+    border-radius:8px;
+    margin-bottom:6px;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease-out;
+}
+#questionLeaderboard .qrow.animate {
+    opacity: 1;
+    transform: translateX(0);
+}
+#questionLeaderboard .qname{
+    font-weight:600;
+    color:#065f46;
+}
+#questionLeaderboard .qtime{
+    font-weight:700;
+    color:#16a34a;
+}
+
+/* BUTTON */
+.next-btn{
+    width:100%;
+    margin-top:12px;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    background:#16a34a;
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+    transition: background 0.3s ease;
+}
+.next-btn:hover{
+    background:#15803d;
+}
+.next-btn:disabled{
+    background:#94a3b8;
+    cursor:not-allowed;
+}
+
+.loading{
+    text-align:center;
+    color:#94a3b8;
+    padding:20px;
+}
+
+.countdown{
+    text-align:center;
+    color:#16a34a;
+    font-weight:600;
+    margin-top:10px;
+    font-size:14px;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Desktop responsiveness */
+@media (min-width: 768px) {
+    .box {
+        max-width: 900px;
+        padding: 24px;
+        margin: 40px auto;
+    }
+    .row {
+        padding: 16px;
+    }
+    .avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+    }
+    .rank {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    #questionLeaderboard .qrow {
+        padding: 10px 12px;
+    }
+    .next-btn {
+        padding: 16px;
+        font-size: 16px;
+    }
+    h2 {
+        font-size: 28px;
+    }
+    .subtitle {
+        font-size: 16px;
+    }
+    .points-summary {
+        font-size: 14px;
+    }
+    .points-summary h5 {
+        font-size: 16px;
+    }
+}
+
+/* Leaderboard container for scroll if needed */
+#leaderboardBody {
+    max-height: 50vh;
+    overflow-y: auto;
+}

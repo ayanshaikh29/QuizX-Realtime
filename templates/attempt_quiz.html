@@ -2,94 +2,288 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | Attempt Quiz</title>
+    <title>QuizX | {{ quiz.title }} - Attempt Quiz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Bootstrap -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Google Font -->
+    <!-- Google Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- External CSS -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/attempt_quiz.css') }}">
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="page-header text-center">
-    <h4>🧠 Live Quiz</h4>
-    <p class="mb-0">Answer before time runs out</p>
-</div>
+<div class="quiz-box">
+    <!-- Quiz Title -->
+    <h2 class="quiz-title">{{ quiz.title }}</h2>
 
-<div class="container mt-4 mb-5">
-
-    {% if paused %}
-    <div class="alert alert-warning text-center fw-bold">
-        ⏸ Quiz Paused by Admin<br>
-        Please wait...
-    </div>
-    <script>
-        setTimeout(() => location.reload(), 5000);
-    </script>
-    {% else %}
-
-    <div class="timer-box">
-        ⏱ Time Left: <span id="timer">--:--</span>
+    <!-- Anti-Cheat Alert -->
+    <div class="cheat-alert" id="cheatAlert">
+        Warning <span id="warnCount">1</span>/3 – Do not switch tabs or leave the quiz window!
     </div>
 
-    <form method="POST">
-        {% for q in questions %}
-        <div class="question-card">
-            <div class="question-text">
-                {{ loop.index }}. {{ q.question }}
+    <div class="top-bar">
+        <div class="progress-text">
+            Question {{ current_index + 1 }} of {{ total_questions }}
+        </div>
+        <div class="timer-circle" id="timerCircle">
+            <div>
+                <div id="timeText">{{ current_question.time_limit }}</div>
+                <small>seconds</small>
             </div>
+        </div>
+    </div>
 
+    <!-- Current Question -->
+    <form id="quizForm">
+        <input type="hidden" name="question_id" value="{{ current_question.id }}">
+        <input type="hidden" name="qindex" value="{{ current_index }}">
+
+        <h5 class="mb-4 fw-bold">{{ current_index + 1 }}. {{ current_question.question }}</h5>
+
+        <div class="options mb-4">
             <label class="option">
-                <input type="radio" name="{{ q.id }}" value="{{ q.option1 }}" required>
-                {{ q.option1 }}
+                <input type="radio" name="selected_answer" value="{{ current_question.option1 }}">
+                <span class="option-text">{{ current_question.option1 }}</span>
             </label>
             <label class="option">
-                <input type="radio" name="{{ q.id }}" value="{{ q.option2 }}">
-                {{ q.option2 }}
+                <input type="radio" name="selected_answer" value="{{ current_question.option2 }}">
+                <span class="option-text">{{ current_question.option2 }}</span>
             </label>
             <label class="option">
-                <input type="radio" name="{{ q.id }}" value="{{ q.option3 }}">
-                {{ q.option3 }}
+                <input type="radio" name="selected_answer" value="{{ current_question.option3 }}">
+                <span class="option-text">{{ current_question.option3 }}</span>
             </label>
             <label class="option">
-                <input type="radio" name="{{ q.id }}" value="{{ q.option4 }}">
-                {{ q.option4 }}
+                <input type="radio" name="selected_answer" value="{{ current_question.option4 }}">
+                <span class="option-text">{{ current_question.option4 }}</span>
             </label>
         </div>
-        {% endfor %}
 
-        <div class="submit-bar">
-            <button class="btn-green">🚀 Submit Quiz</button>
+        <div class="warning" id="warningMsg">
+            Please select an answer before proceeding.
         </div>
+
+        <div class="text-end mt-4">
+            <button type="button" class="btn btn-submit" id="submitBtn">Submit Answer</button>
+        </div>
+
+        <div id="feedback" class="feedback" style="display:none;"></div>
     </form>
-    {% endif %}
 </div>
 
-{% if not paused %}
+<!-- ================= JAVASCRIPT ================= -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-let time = {{ remaining_seconds | default(0) }};
-const timerEl = document.getElementById("timer");
+    let timeLeft = {{ current_question.time_limit }};
+    let totalTime = {{ current_question.time_limit }};
+    let timer;
+    let warnings = 0;
+    let quizId = {{ quiz_id }};
+    let currentIndex = {{ current_index }};
+    let isSubmitting = false;
 
-const interval = setInterval(() => {
-    if (time <= 0) {
-        clearInterval(interval);
-        alert("⏰ Time over! Quiz auto-submitted.");
-        document.querySelector("form").submit();
+    const timeText = document.getElementById("timeText");
+    const timerCircle = document.getElementById("timerCircle");
+    const cheatAlert = document.getElementById("cheatAlert");
+    const warnCount = document.getElementById("warnCount");
+    const warningMsg = document.getElementById("warningMsg");
+    const submitBtn = document.getElementById("submitBtn");
+    const socket = io();
+
+    socket.emit("join_quiz", { quiz_id: quizId });
+
+    // Start timer
+    timer = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            forceSubmit();
+        }
+    }, 1000);
+
+    // Start question timer (server-side)
+    fetch(`/student/quiz/${quizId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `question_id={{ current_question.id }}&start_question=1`
+    }).catch(err => console.error('Start question error:', err));
+
+    function updateTimer() {
+        timeText.innerText = Math.max(0, timeLeft);
+
+        const percentage = (timeLeft / totalTime) * 100;
+        const deg = (percentage / 100) * 360;
+
+        let color = '#16a34a';
+        if (timeLeft <= 10) color = '#dc2626';
+        else if (timeLeft <= 20) color = '#f59e0b';
+
+        timerCircle.style.background = `conic-gradient(${color} ${deg}deg, #e5e7eb 0deg)`;
     }
 
-    let m = Math.floor(time / 60);
-    let s = time % 60;
-    timerEl.innerText = `${m}:${s.toString().padStart(2,'0')}`;
-    time--;
-}, 1000);
+    submitBtn.addEventListener('click', handleSubmit);
+
+    function handleSubmit() {
+        if (isSubmitting) return;
+        
+        const selected = document.querySelector("input[name='selected_answer']:checked");
+        if (!selected) {
+            warningMsg.style.display = "block";
+            setTimeout(() => warningMsg.style.display = "none", 3000);
+            return;
+        }
+
+        isSubmitting = true;
+        clearInterval(timer);
+
+        // GET FORM DATA FIRST, BEFORE DISABLING INPUTS!
+        const formData = new FormData(document.getElementById("quizForm"));
+        
+        console.log('Selected answer:', selected.value);
+        console.log('FormData selected_answer:', formData.get('selected_answer'));
+
+        // NOW lock options (AFTER getting form data)
+        document.querySelectorAll(".option").forEach(opt => {
+            opt.classList.add("locked");
+            const input = opt.querySelector("input");
+            input.disabled = true;
+            if (input.checked) opt.classList.add("selected");
+        });
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+
+        fetch(`/student/quiz/${quizId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => {
+            console.log('Response status:', res.status);
+            return res.json();
+        })
+        .then(data => {
+            console.log('Server response:', data);
+            console.log('is_last:', data.is_last);
+            console.log('next_qindex:', data.next_qindex);
+            const feedback = document.getElementById("feedback");
+            if (data.is_correct) {
+                feedback.textContent = `✓ Correct!`;
+                feedback.className = "feedback correct";
+            } else {
+                feedback.textContent = `✗ Incorrect`;
+                feedback.className = "feedback incorrect";
+            }
+            feedback.style.display = "block";
+
+            if (data.is_last) {
+                setTimeout(() => {
+                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
+                }, 1200);
+            } else {
+                setTimeout(() => {
+                    window.location.href = `/leaderboard/live/${quizId}?qindex=${data.next_qindex}`;
+                }, 1200);
+            }
+        })
+        .catch(err => {
+            console.error('Submit error:', err);
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit Answer";
+        });
+    }
+
+    function forceSubmit() {
+        if (isSubmitting) return;
+        
+        isSubmitting = true;
+        
+        // Lock options
+        document.querySelectorAll(".option").forEach(opt => {
+            opt.classList.add("locked");
+            const input = opt.querySelector("input");
+            input.disabled = true;
+        });
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Time's Up!";
+
+        const formData = new FormData(document.getElementById("quizForm"));
+        // Don't add selected_answer if nothing is selected - server will handle it
+
+        fetch(`/student/quiz/${quizId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('Force submit response:', data);
+            const feedback = document.getElementById("feedback");
+            feedback.textContent = `Time's up! Incorrect.`;
+            feedback.className = "feedback incorrect";
+            feedback.style.display = "block";
+
+            if (data.is_last) {
+                setTimeout(() => {
+                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
+                }, 1200);
+            } else {
+                setTimeout(() => {
+                    window.location.href = `/leaderboard/live/${quizId}?qindex=${data.next_qindex}`;
+                }, 1200);
+            }
+        })
+        .catch(err => {
+            console.error('Force submit error:', err);
+            // Even on error, try to redirect
+            setTimeout(() => {
+                window.location.href = `/student/quizzes`;
+            }, 1000);
+        });
+    }
+
+    /* ===== ANTI-CHEAT SYSTEM ===== */
+    function triggerWarning() {
+        warnings++;
+        warnCount.innerText = warnings;
+        cheatAlert.style.display = "block";
+
+        if (warnings >= 3) {
+            alert("Too many violations! Your quiz is being submitted automatically.");
+            forceSubmit();
+        }
+
+        setTimeout(() => cheatAlert.style.display = "none", 4000);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) triggerWarning();
+    });
+
+    window.addEventListener("blur", triggerWarning);
+
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("copy", e => e.preventDefault());
+    document.addEventListener("cut", e => e.preventDefault());
+    document.addEventListener("paste", e => e.preventDefault());
+
+    document.onkeydown = function(e) {
+        if (
+            e.key === "F12" ||
+            (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+            (e.ctrlKey && e.key === "u")
+        ) {
+            e.preventDefault();
+            triggerWarning();
+            return false;
+        }
+    };
 </script>
-{% endif %}
 
 </body>
 </html>
