@@ -9,7 +9,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/attempt_quiz.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normal_attempt_quiz.css') }}">
 </head>
 <body>
 
@@ -23,12 +23,6 @@
     <div class="top-bar">
         <div class="progress-text">
             Question {{ current_index + 1 }} of {{ total_questions }}
-        </div>
-        <div class="timer-circle" id="timerCircle">
-            <div>
-                <div id="timeText">{{ current_question.time_limit }}</div>
-                <small>seconds</small>
-            </div>
         </div>
     </div>
 
@@ -71,16 +65,11 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    let timeLeft = {{ current_question.time_limit }};
-    let totalTime = {{ current_question.time_limit }};
-    let timer;
     let warnings = 0;
     let quizId = {{ quiz_id }};
     let currentIndex = {{ current_index }};
     let isSubmitting = false;
 
-    const timeText = document.getElementById("timeText");
-    const timerCircle = document.getElementById("timerCircle");
     const cheatAlert = document.getElementById("cheatAlert");
     const warnCount = document.getElementById("warnCount");
     const warningMsg = document.getElementById("warningMsg");
@@ -89,55 +78,34 @@
 
     socket.emit("join_quiz", { quiz_id: quizId });
 
-    // Start timer
-    timer = setInterval(() => {
-        timeLeft--;
-        updateTimer();
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            forceSubmit();
-        }
-    }, 1000);
-
-    // Start question timer (server-side)
+    // Start question timer (Still useful for tracking stats server-side, even if no visual timer)
     fetch(`/student/quiz/${quizId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `question_id={{ current_question.id }}&start_question=1`
     }).catch(err => console.error('Start question error:', err));
 
-    function updateTimer() {
-        timeText.innerText = Math.max(0, timeLeft);
-
-        const percentage = (timeLeft / totalTime) * 100;
-        const deg = (percentage / 100) * 360;
-
-        let color = '#16a34a';
-        if (timeLeft <= 10) color = '#dc2626';
-        else if (timeLeft <= 20) color = '#f59e0b';
-
-        timerCircle.style.background = `conic-gradient(${color} ${deg}deg, #e5e7eb 0deg)`;
-    }
-
     submitBtn.addEventListener('click', handleSubmit);
 
     function handleSubmit() {
         if (isSubmitting) return;
         
+        // Check for selection
         const selected = document.querySelector("input[name='selected_answer']:checked");
-        if (!selected) {
+        // If triggered by anti-cheat (no event), we might not have a selection, but we must submit anyway.
+        // However, for normal clicks, we enforce selection.
+        if (!selected && warnings < 3) {
             warningMsg.style.display = "block";
             setTimeout(() => warningMsg.style.display = "none", 3000);
             return;
         }
 
         isSubmitting = true;
-        clearInterval(timer);
 
-        // GET FORM DATA FIRST, BEFORE DISABLING INPUTS!
+        // GET FORM DATA FIRST
         const formData = new FormData(document.getElementById("quizForm"));
         
-        // NOW lock options (AFTER getting form data)
+        // Lock options
         document.querySelectorAll(".option").forEach(opt => {
             opt.classList.add("locked");
             const input = opt.querySelector("input");
@@ -182,63 +150,19 @@
         });
     }
 
-    function forceSubmit() {
-        if (isSubmitting) return;
-        
-        isSubmitting = true;
-        
-        // Lock options
-        document.querySelectorAll(".option").forEach(opt => {
-            opt.classList.add("locked");
-            const input = opt.querySelector("input");
-            input.disabled = true;
-        });
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Time's Up!";
-
-        const formData = new FormData(document.getElementById("quizForm"));
-        // Don't add selected_answer if nothing is selected - server will handle it
-
-        fetch(`/student/quiz/${quizId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            const feedback = document.getElementById("feedback");
-            feedback.textContent = `Time's up! Incorrect.`;
-            feedback.className = "feedback incorrect";
-            feedback.style.display = "block";
-
-            if (data.is_last) {
-                setTimeout(() => {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-                }, 1200);
-            } else {
-                setTimeout(() => {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=${data.next_qindex}`;
-                }, 1200);
-            }
-        })
-        .catch(err => {
-            console.error('Force submit error:', err);
-            // Even on error, try to redirect
-            setTimeout(() => {
-                window.location.href = `/student/quizzes`;
-            }, 1000);
-        });
-    }
-
     /* ===== ANTI-CHEAT SYSTEM ===== */
     function triggerWarning() {
+        // Don't warn if already submitting
+        if(isSubmitting) return;
+
         warnings++;
         warnCount.innerText = warnings;
         cheatAlert.style.display = "block";
 
         if (warnings >= 3) {
             alert("Too many violations! Your quiz is being submitted automatically.");
-            forceSubmit();
+            // Force submit regardless of selection
+            handleSubmit(); 
         }
 
         setTimeout(() => cheatAlert.style.display = "none", 4000);

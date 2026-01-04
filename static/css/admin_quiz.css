@@ -38,3 +38,5 @@ body{
 .badge-ended{background:#6b7280;}
 .badge-locked{background:#fde047;color:#000;}
 .badge-draft{background:#e5e7eb;color:#000;}
+.badge-normal{background:#3b82f6; color:white;}
+.badge-time{background:#f59e0b; color:white;}

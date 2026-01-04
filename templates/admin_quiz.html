@@ -45,8 +45,15 @@
 <div class="create-card mb-4">
     <h5 class="fw-bold mb-3">Create New Quiz</h5>
     <form method="POST" class="row g-3">
-        <div class="col-md-9">
+        <div class="col-md-5">
             <input name="title" class="form-control" placeholder="Quiz title" required>
+        </div>
+        <div class="col-md-4">
+            <select name="quiz_type" class="form-select" required>
+                <option value="">Select Quiz Type</option>
+                <option value="normal">📝 Normal Quiz (No Timer)</option>
+                <option value="timer">⏱️ Timer-Based Quiz</option>
+            </select>
         </div>
         <div class="col-md-3 d-grid">
             <button class="btn btn-success">Create Quiz</button>
@@ -54,85 +61,170 @@
     </form>
 </div>
 
-<!-- QUIZ LIST -->
-{% if quizzes %}
-{% for q in quizzes %}
-<div class="quiz-card">
-    <div class="quiz-title">{{ q.title }}</div>
-
-    {% if q.is_active and q.is_paused %}
-        <span class="badge badge-paused mt-2">Paused</span>
-    {% elif q.is_active %}
-        <span class="badge badge-live mt-2">Live</span>
-    {% elif q.is_published %}
-        <span class="badge badge-ended mt-2">Ended</span>
-    {% elif q.is_locked %}
-        <span class="badge badge-locked mt-2">Locked</span>
-    {% else %}
-        <span class="badge badge-draft mt-2">Draft</span>
-    {% endif %}
-
-    <div class="mt-3 d-flex gap-2 flex-wrap">
-        {% if not q.is_locked and not q.is_active %}
-            <a href="/admin/add-question/{{ q.id }}" class="btn btn-success btn-sm">
-                Add / Edit Questions
-            </a>
-        {% endif %}
-
-        {% if q.is_locked and not q.is_published %}
-            <a href="/admin/publish-quiz/{{ q.id }}" class="btn btn-primary btn-sm">
-                Start Live
-            </a>
-        {% endif %}
-
-        {% if q.is_active and not q.is_paused %}
-            <a href="/admin/pause-quiz/{{ q.id }}" class="btn btn-warning btn-sm">
-                Pause
-            </a>
-        {% endif %}
+<!-- NORMAL QUIZZES SECTION -->
+<h5 class="fw-bold mt-5 mb-3">📝 Normal Quizzes</h5>
+{% set normal_quizzes = quizzes | selectattr('has_timer', 'equalto', False) | list %}
+{% if normal_quizzes %}
+    {% for q in normal_quizzes %}
+    <div class="quiz-card">
+        <div class="quiz-title">{{ q.title }}</div>
+        <span class="badge badge-normal mt-2">Normal Quiz</span>
 
         {% if q.is_active and q.is_paused %}
-            <a href="/admin/resume-quiz/{{ q.id }}" class="btn btn-success btn-sm">
-                Resume
-            </a>
+            <span class="badge badge-paused mt-2">Paused</span>
+        {% elif q.is_active %}
+            <span class="badge badge-live mt-2">Live</span>
+        {% elif q.is_published %}
+            <span class="badge badge-ended mt-2">Ended</span>
+        {% elif q.is_locked %}
+            <span class="badge badge-locked mt-2">Locked</span>
+        {% else %}
+            <span class="badge badge-draft mt-2">Draft</span>
         {% endif %}
+
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+            {% if not q.is_locked and not q.is_active %}
+                <a href="/admin/add-question/{{ q.id }}" class="btn btn-success btn-sm">
+                    Add / Edit Questions
+                </a>
+            {% endif %}
+
+            {% if q.is_locked and not q.is_published %}
+                <a href="/admin/publish-quiz/{{ q.id }}" class="btn btn-primary btn-sm">
+                    Start Live
+                </a>
+            {% endif %}
+
+            {% if q.is_active and not q.is_paused %}
+                <a href="/admin/pause-quiz/{{ q.id }}" class="btn btn-warning btn-sm">
+                    Pause
+                </a>
+            {% endif %}
+
+            {% if q.is_active and q.is_paused %}
+                <a href="/admin/resume-quiz/{{ q.id }}" class="btn btn-success btn-sm">
+                    Resume
+                </a>
+            {% endif %}
+
+            {% if q.is_active %}
+                <a href="/admin/stop-quiz/{{ q.id }}"
+                   onclick="return confirm('Stop this live quiz?')"
+                   class="btn btn-danger btn-sm">
+                    Stop Quiz
+                </a>
+
+                <!-- View Live Leaderboard -->
+                <a href="/admin/live-leaderboard/{{ q.id }}"
+                   class="btn btn-dark btn-sm"
+                   target="_blank">
+                   View Live Leaderboard
+                </a>
+            {% endif %}
+        </div>
 
         {% if q.is_active %}
-            <a href="/admin/stop-quiz/{{ q.id }}"
-               onclick="return confirm('Stop this live quiz?')"
-               class="btn btn-danger btn-sm">
-                Stop Quiz
+        <div class="mt-3">
+            <small class="text-muted">Join Code:</small> <b>{{ q.join_code }}</b><br>
+            <small class="text-muted">Link:</small>
+            <!-- FIXED: Open in new tab so admin session is NOT overwritten -->
+            <a href="/join/{{ q.join_code }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="text-primary">
+               /join/{{ q.join_code }}
             </a>
-
-            <!-- View Live Leaderboard -->
-            <a href="/admin/live-leaderboard/{{ q.id }}"
-               class="btn btn-dark btn-sm"
-               target="_blank">
-               View Live Leaderboard
-            </a>
+        </div>
         {% endif %}
     </div>
-
-    {% if q.is_active %}
-    <div class="mt-3">
-        <small class="text-muted">Join Code:</small> <b>{{ q.join_code }}</b><br>
-        <small class="text-muted">Link:</small>
-        <!-- FIXED: Open in new tab so admin session is NOT overwritten -->
-        <a href="/join/{{ q.join_code }}"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-primary">
-           /join/{{ q.join_code }}
-        </a>
-    </div>
-    {% endif %}
-</div>
-{% endfor %}
+    {% endfor %}
 {% else %}
-<div class="text-center text-muted mt-5">
-    <h5>No quizzes created yet</h5>
-    <p>Create your first quiz using the form above</p>
-</div>
+    <div class="text-center text-muted mb-5">
+        <p>No Normal Quizzes created yet.</p>
+    </div>
+{% endif %}
+
+<!-- TIME-BASED QUIZZES SECTION -->
+<h5 class="fw-bold mt-5 mb-3">⏱️ Timer-Based Quizzes</h5>
+{% set timer_quizzes = quizzes | selectattr('has_timer', 'equalto', True) | list %}
+{% if timer_quizzes %}
+    {% for q in timer_quizzes %}
+    <div class="quiz-card">
+        <div class="quiz-title">{{ q.title }}</div>
+        <span class="badge badge-time mt-2">Timer-Based</span>
+
+        {% if q.is_active and q.is_paused %}
+            <span class="badge badge-paused mt-2">Paused</span>
+        {% elif q.is_active %}
+            <span class="badge badge-live mt-2">Live</span>
+        {% elif q.is_published %}
+            <span class="badge badge-ended mt-2">Ended</span>
+        {% elif q.is_locked %}
+            <span class="badge badge-locked mt-2">Locked</span>
+        {% else %}
+            <span class="badge badge-draft mt-2">Draft</span>
+        {% endif %}
+
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+            {% if not q.is_locked and not q.is_active %}
+                <a href="/admin/add-question/{{ q.id }}" class="btn btn-success btn-sm">
+                    Add / Edit Questions
+                </a>
+            {% endif %}
+
+            {% if q.is_locked and not q.is_published %}
+                <a href="/admin/publish-quiz/{{ q.id }}" class="btn btn-primary btn-sm">
+                    Start Live
+                </a>
+            {% endif %}
+
+            {% if q.is_active and not q.is_paused %}
+                <a href="/admin/pause-quiz/{{ q.id }}" class="btn btn-warning btn-sm">
+                    Pause
+                </a>
+            {% endif %}
+
+            {% if q.is_active and q.is_paused %}
+                <a href="/admin/resume-quiz/{{ q.id }}" class="btn btn-success btn-sm">
+                    Resume
+                </a>
+            {% endif %}
+
+            {% if q.is_active %}
+                <a href="/admin/stop-quiz/{{ q.id }}"
+                   onclick="return confirm('Stop this live quiz?')"
+                   class="btn btn-danger btn-sm">
+                    Stop Quiz
+                </a>
+
+                <!-- View Live Leaderboard -->
+                <a href="/admin/live-leaderboard/{{ q.id }}"
+                   class="btn btn-dark btn-sm"
+                   target="_blank">
+                   View Live Leaderboard
+                </a>
+            {% endif %}
+        </div>
+
+        {% if q.is_active %}
+        <div class="mt-3">
+            <small class="text-muted">Join Code:</small> <b>{{ q.join_code }}</b><br>
+            <small class="text-muted">Link:</small>
+            <!-- FIXED: Open in new tab so admin session is NOT overwritten -->
+            <a href="/join/{{ q.join_code }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="text-primary">
+               /join/{{ q.join_code }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center text-muted">
+        <p>No Timer-Based Quizzes created yet.</p>
+    </div>
 {% endif %}
 
 </div>
