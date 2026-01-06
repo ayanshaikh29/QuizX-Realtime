@@ -18,11 +18,11 @@
 <body>
 <div class="box">
     <h2>🏆 Live Leaderboard</h2>
-    
+
     {% if qindex == 'done' or is_last %}
-    <div class="subtitle">Final Results 🎉</div>
+        <div class="subtitle">Final Results 🎉</div>
     {% else %}
-    <div class="subtitle">After Question {{ qindex }}</div>
+        <div class="subtitle">After Question {{ qindex }}</div>
     {% endif %}
 
     <div class="participants">
@@ -45,70 +45,64 @@
         <div class="loading">Loading leaderboard...</div>
     </div>
 
-    <!-- Points System Summary -->
+    <!-- Points Summary -->
     <div class="points-summary">
         <h5>📊 Points System Summary</h5>
         <ul>
-            <li>✅ Correct answer: 100 base points</li>
-            <li>✅ Speed bonus: 20-50 points (faster = more)
-                <ul class="sub-list">
-                    <li>Answer in first 25% of time: +50 points</li>
-                    <li>Answer in first 50% of time: +40 points</li>
-                    <li>Answer in first 75% of time: +30 points</li>
-                    <li>Answer in last 25% of time: +20 points</li>
-                </ul>
-            </li>
-            <li>✅ Rank bonus (for being fastest correct):
-                <ul class="sub-list">
-                    <li>1st place: +50 points</li>
-                    <li>2nd place: +30 points</li>
-                    <li>3rd place: +20 points</li>
-                    <li>4th-5th: +10 points</li>
-                </ul>
-            </li>
-            <li>✅ Wrong answer: 0 points</li>
+            <li>✅ Correct answer: 100 points</li>
+            <li>⚡ Speed bonus: 20–50 points</li>
+            <li>🏅 Rank bonus: 10–50 points</li>
+            <li>❌ Wrong answer: 0 points</li>
         </ul>
     </div>
 
-    <!-- NEXT QUESTION / BACK TO QUIZZES -->
+    <!-- FOOTER BUTTON -->
     {% if qindex == 'done' or is_last %}
-    <button class="next-btn" onclick="window.location.href='/student/quizzes'">
-        Back to Quizzes
-    </button>
+        {% if role == "student" %}
+            <button class="next-btn" onclick="window.location.href='/student/quizzes'">
+                Back to Quizzes
+            </button>
+        {% else %}
+            <button class="next-btn" onclick="window.location.href='/admin/quizzes'">
+                Back to Admin Panel
+            </button>
+        {% endif %}
     {% else %}
-    <div class="countdown" id="countdown">Next question in <span id="timer">5</span>s</div>
-    <button class="next-btn" id="nextBtn" onclick="goNextQuestion()">
-        Continue to Next Question
-    </button>
+        {% if role == "student" %}
+            <div class="countdown">
+                Next question in <span id="timer">5</span>s
+            </div>
+            <button class="next-btn" id="nextBtn" onclick="goNextQuestion()">
+                Continue to Next Question
+            </button>
+        {% endif %}
     {% endif %}
 </div>
 
 <script>
     const socket = io();
     const quizId = {{ quiz_id }};
-    const qindex = '{{ qindex }}';
+    const qindex = "{{ qindex }}";
     const totalQuestions = {{ total_questions }};
     const isLast = {{ 'true' if is_last else 'false' }};
-    
+    const role = "{{ role }}";
+
     const leaderboardBody = document.getElementById("leaderboardBody");
     const participantCount = document.getElementById("participantCount");
     const winnerBox = document.getElementById("winnerBox");
-    const questionLeaderboard = document.getElementById("questionLeaderboard");
     const questionList = document.getElementById("questionList");
 
     socket.emit("join_quiz", { quiz_id: quizId });
 
-    function confettiBlast(){
+    function confettiBlast() {
         confetti({
-            particleCount:80,
-            spread:70,
-            origin:{y:0.6},
-            colors:["#16a34a","#22c55e","#4ade80"]
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 }
         });
     }
 
-    // Load overall leaderboard (cumulative scores)
-    function loadLeaderboard(){
+    function loadLeaderboard() {
         fetch(`/api/leaderboard/${quizId}`)
         .then(res => res.json())
         .then(data => {
@@ -116,8 +110,8 @@
             leaderboardBody.innerHTML = "";
             winnerBox.innerHTML = "";
 
-            if(data.leaderboard.length === 0){
-                leaderboardBody.innerHTML = `<div class="loading">No submissions yet</div>`;
+            if (data.leaderboard.length === 0) {
+                leaderboardBody.innerHTML = "<div class='loading'>No submissions yet</div>";
                 return;
             }
 
@@ -126,17 +120,17 @@
                 <div class="winner">
                     🥇 ${winner.student}<br>
                     ${winner.score}/${winner.total} • ${winner.time}s<br>
-                    <span style="font-size:18px;">⭐ ${winner.points} points</span>
+                    ⭐ ${winner.points} points
                 </div>
             `;
-            if(isLast) confettiBlast();
 
-            // Animate rows
+            if (isLast) confettiBlast();
+
             data.leaderboard.forEach((row, index) => {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                rowDiv.innerHTML = `
-                    <div class="rank">${index+1}</div>
+                const div = document.createElement("div");
+                div.className = "row";
+                div.innerHTML = `
+                    <div class="rank">${index + 1}</div>
                     <div class="avatar">${row.student[0].toUpperCase()}</div>
                     <div class="info">
                         <div class="name">${row.student}</div>
@@ -144,97 +138,50 @@
                     </div>
                     <div class="points">⭐${row.points}</div>
                 `;
-                leaderboardBody.appendChild(rowDiv);
-                
-                // Trigger animation with delay
-                setTimeout(() => {
-                    rowDiv.classList.add('animate');
-                }, index * 100);
+                leaderboardBody.appendChild(div);
             });
-        })
-        .catch(err => {
-            console.error('Leaderboard error:', err);
-            leaderboardBody.innerHTML = `<div class="loading">Error loading leaderboard</div>`;
         });
     }
 
-    // Load per-question fastest answers
-    function loadQuestionLeaderboard(){
-        if(qindex === 'done' || isLast) return;
-        
-        // Get the previous question ID (the one just answered)
-        const prevQindex = parseInt(qindex) - 1;
-        if(prevQindex < 0) return;
-        
-        // We need to get the actual question ID from the question index
-        // For now, we'll estimate: question_id might be qindex + 1 (depends on your DB)
-        // A better approach is to pass question_id from backend
-        
-        fetch(`/api/question-leaderboard/${quizId}/${prevQindex + 1}`)
+    function loadQuestionLeaderboard() {
+        if (qindex === "done" || isLast) return;
+
+        const prevIndex = parseInt(qindex) - 1;
+        if (prevIndex < 0) return;
+
+        fetch(`/api/question-leaderboard/${quizId}/${prevIndex + 1}`)
         .then(res => res.json())
         .then(data => {
             questionList.innerHTML = "";
-            if(data.leaderboard.length === 0){
-                questionList.innerHTML = `<div class="loading">No correct answers yet</div>`;
-                return;
-            }
-            
-            // Animate qrows
-            data.leaderboard.forEach((row, index) => {
-                const qrowDiv = document.createElement('div');
-                qrowDiv.className = 'qrow';
-                qrowDiv.innerHTML = `
-                    <span class="qname">${row.rank}. ${row.student}</span>
-                    <span class="qtime">${row.time_taken}s • ⭐${row.points}pts</span>
+            data.leaderboard.forEach(row => {
+                questionList.innerHTML += `
+                    <div class="qrow">
+                        ${row.rank}. ${row.student} — ${row.time_taken}s ⭐${row.points}
+                    </div>
                 `;
-                questionList.appendChild(qrowDiv);
-                
-                // Trigger animation with delay
-                setTimeout(() => {
-                    qrowDiv.classList.add('animate');
-                }, index * 50);
             });
-        })
-        .catch(err => {
-            console.error('Question leaderboard error:', err);
-            questionList.innerHTML = `<div class="loading">Error loading</div>`;
         });
     }
 
-    function goNextQuestion(){
-        const nextQ = parseInt(qindex);
-        window.location.href = `/student/quiz/${quizId}?qindex=${nextQ}`;
+    function goNextQuestion() {
+        if (role !== "student") return;
+        window.location.href = `/student/quiz/${quizId}?qindex=${qindex}`;
     }
 
-    // Auto-advance countdown
-    if(!isLast && qindex !== 'done'){
+    // AUTO COUNTDOWN — STUDENT ONLY
+    if (role === "student" && !isLast && qindex !== "done") {
         let timeLeft = 5;
-        const timerEl = document.getElementById('timer');
-        const nextBtn = document.getElementById('nextBtn');
-        
-        const countdown = setInterval(() => {
+        const timer = document.getElementById("timer");
+        setInterval(() => {
             timeLeft--;
-            if(timerEl) timerEl.innerText = timeLeft;
-            
-            if(timeLeft <= 0){
-                clearInterval(countdown);
-                goNextQuestion();
-            }
+            if (timer) timer.innerText = timeLeft;
+            if (timeLeft <= 0) goNextQuestion();
         }, 1000);
     }
 
-    // SOCKET EVENTS
-    socket.on("leaderboard_refresh", () => {
-        loadLeaderboard();
-    });
+    socket.on("leaderboard_refresh", loadLeaderboard);
+    socket.on("question_leaderboard_update", loadQuestionLeaderboard);
 
-    socket.on("question_leaderboard_update", (data) => {
-        if(data.quiz_id == quizId){
-            loadQuestionLeaderboard();
-        }
-    });
-
-    // Initial load
     loadLeaderboard();
     loadQuestionLeaderboard();
 </script>
