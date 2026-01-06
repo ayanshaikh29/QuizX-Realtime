@@ -7,6 +7,7 @@ import random
 import string
 import time
 import uuid
+import pytz
 from functools import wraps
 
 
@@ -18,6 +19,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+app.jinja_env.globals['pytz'] = pytz
+
 
 
 # ================== SOCKETIO SETUP ==================
@@ -165,7 +169,13 @@ class User(db.Model):
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    has_timer = db.Column(db.Boolean, default=False)  # Timer enabled or not
+
+    has_timer = db.Column(db.Boolean, default=False)
+
+    # ✅ NEW FIELDS
+    published_at = db.Column(db.DateTime)             # last published time
+    publish_count = db.Column(db.Integer, default=0) # how many times published
+
     start_time = db.Column(db.DateTime)
     is_locked = db.Column(db.Boolean, default=False)
     is_published = db.Column(db.Boolean, default=False)
@@ -174,6 +184,7 @@ class Quiz(db.Model):
     is_paused = db.Column(db.Boolean, default=False)
     paused_at = db.Column(db.DateTime)
     paused_seconds = db.Column(db.Integer, default=0)
+
 
 
 class Question(db.Model):
@@ -388,25 +399,75 @@ def end_questions(quiz_id):
     return redirect(url_for("admin_quizzes"))
 
 
+# @app.route("/admin/publish-quiz/<int:quiz_id>")
+# @require_admin
+# def publish_quiz(quiz_id):
+#     quiz = Quiz.query.get_or_404(quiz_id)
+
+#     if not quiz.is_locked:
+#         flash("Lock questions first before publishing!", "error")
+#         return redirect(url_for("admin_quizzes"))
+
+#     quiz.is_published = True
+#     quiz.is_active = True
+#     quiz.start_time = now_utc()
+
+#     # ✅ NEW LOGIC
+#     quiz.published_at = now_utc()
+#     quiz.publish_count = (quiz.publish_count or 0) + 1
+
+#     quiz.paused_seconds = 0
+#     quiz.is_paused = False
+
+#     if not quiz.join_code:
+#         quiz.join_code = generate_join_code()
+
+#     db.session.commit()
+
+#     flash(
+#         f"Quiz published at {quiz.published_at.strftime('%d %b %Y %I:%M %p')} "
+#         f"(Published {quiz.publish_count} times)",
+#         "success",
+#     )
+
+#     return redirect(url_for("admin_quizzes"))
+
 @app.route("/admin/publish-quiz/<int:quiz_id>")
 @require_admin
 def publish_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
+
     if not quiz.is_locked:
         flash("Lock questions first before publishing!", "error")
         return redirect(url_for("admin_quizzes"))
 
     quiz.is_published = True
     quiz.is_active = True
+
+    # ✅ Store UTC (correct)
     quiz.start_time = now_utc()
+    quiz.published_at = now_utc()
+    quiz.publish_count = (quiz.publish_count or 0) + 1
+
     quiz.paused_seconds = 0
     quiz.is_paused = False
+
     if not quiz.join_code:
         quiz.join_code = generate_join_code()
 
     db.session.commit()
-    flash(f"Quiz published! Join code: {quiz.join_code}", "success")
+
+    # ✅ Convert ONLY for display
+    ist_time = utc_to_ist(quiz.published_at)
+
+    flash(
+        f"Quiz published at {ist_time.strftime('%d %b %Y, %I:%M %p')} IST "
+        f"(Published {quiz.publish_count} times)",
+        "success",
+    )
+
     return redirect(url_for("admin_quizzes"))
+
 
 
 @app.route("/admin/pause-quiz/<int:quiz_id>")
@@ -884,6 +945,12 @@ def edit_profile():
         return redirect(url_for("profile"))
 
     return render_template("edit_profile.html", user=user)
+
+
+def utc_to_ist(utc_dt):
+    return utc_dt.replace(tzinfo=pytz.utc).astimezone(
+        pytz.timezone("Asia/Kolkata")
+    )
 
 
 # ================== RUN ==================

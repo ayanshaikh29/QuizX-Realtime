@@ -70,10 +70,22 @@
             <div class="quiz-card">
                 <div>
                     <div class="quiz-title">{{ quiz.title }}</div>
-                    <div class="quiz-meta">Status: Live</div>
+                    <div class="quiz-meta">
+                        Status: Live
+                    </div>
+                    {% if quiz.published_at %}
+                    <div class="quiz-meta text-muted">
+                        📅 Last Published: {{ quiz.published_at.astimezone().strftime('%d %b %Y, %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                    {% if quiz.publish_count %}
+                    <div class="quiz-meta text-muted">
+                        🔁 Published: {{ quiz.publish_count }} times
+                    </div>
+                    {% endif %}
                 </div>
 
-                <a href="/student/quiz/{{ quiz.id }}" class="btn-green">
+                <a href="/student/quiz/{{ quiz.id }}" class="btn-green mt-2">
                     Attempt Quiz
                 </a>
             </div>
