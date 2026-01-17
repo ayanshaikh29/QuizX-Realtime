@@ -1,121 +1,127 @@
+:root {
+    --primary: #6fbf4a;
+    --primary-dark: #5ba33a;
+    --dark: #1e293b;
+    --text-muted: #94a3b8;
+    --bg-light: #f8fafc;
+}
+
 body {
-    background: #f6f8fb;
-    font-family: 'Inter', sans-serif;
+    background: var(--bg-light);
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* ================= NAVBAR ================= */
-.navbar {
-    background: linear-gradient(120deg, #6fbf4a, #8ed36a);
-    padding: 14px 24px;
-}
-
-.logo-box {
+/* Quiz Card Pro (Consistent with Admin) */
+.quiz-card-pro {
+    background: white;
+    border-radius: 24px;
+    padding: 28px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
 }
 
-.logo-box img {
-    height: 48px;
+.quiz-card-pro:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    border-color: var(--primary);
 }
 
-.navbar-brand {
-    font-weight: 700;
+.quiz-name {
+    font-weight: 800;
     font-size: 20px;
-    color: white;
+    color: var(--dark);
+    margin-bottom: 10px;
 }
 
-.back-btn {
-    background: white;
-    color: #2b2b2b;
+/* Status Pills */
+.status-pill {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 5px 12px;
     border-radius: 30px;
-    padding: 8px 22px;
-    font-weight: 700;
-    text-decoration: none;
+    letter-spacing: 0.5px;
 }
 
-/* ================= PAGE HEADER ================= */
-.page-header {
-    margin-top: 30px;
-    margin-bottom: 20px;
+.live-pulse {
+    background: #dcfce7;
+    color: #15803d;
 }
 
-.page-header h3 {
-    font-weight: 700;
+.live-pulse i {
+    animation: pulse 1.5s infinite;
 }
 
-.page-header p {
-    color: #555;
+.timer-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
 }
 
-/* ================= QUIZ CARD ================= */
-.quiz-card {
-    background: white;
-    border-radius: 18px;
-    padding: 22px 26px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+/* Info Tags */
+.quiz-info-grid {
     display: flex;
-    justify-content: space-between;
+    gap: 15px;
+}
+
+.info-tag {
+    display: flex;
     align-items: center;
-    transition: 0.3s;
-    animation: fadeUp 0.8s ease;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
-.quiz-card:hover {
-    transform: translateY(-6px);
-}
-
-.quiz-title {
-    font-weight: 700;
-    font-size: 18px;
-}
-
-.quiz-meta {
-    color: #777;
-    font-size: 14px;
-}
-
-.btn-green {
-    background: linear-gradient(120deg, #6fbf4a, #8ed36a);
+/* Attempt Button */
+.btn-attempt {
+    background: var(--primary);
     color: white;
-    border-radius: 30px;
-    padding: 10px 24px;
+    border-radius: 14px;
+    padding: 12px;
     font-weight: 700;
     border: none;
-    text-decoration: none;
-    transition: 0.3s;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.btn-green:hover {
-    transform: scale(1.05);
+.btn-attempt:hover {
+    background: var(--primary-dark);
     color: white;
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(111, 191, 74, 0.3);
 }
 
-/* ================= EMPTY STATE ================= */
-.empty-card {
+/* Empty State */
+.empty-state {
+    padding: 60px;
     background: white;
-    border-radius: 20px;
-    padding: 40px;
-    text-align: center;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-    animation: fadeUp 0.8s ease;
+    border-radius: 30px;
+    border: 2px dashed #e2e8f0;
 }
 
-/* ================= ANIMATION ================= */
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
+.empty-icon {
+    font-size: 50px;
+    color: #cbd5e1;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    .quiz-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 14px;
-    }
-
-    .logo-box img {
-        height: 42px;
-    }
 }

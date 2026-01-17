@@ -2,72 +2,94 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | {{ quiz.title }} - Attempt Quiz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | {{ quiz.title }} - Attempt</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normal_attempt_quiz.css') }}">
 </head>
 <body>
 
-<div class="quiz-box">
-    <h2 class="quiz-title">{{ quiz.title }}</h2>
-
-    <div class="cheat-alert" id="cheatAlert">
-        Warning <span id="warnCount">1</span>/3 – Do not switch tabs or leave the quiz window!
-    </div>
-
-    <div class="top-bar">
-        <div class="progress-text">
-            Question {{ current_index + 1 }} of {{ total_questions }}
+<nav class="quiz-navbar">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="nav-brand-area">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX Logo" class="brand-logo">
+            <span class="brand-text">QuizX <span class="badge bg-primary-soft">Standard</span></span>
+        </div>
+        <div class="quiz-meta-info d-none d-md-block">
+            <i class="fas fa-book-reader me-2"></i>
+            <strong>{{ quiz.title }}</strong>
+        </div>
+        <div class="user-pill">
+            <i class="fas fa-user-circle me-1"></i> {{ session.username }}
         </div>
     </div>
+</nav>
 
-    <form id="quizForm">
-        <input type="hidden" name="question_id" value="{{ current_question.id }}">
-        <input type="hidden" name="qindex" value="{{ current_index }}">
+<div class="container mt-4">
+    <div class="cheat-alert animate-shake" id="cheatAlert">
+        <i class="fas fa-shield-alt me-2"></i>
+        Violation <span id="warnCount">0</span>/3: Stay focused on the quiz window!
+    </div>
 
-        <h5 class="mb-4 fw-bold">{{ current_index + 1 }}. {{ current_question.question }}</h5>
-
-        <div class="options mb-4">
-            <label class="option">
-                <input type="radio" name="selected_answer" value="{{ current_question.option1 }}">
-                <span class="option-text">{{ current_question.option1 }}</span>
-            </label>
-            <label class="option">
-                <input type="radio" name="selected_answer" value="{{ current_question.option2 }}">
-                <span class="option-text">{{ current_question.option2 }}</span>
-            </label>
-            <label class="option">
-                <input type="radio" name="selected_answer" value="{{ current_question.option3 }}">
-                <span class="option-text">{{ current_question.option3 }}</span>
-            </label>
-            <label class="option">
-                <input type="radio" name="selected_answer" value="{{ current_question.option4 }}">
-                <span class="option-text">{{ current_question.option4 }}</span>
-            </label>
+    <div class="quiz-main-card animate-slide-up">
+        
+        <div class="quiz-header-status">
+            <div class="progress-container w-100">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="status-label">Question {{ current_index + 1 }} of {{ total_questions }}</span>
+                    <span class="status-percent">{{ ((current_index + 1) / total_questions * 100)|round|int }}% Complete</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar-fill" style="width: {{ ((current_index + 1) / total_questions * 100) }}%"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="warning" id="warningMsg">
-            Please select an answer before proceeding.
-        </div>
+        <hr class="divider">
 
-        <div class="text-end mt-4">
-            <button type="button" class="btn btn-submit" id="submitBtn">Submit Answer</button>
-        </div>
+        <div class="question-body">
+            <h3 class="question-title">{{ current_question.question }}</h3>
+            
+            <form id="quizForm" class="mt-4">
+                <input type="hidden" name="question_id" value="{{ current_question.id }}">
+                <input type="hidden" name="qindex" value="{{ current_index }}">
 
-        <div id="feedback" class="feedback" style="display:none;"></div>
-    </form>
+                <div class="options-container">
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
+                    <label class="option-item">
+                        <input type="radio" name="selected_answer" value="{{ opt }}">
+                        <div class="option-design">
+                            <span class="option-marker"></span>
+                            <span class="option-label-text">{{ opt }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <div class="warning-msg" id="warningMsg">
+                    <i class="fas fa-exclamation-circle me-1"></i> Please choose an answer to continue.
+                </div>
+
+                <div class="form-actions mt-5">
+                    <button type="button" class="btn btn-submit-quiz" id="submitBtn">
+                        Submit Answer <i class="fas fa-chevron-right ms-2"></i>
+                    </button>
+                </div>
+
+                <div id="feedback" class="feedback-toast" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
     let warnings = 0;
     let quizId = {{ quiz_id }};
-    let currentIndex = {{ current_index }};
     let isSubmitting = false;
 
     const cheatAlert = document.getElementById("cheatAlert");
@@ -78,7 +100,7 @@
 
     socket.emit("join_quiz", { quiz_id: quizId });
 
-    // Start question timer (Still useful for tracking stats server-side, even if no visual timer)
+    // Inform server question has started
     fetch(`/student/quiz/${quizId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -90,10 +112,7 @@
     function handleSubmit() {
         if (isSubmitting) return;
         
-        // Check for selection
         const selected = document.querySelector("input[name='selected_answer']:checked");
-        // If triggered by anti-cheat (no event), we might not have a selection, but we must submit anyway.
-        // However, for normal clicks, we enforce selection.
         if (!selected && warnings < 3) {
             warningMsg.style.display = "block";
             setTimeout(() => warningMsg.style.display = "none", 3000);
@@ -101,20 +120,12 @@
         }
 
         isSubmitting = true;
-
-        // GET FORM DATA FIRST
         const formData = new FormData(document.getElementById("quizForm"));
         
-        // Lock options
-        document.querySelectorAll(".option").forEach(opt => {
-            opt.classList.add("locked");
-            const input = opt.querySelector("input");
-            input.disabled = true;
-            if (input.checked) opt.classList.add("selected");
-        });
-
+        // Lock UI
+        document.querySelectorAll(".option-item").forEach(opt => opt.classList.add("locked"));
         submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting...";
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Submitting...`;
 
         fetch(`/student/quiz/${quizId}`, {
             method: 'POST',
@@ -123,74 +134,38 @@
         .then(res => res.json())
         .then(data => {
             const feedback = document.getElementById("feedback");
-            if (data.is_correct) {
-                feedback.textContent = `✓ Correct!`;
-                feedback.className = "feedback correct";
-            } else {
-                feedback.textContent = `✗ Incorrect`;
-                feedback.className = "feedback incorrect";
-            }
             feedback.style.display = "block";
+            feedback.className = data.is_correct ? "feedback-toast correct" : "feedback-toast incorrect";
+            feedback.innerHTML = data.is_correct ? '<i class="fas fa-check-circle me-2"></i> Correct!' : '<i class="fas fa-times-circle me-2"></i> Incorrect';
 
-            if (data.is_last) {
-                setTimeout(() => {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-                }, 1200);
-            } else {
-                setTimeout(() => {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=${data.next_qindex}`;
-                }, 1200);
-            }
+            setTimeout(() => {
+                window.location.href = `/leaderboard/live/${quizId}?qindex=${data.is_last ? 'done' : data.next_qindex}`;
+            }, 1500);
         })
         .catch(err => {
-            console.error('Submit error:', err);
+            console.error(err);
             isSubmitting = false;
             submitBtn.disabled = false;
-            submitBtn.textContent = "Submit Answer";
+            submitBtn.innerText = "Submit Answer";
         });
     }
 
-    /* ===== ANTI-CHEAT SYSTEM ===== */
+    /* ANTI-CHEAT */
     function triggerWarning() {
-        // Don't warn if already submitting
         if(isSubmitting) return;
-
         warnings++;
         warnCount.innerText = warnings;
         cheatAlert.style.display = "block";
-
         if (warnings >= 3) {
-            alert("Too many violations! Your quiz is being submitted automatically.");
-            // Force submit regardless of selection
-            handleSubmit(); 
+            alert("Too many violations! Submitting current progress.");
+            handleSubmit();
         }
-
         setTimeout(() => cheatAlert.style.display = "none", 4000);
     }
 
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) triggerWarning();
-    });
-
+    document.addEventListener("visibilitychange", () => { if (document.hidden) triggerWarning(); });
     window.addEventListener("blur", triggerWarning);
-
     document.addEventListener("contextmenu", e => e.preventDefault());
-    document.addEventListener("copy", e => e.preventDefault());
-    document.addEventListener("cut", e => e.preventDefault());
-    document.addEventListener("paste", e => e.preventDefault());
-
-    document.onkeydown = function(e) {
-        if (
-            e.key === "F12" ||
-            (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-            (e.ctrlKey && e.key === "u")
-        ) {
-            e.preventDefault();
-            triggerWarning();
-            return false;
-        }
-    };
 </script>
-
 </body>
 </html>

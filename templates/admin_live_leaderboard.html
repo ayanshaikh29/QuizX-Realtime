@@ -2,141 +2,146 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | Live Leaderboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Live Standings</title>
 
-    <!-- Socket.IO -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-    <!-- Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_leaderboard.css') }}">
 </head>
-
 <body>
-<div class="box">
-    <h2>🏆 Live Leaderboard</h2>
 
-    {% if qindex == 'done' or is_last %}
-        <div class="subtitle">Final Results 🎉</div>
-    {% else %}
-        <div class="subtitle">After Question {{ qindex }}</div>
-    {% endif %}
-
-    <div class="participants">
-        Participants: <span id="participantCount">0</span>
+<div class="leaderboard-container">
+    <div class="leaderboard-header animate-fade-in">
+        <div class="badge-group">
+            <span class="live-indicator"><i class="fas fa-circle"></i> LIVE</span>
+            <span class="user-count"><i class="fas fa-users"></i> <span id="participantCount">0</span> Joined</span>
+        </div>
+        
+        <h1>
+            {% if qindex == 'done' or is_last %}
+                🏆 Final Standings
+            {% else %}
+                📊 Leaderboard <small>(Q{{ qindex }}/{{ total_questions }})</small>
+            {% endif %}
+        </h1>
     </div>
 
-    <div id="winnerBox"></div>
+    <div id="podiumBox" class="podium-section">
+        </div>
 
-    <!-- Per Question Fastest -->
-    {% if qindex != 'done' and not is_last %}
-    <div id="questionLeaderboard">
-        <h4>⚡ Fastest Correct (This Question)</h4>
-        <div id="questionList">
-            <div class="loading">Loading...</div>
+    <div class="content-grid">
+        <div class="list-section">
+            <div id="leaderboardBody" class="rankings-list">
+                <div class="loading">Calculating results...</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            {% if qindex != 'done' and not is_last %}
+            <div id="questionLeaderboard" class="glass-card">
+                <h5><i class="fas fa-bolt text-warning"></i> Fastest Correct</h5>
+                <div id="questionList">
+                    <div class="loading-small">Waiting for responses...</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="glass-card points-info">
+                <h5><i class="fas fa-info-circle"></i> Scoring System</h5>
+                <div class="score-rule"><span>Correct Answer</span> <strong>100</strong></div>
+                <div class="score-rule"><span>Speed Bonus</span> <strong>+50 max</strong></div>
+                <div class="score-rule"><span>Accuracy Bonus</span> <strong>+50 max</strong></div>
+            </div>
+
+            <div class="action-footer">
+                {% if qindex == 'done' or is_last %}
+                    <button class="pro-btn primary" onclick="window.location.href='/{{ 'student' if role == 'student' else 'admin' }}/quizzes'">
+                        <i class="fas fa-home"></i> Exit to Dashboard
+                    </button>
+                {% else %}
+                    {% if role == "student" %}
+                        <div class="countdown-circle">
+                            <span id="timer">5</span>
+                            <small>Next Q</small>
+                        </div>
+                        <button class="pro-btn secondary" id="nextBtn" onclick="goNextQuestion()">
+                            Skip to Next Question <i class="fas fa-arrow-right"></i>
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
-    {% endif %}
-
-    <div id="leaderboardBody">
-        <div class="loading">Loading leaderboard...</div>
-    </div>
-
-    <!-- Points Summary -->
-    <div class="points-summary">
-        <h5>📊 Points System Summary</h5>
-        <ul>
-            <li>✅ Correct answer: 100 points</li>
-            <li>⚡ Speed bonus: 20–50 points</li>
-            <li>🏅 Rank bonus: 10–50 points</li>
-            <li>❌ Wrong answer: 0 points</li>
-        </ul>
-    </div>
-
-    <!-- FOOTER BUTTON -->
-    {% if qindex == 'done' or is_last %}
-        {% if role == "student" %}
-            <button class="next-btn" onclick="window.location.href='/student/quizzes'">
-                Back to Quizzes
-            </button>
-        {% else %}
-            <button class="next-btn" onclick="window.location.href='/admin/quizzes'">
-                Back to Admin Panel
-            </button>
-        {% endif %}
-    {% else %}
-        {% if role == "student" %}
-            <div class="countdown">
-                Next question in <span id="timer">5</span>s
-            </div>
-            <button class="next-btn" id="nextBtn" onclick="goNextQuestion()">
-                Continue to Next Question
-            </button>
-        {% endif %}
-    {% endif %}
 </div>
 
 <script>
     const socket = io();
     const quizId = {{ quiz_id }};
     const qindex = "{{ qindex }}";
-    const totalQuestions = {{ total_questions }};
     const isLast = {{ 'true' if is_last else 'false' }};
     const role = "{{ role }}";
 
-    const leaderboardBody = document.getElementById("leaderboardBody");
-    const participantCount = document.getElementById("participantCount");
-    const winnerBox = document.getElementById("winnerBox");
-    const questionList = document.getElementById("questionList");
-
     socket.emit("join_quiz", { quiz_id: quizId });
-
-    function confettiBlast() {
-        confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-    }
 
     function loadLeaderboard() {
         fetch(`/api/leaderboard/${quizId}`)
         .then(res => res.json())
         .then(data => {
-            participantCount.innerText = data.participants;
+            document.getElementById("participantCount").innerText = data.participants;
+            const podiumBox = document.getElementById("podiumBox");
+            const leaderboardBody = document.getElementById("leaderboardBody");
+            
             leaderboardBody.innerHTML = "";
-            winnerBox.innerHTML = "";
+            podiumBox.innerHTML = "";
 
             if (data.leaderboard.length === 0) {
-                leaderboardBody.innerHTML = "<div class='loading'>No submissions yet</div>";
+                leaderboardBody.innerHTML = "<div class='loading'>Waiting for players to finish...</div>";
                 return;
             }
 
-            const winner = data.leaderboard[0];
-            winnerBox.innerHTML = `
-                <div class="winner">
-                    🥇 ${winner.student}<br>
-                    ${winner.score}/${winner.total} • ${winner.time}s<br>
-                    ⭐ ${winner.points} points
-                </div>
-            `;
+            // 1. POPULATE PODIUM (Top 3)
+            const top3 = data.leaderboard.slice(0, 3);
+            const podiumOrder = [1, 0, 2]; // Show 2nd, 1st, 3rd visually
+            
+            podiumOrder.forEach(i => {
+                if (top3[i]) {
+                    const player = top3[i];
+                    const div = document.createElement("div");
+                    div.className = `podium-item rank-${i+1} animate-slide-up`;
+                    div.style.animationDelay = `${i * 0.1}s`;
+                    div.innerHTML = `
+                        <div class="podium-avatar">
+                            <span>${player.student[0]}</span>
+                            <div class="medal">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                        </div>
+                        <div class="podium-name">${player.student}</div>
+                        <div class="podium-score">${player.points} <small>pts</small></div>
+                        <div class="podium-bar"></div>
+                    `;
+                    podiumBox.appendChild(div);
+                }
+            });
 
-            if (isLast) confettiBlast();
+            if (isLast) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-            data.leaderboard.forEach((row, index) => {
+            // 2. POPULATE LIST (Rank 4+)
+            const rest = data.leaderboard.slice(3);
+            rest.forEach((row, index) => {
                 const div = document.createElement("div");
-                div.className = "row";
+                div.className = "rank-row animate-slide-left";
+                div.style.animationDelay = `${(index + 3) * 0.05}s`;
                 div.innerHTML = `
-                    <div class="rank">${index + 1}</div>
-                    <div class="avatar">${row.student[0].toUpperCase()}</div>
-                    <div class="info">
-                        <div class="name">${row.student}</div>
-                        <div class="score">${row.score}/${row.total} • ${row.time}s</div>
+                    <div class="rank-num">${index + 4}</div>
+                    <div class="rank-info">
+                        <div class="rank-name">${row.student}</div>
+                        <div class="rank-stats">${row.score}/${row.total} Correct • ${row.time}s</div>
                     </div>
-                    <div class="points">⭐${row.points}</div>
+                    <div class="rank-points">⭐ ${row.points}</div>
                 `;
                 leaderboardBody.appendChild(div);
             });
@@ -145,30 +150,23 @@
 
     function loadQuestionLeaderboard() {
         if (qindex === "done" || isLast) return;
-
-        const prevIndex = parseInt(qindex) - 1;
-        if (prevIndex < 0) return;
-
-        fetch(`/api/question-leaderboard/${quizId}/${prevIndex + 1}`)
+        fetch(`/api/question-leaderboard/${quizId}/${parseInt(qindex)}`)
         .then(res => res.json())
         .then(data => {
-            questionList.innerHTML = "";
-            data.leaderboard.forEach(row => {
-                questionList.innerHTML += `
-                    <div class="qrow">
-                        ${row.rank}. ${row.student} — ${row.time_taken}s ⭐${row.points}
+            const list = document.getElementById("questionList");
+            list.innerHTML = "";
+            data.leaderboard.forEach((row, i) => {
+                list.innerHTML += `
+                    <div class="fastest-row animate-slide-left" style="animation-delay: ${i*0.1}s">
+                        <span class="f-name">${row.student}</span>
+                        <span class="f-time">${row.time_taken}s</span>
                     </div>
                 `;
             });
         });
     }
 
-    function goNextQuestion() {
-        if (role !== "student") return;
-        window.location.href = `/student/quiz/${quizId}?qindex=${qindex}`;
-    }
-
-    // AUTO COUNTDOWN — STUDENT ONLY
+    // Auto Countdown Logic
     if (role === "student" && !isLast && qindex !== "done") {
         let timeLeft = 5;
         const timer = document.getElementById("timer");
@@ -179,9 +177,11 @@
         }, 1000);
     }
 
-    socket.on("leaderboard_refresh", loadLeaderboard);
-    socket.on("question_leaderboard_update", loadQuestionLeaderboard);
+    function goNextQuestion() {
+        window.location.href = `/student/quiz/${quizId}?qindex=${qindex}`;
+    }
 
+    socket.on("leaderboard_refresh", loadLeaderboard);
     loadLeaderboard();
     loadQuestionLeaderboard();
 </script>

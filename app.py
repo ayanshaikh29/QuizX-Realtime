@@ -295,7 +295,25 @@ def logout():
 @app.route("/admin/dashboard")
 @require_admin
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    # Real-time data queries
+    total_quizzes = Quiz.query.count()
+    active_quizzes = Quiz.query.filter_by(is_active=True).count()
+    total_students = User.query.filter_by(role='student').count()
+    
+    # Total Participations (Kitne logo ne quiz finish kiya hai)
+    total_responses = Result.query.count()
+    
+    # Recent Activities (Optional: Last 5 results)
+    recent_results = Result.query.order_by(Result.submitted_at.desc()).limit(5).all()
+
+    return render_template(
+        "admin_dashboard.html", 
+        total_quizzes=total_quizzes,
+        active_quizzes=active_quizzes,
+        total_students=total_students,
+        total_responses=total_responses,
+        recent_results=recent_results
+    )
 
 
 @app.route("/admin/quizzes", methods=["GET", "POST"])
@@ -510,6 +528,20 @@ def stop_quiz(quiz_id):
 @require_admin
 def admin_live_leaderboard(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
+    from sqlalchemy import func
+    # Get player scores logic (using PartialAnswer)
+    results = db.session.query(
+        PartialAnswer.student.label('username'),
+        func.sum(PartialAnswer.points).label('score')
+    ).filter_by(quiz_id=quiz_id)\
+     .group_by(PartialAnswer.student)\
+     .order_by(func.sum(PartialAnswer.points).desc()).all()
+   
+    # Check if the request wants JSON (for the modal)
+    if request.args.get('json'):
+        return jsonify({"results": [{"username": r.username, "score": int(r.score)} for r in results]})
+   
+    # Fallback for old full-page if needed
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
     total_questions = len(questions)
     return render_template(
@@ -915,6 +947,29 @@ def api_question_leaderboard(quiz_id, question_id):
 def join_quiz(data):
     quiz_id = str(data["quiz_id"])
     join_room(quiz_id)
+    
+@app.route("/admin/delete-quiz/<int:quiz_id>")
+@require_admin
+def delete_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    # Delete associated questions first to avoid foreign key errors
+    Question.query.filter_by(quiz_id=quiz_id).delete()
+    db.session.delete(quiz)
+    db.session.commit()
+    flash("Quiz deleted successfully.", "info")
+    return redirect(url_for("admin_quizzes"))
+
+@app.route("/admin/rename-quiz", methods=["POST"])
+@require_admin
+def rename_quiz_action():
+    quiz_id = request.form.get("quiz_id")
+    new_title = request.form.get("new_title")
+    quiz = Quiz.query.get(quiz_id)
+    if quiz and new_title:
+        quiz.title = new_title
+        db.session.commit()
+        flash("Quiz renamed successfully!", "success")
+    return redirect(url_for("admin_quizzes"))
 
 
 # ================== PROFILE (OPTIONAL - REQUIRES LOGIN) ==================

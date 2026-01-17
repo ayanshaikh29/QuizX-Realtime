@@ -2,92 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | Student Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Student Dashboard</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- External CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
 </head>
 <body>
 
-<!-- ================= NAVBAR ================= -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <span class="navbar-brand fw-bold text-success">QuizX</span>
-
-    <div class="ms-auto">
-        <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle fw-semibold"
-                   href="#" role="button" data-bs-toggle="dropdown">
-                    👤 {{ session.username }}
-                </a>
-
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li>
-                        <a class="dropdown-item" href="{{ url_for('profile') }}">
-                            Profile
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                            Logout
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</nav>
-
-<!-- ================= HEADER ================= -->
-<div class="header text-center mt-3">
-    <h4>🎓 Student Dashboard</h4>
-    <p class="mb-0">Welcome, {{ session.username }}</p>
-</div>
-
-<!-- ================= CONTENT ================= -->
-<div class="container mt-5">
-    <div class="row g-4">
-
-        <!-- JOIN BY CODE -->
-        <div class="col-md-6">
-            <div class="card-box">
-                <h5 class="fw-bold mb-3">🔑 Join Quiz by Code</h5>
-                <form method="POST" action="/join">
-                    <input name="code" class="form-control mb-3"
-                           placeholder="Enter 6-digit quiz code" required>
-                    <button class="btn-green w-100">
-                        🚀 Join Quiz
-                    </button>
-                </form>
+<div class="dashboard-wrapper">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap text-success"></i>
+                <span>QuizX Student</span>
             </div>
         </div>
-
-        <!-- VIEW LIVE QUIZZES -->
-        <div class="col-md-6">
-            <div class="card-box text-center">
-                <h5 class="fw-bold mb-3">📚 Available Live Quizzes</h5>
-                <p class="text-muted">
-                    View quizzes that are currently live
-                </p>
-                <a href="/student/quizzes" class="btn btn-outline-success w-100">
-                    View Live Quizzes
-                </a>
-            </div>
+        <nav class="sidebar-nav">
+            <a href="/student/dashboard" class="nav-link active"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="/student/quizzes" class="nav-link"><i class="fas fa-play-circle"></i> Live Quizzes</a>
+            <a href="#" class="nav-link"><i class="fas fa-history"></i> My History</a>
+            <a href="{{ url_for('profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
+    </aside>
 
-    </div>
+    <main class="main-content">
+        <header class="content-header">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Welcome back, {{ session.username }}!</h4>
+                <small class="text-muted">Ready to test your knowledge today?</small>
+            </div>
+            <div class="header-user">
+                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff" class="avatar">
+            </div>
+        </header>
+
+        <div class="container-fluid p-4">
+            
+            <div class="join-quiz-box animate-slide-up">
+                <div class="row align-items-center">
+                    <div class="col-lg-5">
+                        <h5 class="fw-bold mb-1"><i class="fas fa-key me-2 text-success"></i>Join a Quiz</h5>
+                        <p class="text-muted small mb-0">Enter the 6-digit code provided by your instructor.</p>
+                    </div>
+                    <div class="col-lg-7">
+                        <form method="POST" action="/join" class="row g-2">
+                            <div class="col-md-8">
+                                <input name="code" class="form-control custom-input" placeholder="Example: AB12CD" required maxlength="6">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success-custom w-100">
+                                    <i class="fas fa-rocket me-2"></i>Join Now
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="student-card-pro">
+                        <div class="card-icon bg-light-success">
+                            <i class="fas fa-broadcast-tower text-success"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Browse Quizzes</h5>
+                        <p class="text-muted small">See all quizzes currently active and joinable without a code.</p>
+                        <a href="/student/quizzes" class="btn btn-outline-success border-2 fw-bold w-100 rounded-pill mt-2">
+                            View Live Quizzes
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="student-card-pro">
+                        <div class="card-icon bg-light-primary">
+                            <i class="fas fa-medal text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">My Performance</h5>
+                        <p class="text-muted small">Check your previous scores, rank, and detailed quiz reports.</p>
+                        <a href="#" class="btn btn-outline-primary border-2 fw-bold w-100 rounded-pill mt-2">
+                            View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

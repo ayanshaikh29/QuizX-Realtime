@@ -2,153 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | Add Questions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
+    <title>QuizX | Standard Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/add_question.css') }}">
 </head>
 <body>
 
-<div class="header">
-    <h4>📝 Add Questions</h4>
-    <p class="mb-0">Quiz: <b>{{ quiz.title }}</b></p>
-    {% if quiz.has_timer %}
-    <span class="quiz-type-badge badge-timer">⏱️ Timer-Based Quiz</span>
-    {% else %}
-    <span class="quiz-type-badge badge-normal">📝 Normal Quiz</span>
-    {% endif %}
-</div>
+<div class="studio-container">
+    <header class="studio-header">
+        <div class="header-left">
+            <a href="/admin/quizzes" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <span class="badge">📝 Standard Mode</span>
+                <h4>{{ quiz.title }}</h4>
+            </div>
+        </div>
+        <div class="header-right">
+            {% if not quiz.is_locked %}
+            <a href="/admin/end-questions/{{ quiz.id }}" onclick="return confirm('Lock this quiz?')" class="btn-lock">
+                <i class="fas fa-lock"></i> Finalize Quiz
+            </a>
+            {% endif %}
+        </div>
+    </header>
 
-<div class="container form-wrapper">
+    <div class="content-wrapper">
+        <form method="POST" id="quizForm">
+            <div id="questions-container">
+                <div class="question-block animate-slide-up">
+                    <div class="block-header">
+                        <span class="q-number">Question 1</span>
+                        </div>
 
-{% if quiz.is_locked %}
-    <div class="alert alert-warning">
-        Quiz is locked. No more questions can be added.
+                    <div class="block-body">
+                        <label>Question Prompt</label>
+                        <div class="editor-wrapper">
+                            <div class="toolbar">
+                                <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
+                                <button type="button" onclick="format('italic')"><i class="fas fa-italic"></i></button>
+                                <button type="button" onclick="format('underline')"><i class="fas fa-underline"></i></button>
+                            </div>
+                            <div class="editor" contenteditable="true" oninput="syncQuestion(this)" data-placeholder="Type your question here..."></div>
+                            <input type="hidden" name="question[]">
+                        </div>
+
+                        <label class="mt-4">Answer Options</label>
+                        <div class="options-grid">
+                            {% for i in range(1, 5) %}
+                            <div class="option-row">
+                                <div class="radio-wrapper">
+                                    <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}" required>
+                                    <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check"></i></label>
+                                </div>
+                                <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..." required>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="addQuestion(false)" class="btn-add"><i class="fas fa-plus"></i> Add Question</button>
+                <button type="submit" class="btn-save"><i class="fas fa-cloud-upload-alt"></i> Save Questions</button>
+            </div>
+        </form>
     </div>
-    <a href="/admin/quizzes" class="btn btn-outline-success back-link">Back to Quizzes</a>
-{% else %}
-
-<form method="POST">
-<div id="questions-container">
-
-    <div class="question-card">
-
-        <label class="fw-bold">Question</label>
-
-        <div class="toolbar">
-            <button type="button" onclick="format('bold')"><b>B</b></button>
-            <button type="button" onclick="format('italic')"><i>I</i></button>
-        </div>
-
-        <div class="editor" contenteditable="true" oninput="syncQuestion(this)"></div>
-        <input type="hidden" name="question[]">
-
-        {% if quiz.has_timer %}
-        <label class="fw-bold mt-3">⏱ Time Limit (seconds)</label>
-        <input type="number"
-               name="time_0"
-               class="form-control"
-               min="5"
-               value="30"
-               required>
-        {% endif %}
-
-        <label class="fw-bold mt-4">Options</label>
-
-        <div class="option">
-            <input type="radio" name="answer_0" value="1" required>
-            <input type="text" name="option1_0" placeholder="Option 1" required>
-        </div>
-        <div class="option">
-            <input type="radio" name="answer_0" value="2" required>
-            <input type="text" name="option2_0" placeholder="Option 2" required>
-        </div>
-        <div class="option">
-            <input type="radio" name="answer_0" value="3" required>
-            <input type="text" name="option3_0" placeholder="Option 3" required>
-        </div>
-        <div class="option">
-            <input type="radio" name="answer_0" value="4" required>
-            <input type="text" name="option4_0" placeholder="Option 4" required>
-        </div>
-
-    </div>
-    </div>
-
-<div class="action-buttons">
-    <button type="button" onclick="addQuestion()" class="btn btn-outline-success">
-        ➕ Add Another Question
-    </button>
-    <button type="submit" class="btn btn-success">
-        ✅ Save All Questions
-    </button>
-</div>
-</form>
-
-<div class="end-questions">
-    <a href="/admin/end-questions/{{ quiz.id }}"
-       onclick="return confirm('Lock this quiz? No more questions can be added after this.')"
-       class="btn btn-outline-danger">
-        🔒 End Questions
-    </a>
-    <div style="margin-top: 12px; font-size: 14px; color: #94a3b8;">
-        Click to lock the quiz and proceed to publishing.
-    </div>
-</div>
-
-{% endif %}
-
 </div>
 
 <script>
 let qIndex = 1;
-// Get the timer status from the server
-let hasTimer = {{ 'true' if quiz.has_timer else 'false' }};
+function format(cmd) { document.execCommand(cmd, false, null); }
+function syncQuestion(div) { div.nextElementSibling.value = div.innerHTML; }
 
-function format(cmd){
-    document.execCommand(cmd, false, null);
-}
-
-function syncQuestion(div){
-    div.nextElementSibling.value = div.innerHTML;
-}
-
-function addQuestion(){
+function addQuestion(hasTimer) {
     const container = document.getElementById("questions-container");
-    const first = container.children[0];
-    const clone = first.cloneNode(true);
-
-    // Reset question text
+    const clone = container.querySelector(".question-block").cloneNode(true);
+    clone.querySelector(".q-number").innerText = `Question ${qIndex + 1}`;
     clone.querySelector(".editor").innerHTML = "";
-    clone.querySelector("input[name='question[]']").value = "";
-
-    clone.querySelectorAll("input").forEach(i => {
-
-        // Radio buttons
-        if(i.type === "radio"){
-            i.name = "answer_" + qIndex;
-            i.checked = false;
-        }
-
-        // Option text inputs
-        if(i.type === "text"){
-            i.name = i.name.replace("_0", "_" + qIndex);
-            i.value = "";
-        }
-
-        // Timer input (only if quiz has timer)
-        if(i.type === "number" && hasTimer){
-            i.name = "time_" + qIndex;
-            i.value = 30;
+    clone.querySelectorAll("input").forEach(input => {
+        if(input.type === "radio") {
+            input.name = `answer_${qIndex}`;
+            input.checked = false;
+            input.id = `q${qIndex}_opt${input.value}`;
+            input.nextElementSibling.setAttribute('for', input.id);
+        } else if(input.type === "text") {
+            input.name = input.name.replace("_0", `_${qIndex}`);
+            input.value = "";
         }
     });
-
     container.appendChild(clone);
     qIndex++;
+    clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 </script>
-
 </body>
 </html>

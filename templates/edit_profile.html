@@ -1,51 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>QuizX | Edit Profile</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Edit Profile</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 </head>
-
 <body>
 
-<nav class="navbar navbar-dark">
-    <span class="navbar-brand">QuizX</span>
-</nav>
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-
-            <div class="profile-card">
-                <h4 class="fw-bold mb-3">✏ Edit Profile</h4>
-
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input class="form-control"
-                               value="{{ user.username }}" disabled>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input name="email"
-                               class="form-control"
-                               value="{{ user.email }}"
-                               required>
-                    </div>
-
-                    <button class="btn btn-edit w-100">
-                        Save Changes
-                    </button>
-                </form>
+<div class="dashboard-wrapper">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-bolt text-warning"></i>
+                <span>QuizX Studio</span>
             </div>
-
         </div>
-    </div>
+        <nav class="sidebar-nav">
+            <a href="{{ '/admin/dashboard' if user.role == 'admin' else '/student/dashboard' }}" class="nav-link">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-link active">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="content-header">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Edit Profile</h4>
+                <small class="text-muted">Update your account details</small>
+            </div>
+        </header>
+
+        <div class="container-fluid p-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="profile-container p-5 animate-slide-up">
+                        <div class="text-center mb-4">
+                            <div class="main-avatar mx-auto mb-3">
+                                {{ user.username[0]|upper }}
+                            </div>
+                            <h5 class="fw-bold">Modify Information</h5>
+                        </div>
+
+                        <form method="POST">
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted">Username (Cannot be changed)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-at text-muted"></i></span>
+                                    <input class="form-control custom-input bg-light" value="{{ user.username }}" disabled>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-envelope text-muted"></i></span>
+                                    <input name="email" type="email" class="form-control custom-input border-start-0" value="{{ user.email }}" required>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-5">
+                                <a href="{{ url_for('profile') }}" class="btn btn-light w-100 rounded-pill fw-bold">Cancel</a>
+                                <button type="submit" class="btn btn-save-profile w-100 rounded-pill">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
