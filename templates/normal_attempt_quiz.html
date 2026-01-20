@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -166,6 +166,166 @@
     document.addEventListener("visibilitychange", () => { if (document.hidden) triggerWarning(); });
     window.addEventListener("blur", triggerWarning);
     document.addEventListener("contextmenu", e => e.preventDefault());
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | {{ quiz.title }} - Attempt</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normal_attempt_quiz.css') }}">
+</head>
+<body>
+
+<nav class="quiz-navbar">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="nav-brand-area">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo">
+            <span class="brand-text">QuizX <span class="badge bg-primary-soft">Standard</span></span>
+        </div>
+        <div class="quiz-meta-info d-none d-md-block">
+            <i class="fas fa-book-reader me-2"></i>
+            <strong>{{ quiz.title }}</strong>
+        </div>
+        <div class="user-pill">
+            <i class="fas fa-user-circle me-1"></i> {{ session.username }}
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="cheat-alert animate-shake" id="cheatAlert">
+        <i class="fas fa-shield-alt me-2"></i>
+        Violation <span id="warnCount">0</span>/3
+    </div>
+
+    <div class="quiz-main-card animate-slide-up">
+
+        <div class="quiz-header-status">
+            <div class="progress-container w-100">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Question {{ current_index + 1 }} of {{ total_questions }}</span>
+                    <span>{{ ((current_index + 1) / total_questions * 100)|round|int }}%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar-fill"
+                         style="width: {{ ((current_index + 1) / total_questions * 100) }}%">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="question-body">
+            <h3>{{ current_question.question }}</h3>
+
+            <form id="quizForm" class="mt-4">
+                <input type="hidden" name="question_id" value="{{ current_question.id }}">
+                <input type="hidden" name="qindex" value="{{ current_index }}">
+
+                <div class="options-container">
+                    {% for opt in [current_question.option1, current_question.option2,
+                                   current_question.option3, current_question.option4] %}
+                    <label class="option-item">
+                        <input type="radio" name="selected_answer" value="{{ opt }}">
+                        <div class="option-design">
+                            <span class="option-marker"></span>
+                            <span>{{ opt }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <div class="warning-msg" id="warningMsg">
+                    <i class="fas fa-exclamation-circle"></i> Please choose an option
+                </div>
+
+                <div class="form-actions mt-4">
+                    <button type="button" class="btn btn-submit-quiz" id="submitBtn">
+                        Submit Answer <i class="fas fa-chevron-right ms-2"></i>
+                    </button>
+                </div>
+
+                <div id="feedback" class="feedback-toast" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    let warnings = 0;
+    let quizId = {{ quiz_id }};
+    let isSubmitting = false;
+
+    const cheatAlert = document.getElementById("cheatAlert");
+    const warnCount = document.getElementById("warnCount");
+    const warningMsg = document.getElementById("warningMsg");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const socket = io();
+    socket.emit("join_quiz", { quiz_id: quizId });
+
+    submitBtn.addEventListener("click", handleSubmit);
+
+    function handleSubmit() {
+        if (isSubmitting) return;
+
+        const selected = document.querySelector("input[name='selected_answer']:checked");
+        if (!selected) {
+            warningMsg.style.display = "block";
+            return;
+        }
+
+        isSubmitting = true;
+        submitBtn.disabled = true;
+
+        const formData = new FormData(document.getElementById("quizForm"));
+
+        fetch(`/student/quiz/${quizId}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            const feedback = document.getElementById("feedback");
+            feedback.style.display = "block";
+            feedback.className = data.is_correct ? "feedback-toast correct" : "feedback-toast incorrect";
+            feedback.innerHTML = data.is_correct ? "Correct!" : "Incorrect";
+
+            setTimeout(() => {
+                if (data.is_last) {
+                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
+                } else {
+                    window.location.href =
+                        `/student/quiz/${quizId}?qindex=${data.next_qindex}`;
+                }
+            }, 1200);
+        });
+    }
+
+    /* Anti-cheat */
+    function triggerWarning() {
+        if (isSubmitting) return;
+        warnings++;
+        warnCount.innerText = warnings;
+        cheatAlert.style.display = "block";
+        if (warnings >= 3) handleSubmit();
+        setTimeout(() => cheatAlert.style.display = "none", 3000);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) triggerWarning();
+    });
+    window.addEventListener("blur", triggerWarning);
 </script>
 </body>
 </html>
