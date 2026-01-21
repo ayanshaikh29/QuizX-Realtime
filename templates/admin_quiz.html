@@ -111,7 +111,7 @@
                                         </button>
                                     </div>
 
-                                    <div class="mb-2"><small class="text-danger">Active: {{ q.is_active }} | Code: {{ q.join_code or 'None' }}</small></div>
+                                    <div class="mb-2"><small class="text-danger">Code: {{ q.join_code or 'None' }}</small></div>
                                     
                                     <div class="quiz-info">
                                         <div class="info-item"><i class="fas fa-calendar-alt"></i><span>{% if q.published_at %}{{ q.published_at.strftime('%d %b, %H:%M') }}{% else %}Not Started{% endif %}</span></div>
@@ -125,31 +125,33 @@
                                                 <small>Join Code</small>
                                                 <strong id="code-{{ q.id }}">{{ q.join_code }}</strong>
                                             </div>
-                                            <button class="btn btn-sm copy-btn" onclick="copyJoinLink('{{ request.host_url }}join/{{ q.join_code }}')" title="Copy Link">
+                                            <button class="btn btn-sm copy-btn" onclick="copyJoinLink('{{ request.host_url }}join/{{ q.join_code }}')">
                                                 <i class="fas fa-copy"></i>
                                             </button>
                                         </div>
-                                        <a href="{{ request.host_url }}join/{{ q.join_code }}" target="_blank" class="join-link" id="link-{{ q.id }}">
+                                        <a href="{{ request.host_url }}join/{{ q.join_code }}" target="_blank" class="join-link">
                                             {{ request.host_url }}join/{{ q.join_code }}
                                         </a>
                                     </div>
                                     {% endif %}
 
                                     <div class="card-actions">
+                                        {% if q.is_active %}
+                                            <a href="{{ url_for('admin_live_control', quiz_id=q.id) }}" class="btn action-btn btn-danger text-white w-100 mb-2">
+                                                <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
+                                            </a>
+                                        {% endif %}
+
                                         {% if not q.is_locked and not q.is_active %}
                                             <a href="/admin/add-question/{{ q.id }}" class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
                                         {% endif %}
+
                                         {% if q.is_locked and not q.is_published %}
                                             <a href="/admin/publish-quiz/{{ q.id }}" class="btn action-btn start"><i class="fas fa-play"></i> Start</a>
                                         {% endif %}
+
                                         {% if q.is_active %}
-                                            {% if q.is_paused %}
-                                                <a href="/admin/resume-quiz/{{ q.id }}" class="btn action-btn resume"><i class="fas fa-play"></i> Resume</a>
-                                            {% else %}
-                                                <a href="/admin/pause-quiz/{{ q.id }}" class="btn action-btn pause"><i class="fas fa-pause"></i> Pause</a>
-                                            {% endif %}
                                             <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
-                                            <a href="/admin/live-leaderboard/{{ q.id }}" class="btn action-btn leaderboard" target="_blank"><i class="fas fa-trophy"></i></a>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -157,7 +159,6 @@
                             {% endfor %}
                         {% else %}
                             <div class="text-center p-5 w-100">
-                                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">No normal quizzes found.</p>
                             </div>
                         {% endif %}
@@ -196,7 +197,7 @@
                                                 <small>Join Code</small>
                                                 <strong id="code-{{ q.id }}">{{ q.join_code }}</strong>
                                             </div>
-                                            <button class="btn btn-sm copy-btn" onclick="copyJoinLink('{{ request.host_url }}join/{{ q.join_code }}')" title="Copy Link">
+                                            <button class="btn btn-sm copy-btn" onclick="copyJoinLink('{{ request.host_url }}join/{{ q.join_code }}')">
                                                 <i class="fas fa-copy"></i>
                                             </button>
                                         </div>
@@ -207,15 +208,22 @@
                                     {% endif %}
 
                                     <div class="card-actions">
+                                        {% if q.is_active %}
+                                            <a href="{{ url_for('admin_live_control', quiz_id=q.id) }}" class="btn action-btn btn-danger text-white w-100 mb-2">
+                                                <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
+                                            </a>
+                                        {% endif %}
+
                                         {% if not q.is_locked and not q.is_active %}
                                             <a href="/admin/add-question/{{ q.id }}" class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
                                         {% endif %}
+
                                         {% if q.is_locked and not q.is_published %}
                                             <a href="/admin/publish-quiz/{{ q.id }}" class="btn action-btn start"><i class="fas fa-play"></i> Start</a>
                                         {% endif %}
+
                                         {% if q.is_active %}
                                             <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
-                                            <a href="/admin/live-leaderboard/{{ q.id }}" class="btn action-btn leaderboard" target="_blank"><i class="fas fa-trophy"></i></a>
                                         {% endif %}
                                     </div>
                                 </div>

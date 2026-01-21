@@ -1,223 +1,3 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | {{ quiz.title }} - Attempt</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/attempt_quiz.css') }}">
-</head>
-<body>
-
-<nav class="quiz-navbar">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="nav-brand-area">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX Logo" class="brand-logo">
-            <span class="brand-text"><span class="badge bg-success-soft">Live</span></span>
-        </div>
-        <div class="quiz-meta-info d-none d-md-block">
-            <i class="fas fa-book-reader me-2"></i>
-            <strong>{{ quiz.title }}</strong>
-        </div>
-        <div class="user-pill">
-            <i class="fas fa-user-circle me-1"></i> {{ session.username }}
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-    <div class="cheat-alert animate-shake" id="cheatAlert">
-        <i class="fas fa-shield-alt me-2"></i>
-        Violation <span id="warnCount">0</span>/3: Stay focused on the quiz window!
-    </div>
-
-    <div class="quiz-main-card animate-slide-up">
-        
-        <div class="quiz-header-status">
-            <div class="progress-container">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="status-label">Question {{ current_index + 1 }} of {{ total_questions }}</span>
-                    <span class="status-percent">{{ ((current_index + 1) / total_questions * 100)|round|int }}% Done</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-bar-fill" style="width: {{ ((current_index + 1) / total_questions * 100) }}%"></div>
-                </div>
-            </div>
-
-            <div class="timer-widget">
-                <div class="timer-circle" id="timerCircle">
-                    <div class="timer-content">
-                        <span id="timeText">{{ current_question.time_limit }}</span>
-                        <small>SEC</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <hr class="divider">
-
-        <div class="question-body">
-            <h3 class="question-title">{{ current_question.question }}</h3>
-            
-            <form id="quizForm" class="mt-4">
-                <input type="hidden" name="question_id" value="{{ current_question.id }}">
-                <input type="hidden" name="qindex" value="{{ current_index }}">
-
-                <div class="options-container">
-                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
-                    <label class="option-item">
-                        <input type="radio" name="selected_answer" value="{{ opt }}">
-                        <div class="option-design">
-                            <span class="option-marker"></span>
-                            <span class="option-label-text">{{ opt }}</span>
-                        </div>
-                    </label>
-                    {% endfor %}
-                </div>
-
-                <div class="warning-msg" id="warningMsg">
-                    <i class="fas fa-exclamation-circle me-1"></i> Please choose an answer to continue.
-                </div>
-
-                <div class="form-actions mt-5">
-                    <button type="button" class="btn btn-submit-quiz" id="submitBtn">
-                        Submit Answer <i class="fas fa-chevron-right ms-2"></i>
-                    </button>
-                </div>
-
-                <div id="feedback" class="feedback-toast" style="display:none;"></div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-    let timeLeft = {{ current_question.time_limit }};
-    let totalTime = {{ current_question.time_limit }};
-    let timer;
-    let warnings = 0;
-    let quizId = {{ quiz_id }};
-    let isSubmitting = false;
-
-    const timeText = document.getElementById("timeText");
-    const timerCircle = document.getElementById("timerCircle");
-    const cheatAlert = document.getElementById("cheatAlert");
-    const warnCount = document.getElementById("warnCount");
-    const warningMsg = document.getElementById("warningMsg");
-    const submitBtn = document.getElementById("submitBtn");
-    const socket = io();
-
-    socket.emit("join_quiz", { quiz_id: quizId });
-
-    // Start timer logic
-    timer = setInterval(() => {
-        timeLeft--;
-        updateTimer();
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            forceSubmit();
-        }
-    }, 1000);
-
-    function updateTimer() {
-        timeText.innerText = Math.max(0, timeLeft);
-        const percentage = (timeLeft / totalTime) * 100;
-        const deg = (percentage / 100) * 360;
-
-        let color = '#6fbf4a'; // QuizX Green
-        if (timeLeft <= 5) color = '#ef4444'; // Danger Red
-        else if (timeLeft <= 10) color = '#f59e0b'; // Warning Amber
-
-        timerCircle.style.background = `conic-gradient(${color} ${deg}deg, #f1f5f9 0deg)`;
-    }
-
-    submitBtn.addEventListener('click', handleSubmit);
-
-    function handleSubmit() {
-        if (isSubmitting) return;
-        
-        const selected = document.querySelector("input[name='selected_answer']:checked");
-        if (!selected) {
-            warningMsg.style.display = "block";
-            return;
-        }
-
-        isSubmitting = true;
-        clearInterval(timer);
-
-        const formData = new FormData(document.getElementById("quizForm"));
-        
-        // Lock UI
-        document.querySelectorAll(".option-item").forEach(opt => opt.classList.add("locked"));
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Submitting...`;
-
-        fetch(`/student/quiz/${quizId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            const feedback = document.getElementById("feedback");
-            feedback.style.display = "block";
-            feedback.className = data.is_correct ? "feedback-toast correct" : "feedback-toast incorrect";
-            feedback.innerHTML = data.is_correct ? '<i class="fas fa-check-circle me-2"></i> Correct!' : '<i class="fas fa-times-circle me-2"></i> Incorrect';
-
-            setTimeout(() => {
-                window.location.href = `/leaderboard/live/${quizId}?qindex=${data.is_last ? 'done' : data.next_qindex}`;
-            }, 1500);
-        })
-        .catch(err => {
-            console.error(err);
-            isSubmitting = false;
-            submitBtn.disabled = false;
-        });
-    }
-
-    function forceSubmit() {
-        if (isSubmitting) return;
-        isSubmitting = true;
-        
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = "Time's Up!";
-        const formData = new FormData(document.getElementById("quizForm"));
-
-        fetch(`/student/quiz/${quizId}`, { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            window.location.href = `/leaderboard/live/${quizId}?qindex=${data.is_last ? 'done' : data.next_qindex}`;
-        });
-    }
-
-    /* ANTI-CHEAT */
-    function triggerWarning() {
-        warnings++;
-        warnCount.innerText = warnings;
-        cheatAlert.style.display = "block";
-        if (warnings >= 3) forceSubmit();
-    }
-
-    document.addEventListener("visibilitychange", () => { if (document.hidden) triggerWarning(); });
-    window.addEventListener("blur", triggerWarning);
-    
-    // Disable Right-click and DevTools shortcuts
-    document.addEventListener("contextmenu", e => e.preventDefault());
-    document.onkeydown = function(e) {
-        if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
-            e.preventDefault();
-            triggerWarning();
-            return false;
-        }
-    };
-</script>
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -236,26 +16,29 @@
     <div class="container d-flex justify-content-between align-items-center">
         <div class="nav-brand-area">
             <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo">
-            <span class="brand-text"><span class="badge bg-success-soft">Live</span></span>
+            <span class="badge bg-success-soft">Live</span>
         </div>
         <div class="quiz-meta-info d-none d-md-block">
-            <i class="fas fa-book-reader me-2"></i>
             <strong>{{ quiz.title }}</strong>
         </div>
         <div class="user-pill">
-            <i class="fas fa-user-circle me-1"></i> {{ session.username }}
+            <i class="fas fa-user-circle"></i> {{ session.username }}
         </div>
     </div>
 </nav>
 
 <div class="container mt-4">
-    <div class="cheat-alert animate-shake" id="cheatAlert">
+
+    <!-- CHEAT ALERT -->
+    <div class="cheat-alert animate-shake" id="cheatAlert" style="display:none;">
         <i class="fas fa-shield-alt me-2"></i>
-        Violation <span id="warnCount">0</span>/3: Stay focused!
+        Violation <span id="warnCount">0</span>/3
     </div>
 
-    <div class="quiz-main-card animate-slide-up">
+    <!-- MAIN CARD -->
+    <div class="quiz-main-card animate-slide-up" id="quizCard">
 
+        <!-- HEADER -->
         <div class="quiz-header-status">
             <div class="progress-container">
                 <div class="d-flex justify-content-between mb-2">
@@ -269,6 +52,7 @@
                 </div>
             </div>
 
+            <!-- TIMER -->
             <div class="timer-widget">
                 <div class="timer-circle" id="timerCircle">
                     <div class="timer-content">
@@ -281,6 +65,7 @@
 
         <hr>
 
+        <!-- QUESTION -->
         <div class="question-body">
             <h3>{{ current_question.question }}</h3>
 
@@ -301,8 +86,8 @@
                     {% endfor %}
                 </div>
 
-                <div class="warning-msg" id="warningMsg">
-                    <i class="fas fa-exclamation-circle"></i> Please select an option.
+                <div class="warning-msg" id="warningMsg" style="display:none;">
+                    <i class="fas fa-exclamation-circle"></i> Please select an option
                 </div>
 
                 <div class="form-actions mt-4">
@@ -315,6 +100,13 @@
             </form>
         </div>
     </div>
+
+    <!-- WAIT SCREEN -->
+    <div id="waitingBox" class="text-center mt-5" style="display:none;">
+        <h3>⏳ Waiting for admin to start next question…</h3>
+        <p class="text-muted">Please stay on this screen</p>
+    </div>
+
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -332,10 +124,21 @@
     const warnCount = document.getElementById("warnCount");
     const warningMsg = document.getElementById("warningMsg");
     const submitBtn = document.getElementById("submitBtn");
+    const quizForm = document.getElementById("quizForm");
 
+    /* SOCKET */
     const socket = io();
     socket.emit("join_quiz", { quiz_id: quizId });
 
+    socket.on("load_next_question", data => {
+        window.location.href = `/student/quiz/${quizId}?qindex=${data.qindex}`;
+    });
+
+    socket.on("quiz_finished", () => {
+        window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
+    });
+
+    /* TIMER */
     timer = setInterval(() => {
         timeLeft--;
         updateTimer();
@@ -370,7 +173,7 @@
         isSubmitting = true;
         clearInterval(timer);
 
-        const formData = new FormData(document.getElementById("quizForm"));
+        const formData = new FormData(quizForm);
 
         fetch(`/student/quiz/${quizId}`, {
             method: "POST",
@@ -380,15 +183,17 @@
         .then(data => {
             const feedback = document.getElementById("feedback");
             feedback.style.display = "block";
-            feedback.className = data.is_correct ? "feedback-toast correct" : "feedback-toast incorrect";
+            feedback.className = data.is_correct
+                ? "feedback-toast correct"
+                : "feedback-toast incorrect";
             feedback.innerHTML = data.is_correct ? "Correct!" : "Incorrect";
 
             setTimeout(() => {
                 if (data.is_last) {
                     window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
                 } else {
-                    window.location.href =
-                        `/student/quiz/${quizId}?qindex=${data.next_qindex}`;
+                    document.getElementById("quizCard").style.display = "none";
+                    document.getElementById("waitingBox").style.display = "block";
                 }
             }, 1200);
         });
@@ -398,21 +203,16 @@
         if (isSubmitting) return;
         isSubmitting = true;
 
-        const formData = new FormData(document.getElementById("quizForm"));
-
+        const formData = new FormData(quizForm);
         fetch(`/student/quiz/${quizId}`, { method: "POST", body: formData })
         .then(res => res.json())
-        .then(data => {
-            if (data.is_last) {
-                window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-            } else {
-                window.location.href =
-                    `/student/quiz/${quizId}?qindex=${data.next_qindex}`;
-            }
+        .then(() => {
+            document.getElementById("quizCard").style.display = "none";
+            document.getElementById("waitingBox").style.display = "block";
         });
     }
 
-    /* Anti-cheat */
+    /* ANTI-CHEAT */
     function triggerWarning() {
         warnings++;
         warnCount.innerText = warnings;

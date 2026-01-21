@@ -9,6 +9,7 @@ import time
 import uuid
 import pytz
 from functools import wraps
+from sqlalchemy import func
 
 
 # ================== APP CONFIG ==================
@@ -26,6 +27,7 @@ app.jinja_env.globals['pytz'] = pytz
 
 # ================== SOCKETIO SETUP ==================
 socketio = SocketIO(app, cors_allowed_origins="*")
+quiz_state = {}
 
 
 # ================== HELPERS ==================
@@ -156,6 +158,19 @@ def ensure_guest_student():
         # Unique guest ID
         if "guest_id" not in session:
             session["guest_id"] = str(uuid.uuid4())[:8]
+
+
+def get_leaderboard_data(quiz_id):
+    points_query = db.session.query(
+        PartialAnswer.student.label('name'),
+        func.sum(PartialAnswer.points).label('score')
+    ).filter_by(quiz_id=quiz_id)\
+     .group_by(PartialAnswer.student)\
+     .order_by(func.sum(PartialAnswer.points).desc()).all()
+
+    leaderboard = [{"name": r.name, "score": int(r.score)} for r in points_query]
+
+    return leaderboard
 
 
 # ================== MODELS ==================
@@ -417,39 +432,6 @@ def end_questions(quiz_id):
     return redirect(url_for("admin_quizzes"))
 
 
-# @app.route("/admin/publish-quiz/<int:quiz_id>")
-# @require_admin
-# def publish_quiz(quiz_id):
-#     quiz = Quiz.query.get_or_404(quiz_id)
-
-#     if not quiz.is_locked:
-#         flash("Lock questions first before publishing!", "error")
-#         return redirect(url_for("admin_quizzes"))
-
-#     quiz.is_published = True
-#     quiz.is_active = True
-#     quiz.start_time = now_utc()
-
-#     # ✅ NEW LOGIC
-#     quiz.published_at = now_utc()
-#     quiz.publish_count = (quiz.publish_count or 0) + 1
-
-#     quiz.paused_seconds = 0
-#     quiz.is_paused = False
-
-#     if not quiz.join_code:
-#         quiz.join_code = generate_join_code()
-
-#     db.session.commit()
-
-#     flash(
-#         f"Quiz published at {quiz.published_at.strftime('%d %b %Y %I:%M %p')} "
-#         f"(Published {quiz.publish_count} times)",
-#         "success",
-#     )
-
-#     return redirect(url_for("admin_quizzes"))
-
 @app.route("/admin/publish-quiz/<int:quiz_id>")
 @require_admin
 def publish_quiz(quiz_id):
@@ -472,6 +454,8 @@ def publish_quiz(quiz_id):
 
     if not quiz.join_code:
         quiz.join_code = generate_join_code()
+
+    quiz_state[quiz.id] = {"current_qindex": 0}
 
     db.session.commit()
 
@@ -520,6 +504,9 @@ def stop_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     quiz.is_active = False
     db.session.commit()
+
+    quiz_state.pop(quiz_id, None)
+
     flash("Quiz stopped.", "info")
     return redirect(url_for("admin_quizzes"))
 
@@ -528,7 +515,6 @@ def stop_quiz(quiz_id):
 @require_admin
 def admin_live_leaderboard(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-    from sqlalchemy import func
     # Get player scores logic (using PartialAnswer)
     results = db.session.query(
         PartialAnswer.student.label('username'),
@@ -714,9 +700,16 @@ def attempt_quiz(quiz_id):
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 500
 
-        next_qindex = qindex + 1
+        # Emit leaderboard update after every answer submission
+        leaderboard_data = get_leaderboard_data(quiz_id)
+        socketio.emit(
+            "leaderboard_update",
+            leaderboard_data,
+            room=str(quiz_id)
+        )
+
         total_questions = len(questions)
-        is_last = next_qindex >= total_questions
+        is_last = (qindex + 1) >= total_questions
 
         if is_last:
             # Calculate final score and total points
@@ -750,9 +743,7 @@ def attempt_quiz(quiz_id):
                 db.session.commit()
 
             session.pop(start_key, None)
-            socketio.emit(
-                "leaderboard_refresh", {"quiz_id": quiz_id}, room=str(quiz_id)
-            )
+            # No need for additional emit here since already emitted above
 
             # Full session cleanup for this quiz
             for k in list(session.keys()):
@@ -768,24 +759,20 @@ def attempt_quiz(quiz_id):
                     "score": score,
                     "total": total,
                     "total_time": total_time,
-                    "next_qindex": total_questions,
+                    "correct_answer": current_question.answer,
                 }
             )
 
-        print(f"=== CONTINUING TO QUESTION {next_qindex} ===")
-
-        return jsonify(
-            {
-                "success": True,
-                "is_last": False,
-                "is_correct": is_correct,
-                "time_taken": time_taken,
-                "next_qindex": next_qindex,
-            }
-        )
+        return jsonify({
+            "success": True,
+            "show_leaderboard": True,
+            "message": "Waiting for admin to start next question",
+            "is_correct": is_correct,
+            "correct_answer": current_question.answer,
+        })
 
     # GET: Show current question
-    qindex = request.args.get("qindex", 0, type=int)
+    qindex = quiz_state.get(quiz_id, {}).get("current_qindex", 0)
     total_questions = len(questions)
     if qindex >= total_questions:
         # Quiz complete, redirect to leaderboard
@@ -866,8 +853,6 @@ def leaderboard(quiz_id):
 @app.route("/api/leaderboard/<int:quiz_id>")
 def api_leaderboard(quiz_id):
     # Get all partial answers to calculate total points
-    from sqlalchemy import func
-
     # Calculate total points per student
     points_query = db.session.query(
         PartialAnswer.student,
@@ -947,6 +932,33 @@ def api_question_leaderboard(quiz_id, question_id):
 def join_quiz(data):
     quiz_id = str(data["quiz_id"])
     join_room(quiz_id)
+
+@socketio.on("admin_next_question")
+def admin_next_question(data):
+    quiz_id = int(data["quiz_id"])
+
+    if quiz_id not in quiz_state:
+        quiz_state[quiz_id] = {"current_qindex": 0}
+
+    quiz_state[quiz_id]["current_qindex"] += 1
+
+    total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
+
+    if quiz_state[quiz_id]["current_qindex"] >= total_questions:
+        socketio.emit(
+            "quiz_finished",
+            {},
+            room=str(quiz_id)
+        )
+        return
+
+    socketio.emit(
+        "load_next_question",
+        {
+            "qindex": quiz_state[quiz_id]["current_qindex"]
+        },
+        room=str(quiz_id)
+    )
     
 @app.route("/admin/delete-quiz/<int:quiz_id>")
 @require_admin
@@ -970,6 +982,25 @@ def rename_quiz_action():
         db.session.commit()
         flash("Quiz renamed successfully!", "success")
     return redirect(url_for("admin_quizzes"))
+
+@app.route("/admin/live-control/<int:quiz_id>")
+@require_admin
+def admin_live_control(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
+    
+    # Ensure quiz state is initialized
+    if quiz_id not in quiz_state:
+        quiz_state[quiz_id] = {"current_qindex": 0}
+        
+    current_qindex = quiz_state[quiz_id]["current_qindex"]
+    
+    return render_template(
+        "admin_live_control.html", 
+        quiz=quiz, 
+        current_index=current_qindex, 
+        total_questions=len(questions)
+    )
 
 
 # ================== PROFILE (OPTIONAL - REQUIRES LOGIN) ==================
@@ -1003,9 +1034,20 @@ def edit_profile():
 
 
 def utc_to_ist(utc_dt):
-    return utc_dt.replace(tzinfo=pytz.utc).astimezone(
-        pytz.timezone("Asia/Kolkata")
-    )
+    """Converts UTC datetime to IST for display purposes."""
+    if not utc_dt:
+        return None
+    ist = pytz.timezone('Asia/Kolkata')
+    return utc_dt.replace(tzinfo=pytz.utc).astimezone(ist)
+    
+@socketio.on('next_question')
+def handle_next_question(data):
+    quiz_id = int(data['quiz_id'])
+    if quiz_id in quiz_state:
+        # Increment the global state for this quiz
+        quiz_state[quiz_id]['current_qindex'] += 1
+        # Tell all students in the room to refresh/load the new question
+        emit('new_question', {'qindex': quiz_state[quiz_id]['current_qindex']}, room=str(quiz_id))
 
 
 # ================== RUN ==================

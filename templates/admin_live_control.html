@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Elite Mission Control</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_control.css') }}">
+</head>
+<body>
+
+<nav class="control-navbar d-flex justify-content-between align-items-center">
+    <div class="brand">
+        <i class="fas fa-satellite-dish text-success me-2"></i>
+        <span>Quiz<span style="color:var(--primary-green)">X</span> Control Center</span>
+    </div>
+    
+    <div class="d-flex align-items-center gap-3">
+        <div class="quiz-info-pill">
+            <i class="fas fa-terminal small me-2"></i> {{ quiz.title }}
+        </div>
+        <div class="quiz-info-pill" style="background: var(--primary-green);">
+            <i class="fas fa-lock-open small me-1"></i> {{ quiz.join_code }}
+        </div>
+        <a href="/admin/quizzes" class="btn btn-sm btn-outline-danger border-0 rounded-circle">
+            <i class="fas fa-power-off"></i>
+        </a>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-md-5">
+    <div class="row g-4">
+        
+        <div class="col-lg-3">
+            
+            <div class="control-card mb-4 text-center">
+                <h6 class="section-title text-start mb-3"><i class="fas fa-microchip me-2"></i>Live Status</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="status-box">
+                            <span class="num" id="qStatus">{{ current_index + 1 }}</span>
+                            <span class="text-muted small">QUESTION</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="status-box">
+                            <span class="num">{{ total_questions }}</span>
+                            <span class="text-muted small">TOTAL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-card mb-4">
+                <h6 class="section-title mb-3"><i class="fas fa-gamepad me-2"></i>Primary Actions</h6>
+                <button class="btn-next-main" onclick="nextQuestion()">
+                    <i class="fas fa-rocket me-2"></i> Push Next Step
+                </button>
+                <button class="btn btn-danger-soft w-100" onclick="endQuiz()">
+                    <i class="fas fa-skull-crossbones me-2"></i> Terminate Quiz
+                </button>
+            </div>
+
+            <div class="control-card">
+                <h6 class="section-title mb-3"><i class="fas fa-network-wired me-2"></i>Live Nodes</h6>
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                    <div>
+                        <span class="h3 fw-bold mb-0" id="joinedCount">0</span>
+                        <p class="text-muted small mb-0">Active Students</p>
+                    </div>
+                    <div class="pulse-dot"></div>
+                </div>
+                <div class="progress" style="height: 4px; background: #e2e8f0;">
+                    <div id="syncProgress" class="progress-bar" style="width: 0%; background: var(--primary-green);"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-9">
+            
+            <div class="control-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold m-0 text-dark">
+                        <i class="fas fa-ranking-star text-warning me-2"></i>Live Leaderboard Matrix
+                    </h5>
+                    <div class="small text-muted">
+                        <i class="fas fa-clock me-1"></i> LAST UPDATE: <span id="lastUpdate">Just Now</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table custom-table">
+                        <thead>
+                            <tr>
+                                <th width="100">POSITION</th>
+                                <th>IDENTITY</th>
+                                <th class="text-end">SCORE METRIC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardData">
+                            <tr>
+                                <td colspan="3" class="text-center py-5">
+                                    <div class="spinner-grow text-success" role="status"></div>
+                                    <p class="text-muted small mt-2">Connecting to live data nodes...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h6 class="section-title mb-3"><i class="fas fa-terminal me-2"></i>System Trace Activity</h6>
+                <div id="activityLog" class="log-container">
+                    <div class="log-entry">
+                        <span class="log-time">[BOOT]</span> Core system initialized...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const quizId = {{ quiz.id }};
+    const socket = io();
+
+    socket.emit("join_quiz", { quiz_id: quizId });
+    addLog("Secure link established with QuizID: " + quizId);
+
+    function nextQuestion() {
+        socket.emit("admin_next_question", { quiz_id: quizId });
+        addLog("ADMIN_CMD: Advancing to next question packet.");
+        
+        let curr = document.getElementById('qStatus');
+        curr.innerText = parseInt(curr.innerText) + 1;
+    }
+
+    function endQuiz() {
+        if(confirm("DANGER: This will disconnect all nodes. Proceed?")) {
+            socket.emit("quiz_finished", { quiz_id: quizId });
+            addLog("CRITICAL: Manual termination signal sent.");
+            window.location.href = "/admin/quizzes";
+        }
+    }
+
+    function addLog(msg) {
+        const logBox = document.getElementById("activityLog");
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+        logBox.prepend(entry);
+    }
+
+    socket.on("leaderboard_update", data => {
+        const body = document.getElementById("leaderboardData");
+        if(!data || data.length === 0) return;
+
+        body.innerHTML = data.map((user, index) => `
+            <tr>
+                <td><span class="badge rounded-pill ${index < 3 ? 'bg-success' : 'bg-light text-dark'}">#0${index + 1}</span></td>
+                <td class="fw-bold">${user.name}</td>
+                <td class="text-end text-success fw-bold">${user.score.toLocaleString()} XP</td>
+            </tr>
+        `).join("");
+
+        document.getElementById('joinedCount').innerText = data.length;
+        document.getElementById('syncProgress').style.width = "100%";
+        document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+        addLog(`SYNC: ${data.length} client states verified.`);
+    });
+</script>
+
+</body>
+</html>

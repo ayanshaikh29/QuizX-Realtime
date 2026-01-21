@@ -1,0 +1,171 @@
+/* Futuristic QuizX Design System */
+:root {
+    --primary-green: #6fbf4a;
+    --neon-green: #22c55e;
+    --dark-bg: #0f172a;
+    --card-glass: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(226, 232, 240, 0.6);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+}
+
+body {
+    background: radial-gradient(circle at top right, #f0fdf4, #f8fafc);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--text-main);
+    min-height: 100vh;
+}
+
+/* Glassmorphism Navbar */
+.control-navbar {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.brand {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-size: 1.25rem;
+}
+
+.quiz-info-pill {
+    background: var(--dark-bg);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Futuristic Cards */
+.control-card {
+    background: var(--card-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.control-card:hover {
+    box-shadow: 0 20px 40px -10px rgba(111, 191, 74, 0.15);
+}
+
+/* Command Center Buttons */
+.btn-next-main {
+    background: linear-gradient(135deg, var(--primary-green), #45a049);
+    color: white;
+    border: none;
+    font-weight: 800;
+    padding: 16px;
+    border-radius: 18px;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(111, 191, 74, 0.3);
+}
+
+.btn-next-main::after {
+    content: '';
+    position: absolute;
+    top: -50%; width: 100%; height: 200%;
+    background: rgba(255,255,255,0.2);
+    transform: rotate(45deg);
+    left: -100%;
+    transition: 0.5s;
+}
+
+.btn-next-main:hover::after { left: 100%; }
+
+.btn-danger-soft {
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
+    border-radius: 14px;
+    font-weight: 700;
+    padding: 10px;
+    margin-top: 12px;
+}
+
+/* Live Status HUD */
+.status-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.status-box .num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary-green);
+    display: block;
+}
+
+/* Performance Pulse */
+.pulse-dot {
+    height: 10px; width: 10px;
+    background: var(--neon-green);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 10px var(--neon-green);
+    animation: neonPulse 1.5s infinite;
+}
+
+@keyframes neonPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Table Design */
+.custom-table thead th {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.custom-table tbody tr {
+    transition: transform 0.2s;
+}
+
+.custom-table tbody tr:hover {
+    transform: scale(1.01);
+    background: rgba(111, 191, 74, 0.05);
+}
+
+/* Activity Feed (Cyber Terminal) */
+.log-container {
+    background: #0f172a;
+    color: #34d399;
+    border-radius: 16px;
+    padding: 1.25rem;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #1e293b;
+}
+
+.log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #1e293b;
+    opacity: 0.9;
+}
+
+.log-time { color: #64748b; margin-right: 8px; }
+
+/* Scrollbar Fix */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
