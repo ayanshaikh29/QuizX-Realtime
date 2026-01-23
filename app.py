@@ -14,9 +14,22 @@ from sqlalchemy import func
 
 # ================== APP CONFIG ==================
 app = Flask(__name__)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False  # True when HTTPS
+
 app.secret_key = "quizx_secret_key_change_later"  # CHANGE THIS IN PRODUCTION!
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql+psycopg2://postgres:12345678@localhost:5432/quizx"
+)
+
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_recycle": 1800,
+    "pool_pre_ping": True
+}
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -215,31 +228,63 @@ class Question(db.Model):
     time_limit = db.Column(db.Integer, default=30)  # Only used if quiz.has_timer=True
 
 
+# class PartialAnswer(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     quiz_id = db.Column(db.Integer, nullable=False, index=True)
+#     question_id = db.Column(db.Integer, nullable=False, index=True)
+#     student = db.Column(db.String(100), nullable=False, index=True)
+#     is_correct = db.Column(db.Boolean, nullable=False)
+#     time_taken = db.Column(db.Integer, nullable=False)  # Always track time
+#     points = db.Column(db.Integer, default=0)
+#     submitted_at = db.Column(db.DateTime, default=now_utc)
 class PartialAnswer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     quiz_id = db.Column(db.Integer, nullable=False, index=True)
     question_id = db.Column(db.Integer, nullable=False, index=True)
     student = db.Column(db.String(100), nullable=False, index=True)
+
     is_correct = db.Column(db.Boolean, nullable=False)
-    time_taken = db.Column(db.Integer, nullable=False)  # Always track time
+    time_taken = db.Column(db.Integer, nullable=False, default=0)
     points = db.Column(db.Integer, default=0)
     submitted_at = db.Column(db.DateTime, default=now_utc)
 
+    __table_args__ = (
+        db.UniqueConstraint(
+            "quiz_id", "question_id", "student",
+            name="unique_answer_per_question"
+        ),
+    )
 
+# class Result(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     quiz_id = db.Column(db.Integer, nullable=False)
+#     student = db.Column(db.String(100), nullable=False)
+#     score = db.Column(db.Integer, nullable=False)
+#     total = db.Column(db.Integer, nullable=False)
+#     time_taken = db.Column(db.Integer, nullable=False)
+#     total_points = db.Column(db.Integer, default=0)
+#     submitted_at = db.Column(db.DateTime, default=now_utc)
 class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    quiz_id = db.Column(db.Integer, nullable=False)
-    student = db.Column(db.String(100), nullable=False)
+
+    quiz_id = db.Column(db.Integer, nullable=False, index=True)
+    student = db.Column(db.String(100), nullable=False, index=True)
+
     score = db.Column(db.Integer, nullable=False)
     total = db.Column(db.Integer, nullable=False)
     time_taken = db.Column(db.Integer, nullable=False)
     total_points = db.Column(db.Integer, default=0)
+
     submitted_at = db.Column(db.DateTime, default=now_utc)
 
-
 # ================== INIT DB ==================
+# with app.app_context():
+#     db.create_all()
 with app.app_context():
+    print(">>> Creating database tables...")
     db.create_all()
+    print(">>> Tables created")
 
 
 # ================== AUTH ==================
