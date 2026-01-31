@@ -228,15 +228,6 @@ class Question(db.Model):
     time_limit = db.Column(db.Integer, default=30)  # Only used if quiz.has_timer=True
 
 
-# class PartialAnswer(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     quiz_id = db.Column(db.Integer, nullable=False, index=True)
-#     question_id = db.Column(db.Integer, nullable=False, index=True)
-#     student = db.Column(db.String(100), nullable=False, index=True)
-#     is_correct = db.Column(db.Boolean, nullable=False)
-#     time_taken = db.Column(db.Integer, nullable=False)  # Always track time
-#     points = db.Column(db.Integer, default=0)
-#     submitted_at = db.Column(db.DateTime, default=now_utc)
 class PartialAnswer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -256,31 +247,32 @@ class PartialAnswer(db.Model):
         ),
     )
 
+
 # class Result(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
-#     quiz_id = db.Column(db.Integer, nullable=False)
-#     student = db.Column(db.String(100), nullable=False)
+
+#     quiz_id = db.Column(db.Integer, nullable=False, index=True)
+#     student = db.Column(db.String(100), nullable=False, index=True)
+
 #     score = db.Column(db.Integer, nullable=False)
 #     total = db.Column(db.Integer, nullable=False)
 #     time_taken = db.Column(db.Integer, nullable=False)
 #     total_points = db.Column(db.Integer, default=0)
+
 #     submitted_at = db.Column(db.DateTime, default=now_utc)
+
 class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer)
+    student = db.Column(db.String(100))
+    score = db.Column(db.Integer)
+    total = db.Column(db.Integer)
+    time_taken = db.Column(db.Integer)
+    total_points = db.Column(db.Integer)
+    submitted_at = db.Column(db.DateTime)
 
-    quiz_id = db.Column(db.Integer, nullable=False, index=True)
-    student = db.Column(db.String(100), nullable=False, index=True)
-
-    score = db.Column(db.Integer, nullable=False)
-    total = db.Column(db.Integer, nullable=False)
-    time_taken = db.Column(db.Integer, nullable=False)
-    total_points = db.Column(db.Integer, default=0)
-
-    submitted_at = db.Column(db.DateTime, default=now_utc)
 
 # ================== INIT DB ==================
-# with app.app_context():
-#     db.create_all()
 with app.app_context():
     print(">>> Creating database tables...")
     db.create_all()
@@ -1093,6 +1085,22 @@ def handle_next_question(data):
         quiz_state[quiz_id]['current_qindex'] += 1
         # Tell all students in the room to refresh/load the new question
         emit('new_question', {'qindex': quiz_state[quiz_id]['current_qindex']}, room=str(quiz_id))
+
+# ================== STUDENT HISTORY ==================
+@app.route("/student/history")
+@require_student
+def student_history():
+    username = session.get("username")
+
+    history = (
+        Result.query
+        .filter_by(student=username)
+        .order_by(Result.submitted_at.desc())
+        .all()
+    )
+
+    return render_template("student_history.html", history=history)
+
 
 
 # ================== RUN ==================

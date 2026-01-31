@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -93,6 +93,150 @@
                         </a>
                     </div>
                 </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Student Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap text-success"></i>
+                <span>QuizX Student</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/student/dashboard" class="nav-link active">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+
+            <a href="/student/quizzes" class="nav-link">
+                <i class="fas fa-play-circle"></i> Live Quizzes
+            </a>
+
+            <!-- ✅ HISTORY LINK -->
+            <a href="/student/history" class="nav-link">
+                <i class="fas fa-history"></i> My History
+            </a>
+
+            <a href="{{ url_for('profile') }}" class="nav-link">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <header class="content-header">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Welcome back, {{ session.username }}!</h4>
+                <small class="text-muted">Ready to test your knowledge today?</small>
+            </div>
+            <div class="header-user">
+                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff"
+                     class="avatar">
+            </div>
+        </header>
+
+        <div class="container-fluid p-4">
+
+            <!-- JOIN QUIZ -->
+            <div class="join-quiz-box animate-slide-up">
+                <div class="row align-items-center">
+                    <div class="col-lg-5">
+                        <h5 class="fw-bold mb-1">
+                            <i class="fas fa-key me-2 text-success"></i>Join a Quiz
+                        </h5>
+                        <p class="text-muted small mb-0">
+                            Enter the 6-digit code provided by your instructor.
+                        </p>
+                    </div>
+                    <div class="col-lg-7">
+                        <form method="POST" action="/join" class="row g-2">
+                            <div class="col-md-8">
+                                <input name="code"
+                                       class="form-control custom-input"
+                                       placeholder="Example: AB12CD"
+                                       required maxlength="6">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success-custom w-100">
+                                    <i class="fas fa-rocket me-2"></i>Join Now
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARDS -->
+            <div class="row g-4 mt-2">
+
+                <div class="col-md-6 animate-slide-up">
+                    <div class="student-card-pro">
+                        <div class="card-icon bg-light-success">
+                            <i class="fas fa-broadcast-tower text-success"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Browse Quizzes</h5>
+                        <p class="text-muted small">
+                            See all quizzes currently active and joinable.
+                        </p>
+                        <a href="/student/quizzes"
+                           class="btn btn-outline-success border-2 fw-bold w-100 rounded-pill mt-2">
+                            View Live Quizzes
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-md-6 animate-slide-up">
+                    <div class="student-card-pro">
+                        <div class="card-icon bg-light-primary">
+                            <i class="fas fa-medal text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">My Performance</h5>
+                        <p class="text-muted small">
+                            Check your scores, rank, and detailed reports.
+                        </p>
+
+                        <!-- ✅ VIEW HISTORY BUTTON -->
+                        <a href="/student/history"
+                           class="btn btn-outline-primary border-2 fw-bold w-100 rounded-pill mt-2">
+                            View History
+                        </a>
+                    </div>
+                </div>
+
             </div>
 
         </div>
