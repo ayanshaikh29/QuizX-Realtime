@@ -637,7 +637,13 @@ def student_quizzes():
 
 @app.route("/join", methods=["GET", "POST"])
 def join_by_code():
+
+    if session.get("role") == "admin":
+        flash("Admins cannot join quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
+
     ensure_guest_student()
+
 
     if request.method == "POST":
         code = request.form.get("code", "").strip().upper()
@@ -652,7 +658,14 @@ def join_by_code():
 
 @app.route("/join/<code>")
 def join_by_link(code):
+
+    # 🔒 ADMIN BLOCK
+    if session.get("role") == "admin":
+        flash("Admins are not allowed to attempt quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
+
     ensure_guest_student()
+
     quiz = Quiz.query.filter_by(
         join_code=code.upper(), is_active=True, is_published=True
     ).first()
@@ -733,6 +746,11 @@ def admin_analytics(quiz_id):
 
 @app.route("/student/quiz/<int:quiz_id>", methods=["GET", "POST"])
 def attempt_quiz(quiz_id):
+
+    if session.get("role") == "admin":
+        flash("Admins cannot solve quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
+
     ensure_guest_student()
     quiz = Quiz.query.get_or_404(quiz_id)
 
@@ -1264,4 +1282,4 @@ def student_history():
 # ================== RUN ==================
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)
-    app.run()
+    
