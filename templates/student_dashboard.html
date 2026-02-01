@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,10 +6,8 @@
     <title>QuizX | Student Dashboard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
 </head>
 <body>
@@ -18,14 +16,14 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i class="fas fa-graduation-cap text-success"></i>
+                <i class="fas fa-graduation-cap"></i>
                 <span>QuizX Student</span>
             </div>
         </div>
         <nav class="sidebar-nav">
             <a href="/student/dashboard" class="nav-link active"><i class="fas fa-th-large"></i> Dashboard</a>
             <a href="/student/quizzes" class="nav-link"><i class="fas fa-play-circle"></i> Live Quizzes</a>
-            <a href="#" class="nav-link"><i class="fas fa-history"></i> My History</a>
+            <a href="/student/history" class="nav-link"><i class="fas fa-history"></i> My History</a>
             <a href="{{ url_for('profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
         </nav>
         <div class="sidebar-footer">
@@ -36,30 +34,41 @@
     <main class="main-content">
         <header class="content-header">
             <div class="header-title">
-                <h4 class="fw-bold mb-0">Welcome back, {{ session.username }}!</h4>
-                <small class="text-muted">Ready to test your knowledge today?</small>
+                <h4 class="fw-bold mb-0">Student Workspace</h4>
             </div>
-            <div class="header-user">
+            <div class="header-user d-flex align-items-center gap-3">
+                <div class="text-end d-none d-sm-block">
+                    <p class="fw-bold mb-0 small">{{ session.username }}</p>
+                    <p class="text-success mb-0 tiny">Online</p>
+                </div>
                 <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff" class="avatar">
             </div>
         </header>
 
         <div class="container-fluid p-4">
             
-            <div class="join-quiz-box animate-slide-up">
+            <div class="welcome-hero animate-slide-up">
+                <div class="hero-content">
+                    <h1>Hello, {{ session.username }}! 👋</h1>
+                    <p>It's a great day to learn something new.</p>
+                </div>
+                
+            </div>
+
+            <div class="join-quiz-box animate-slide-up" style="animation-delay: 0.1s;">
                 <div class="row align-items-center">
                     <div class="col-lg-5">
-                        <h5 class="fw-bold mb-1"><i class="fas fa-key me-2 text-success"></i>Join a Quiz</h5>
-                        <p class="text-muted small mb-0">Enter the 6-digit code provided by your instructor.</p>
+                        <h5 class="fw-extrabold mb-1"><i class="fas fa-bolt me-2 text-warning"></i> Quick Join</h5>
+                        <p class="text-muted small">Have a quiz code? Enter it below to jump in instantly.</p>
                     </div>
                     <div class="col-lg-7">
                         <form method="POST" action="/join" class="row g-2">
                             <div class="col-md-8">
-                                <input name="code" class="form-control custom-input" placeholder="Example: AB12CD" required maxlength="6">
+                                <input name="code" class="form-control custom-input" placeholder="Enter 6-digit code..." required maxlength="6">
                             </div>
                             <div class="col-md-4">
-                                <button class="btn btn-success-custom w-100">
-                                    <i class="fas fa-rocket me-2"></i>Join Now
+                                <button type="submit" class="btn-join-hero w-100">
+                                    Join Session <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
                         </form>
@@ -68,175 +77,31 @@
             </div>
 
             <div class="row g-4 mt-2">
-                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.1s;">
-                    <div class="student-card-pro">
-                        <div class="card-icon bg-light-success">
-                            <i class="fas fa-broadcast-tower text-success"></i>
-                        </div>
-                        <h5 class="fw-bold mt-3">Browse Quizzes</h5>
-                        <p class="text-muted small">See all quizzes currently active and joinable without a code.</p>
-                        <a href="/student/quizzes" class="btn btn-outline-success border-2 fw-bold w-100 rounded-pill mt-2">
-                            View Live Quizzes
-                        </a>
-                    </div>
-                </div>
-
                 <div class="col-md-6 animate-slide-up" style="animation-delay: 0.2s;">
-                    <div class="student-card-pro">
-                        <div class="card-icon bg-light-primary">
-                            <i class="fas fa-medal text-primary"></i>
+                    <div class="student-card-pro browse-card">
+                        <div class="card-glass-icon">
+                            <i class="fas fa-rocket"></i>
                         </div>
-                        <h5 class="fw-bold mt-3">My Performance</h5>
-                        <p class="text-muted small">Check your previous scores, rank, and detailed quiz reports.</p>
-                        <a href="#" class="btn btn-outline-primary border-2 fw-bold w-100 rounded-pill mt-2">
-                            View History
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> -->
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | Student Dashboard</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
-</head>
-<body>
-
-<div class="dashboard-wrapper">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-graduation-cap text-success"></i>
-                <span>QuizX Student</span>
-            </div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="/student/dashboard" class="nav-link active">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-
-            <a href="/student/quizzes" class="nav-link">
-                <i class="fas fa-play-circle"></i> Live Quizzes
-            </a>
-
-            <!-- ✅ HISTORY LINK -->
-            <a href="/student/history" class="nav-link">
-                <i class="fas fa-history"></i> My History
-            </a>
-
-            <a href="{{ url_for('profile') }}" class="nav-link">
-                <i class="fas fa-user-circle"></i> Profile
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="{{ url_for('logout') }}" class="logout-link">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <main class="main-content">
-        <header class="content-header">
-            <div class="header-title">
-                <h4 class="fw-bold mb-0">Welcome back, {{ session.username }}!</h4>
-                <small class="text-muted">Ready to test your knowledge today?</small>
-            </div>
-            <div class="header-user">
-                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff"
-                     class="avatar">
-            </div>
-        </header>
-
-        <div class="container-fluid p-4">
-
-            <!-- JOIN QUIZ -->
-            <div class="join-quiz-box animate-slide-up">
-                <div class="row align-items-center">
-                    <div class="col-lg-5">
-                        <h5 class="fw-bold mb-1">
-                            <i class="fas fa-key me-2 text-success"></i>Join a Quiz
-                        </h5>
-                        <p class="text-muted small mb-0">
-                            Enter the 6-digit code provided by your instructor.
-                        </p>
-                    </div>
-                    <div class="col-lg-7">
-                        <form method="POST" action="/join" class="row g-2">
-                            <div class="col-md-8">
-                                <input name="code"
-                                       class="form-control custom-input"
-                                       placeholder="Example: AB12CD"
-                                       required maxlength="6">
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-success-custom w-100">
-                                    <i class="fas fa-rocket me-2"></i>Join Now
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CARDS -->
-            <div class="row g-4 mt-2">
-
-                <div class="col-md-6 animate-slide-up">
-                    <div class="student-card-pro">
-                        <div class="card-icon bg-light-success">
-                            <i class="fas fa-broadcast-tower text-success"></i>
-                        </div>
-                        <h5 class="fw-bold mt-3">Browse Quizzes</h5>
-                        <p class="text-muted small">
-                            See all quizzes currently active and joinable.
-                        </p>
-                        <a href="/student/quizzes"
-                           class="btn btn-outline-success border-2 fw-bold w-100 rounded-pill mt-2">
-                            View Live Quizzes
+                        <h4 class="fw-extrabold mt-3">Live Quizzes</h4>
+                        <p class="text-muted small mb-4">Jump into active competition and prove your skills.</p>
+                        <a href="/student/quizzes" class="btn btn-action-pill btn-green-glow">
+                            Go to Quizzes <i class="fas fa-chevron-right ms-2"></i>
                         </a>
                     </div>
                 </div>
 
-                <div class="col-md-6 animate-slide-up">
-                    <div class="student-card-pro">
-                        <div class="card-icon bg-light-primary">
-                            <i class="fas fa-medal text-primary"></i>
+                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="student-card-pro history-card-ui">
+                        <div class="card-glass-icon icon-blue">
+                            <i class="fas fa-chart-line"></i>
                         </div>
-                        <h5 class="fw-bold mt-3">My Performance</h5>
-                        <p class="text-muted small">
-                            Check your scores, rank, and detailed reports.
-                        </p>
-
-                        <!-- ✅ VIEW HISTORY BUTTON -->
-                        <a href="/student/history"
-                           class="btn btn-outline-primary border-2 fw-bold w-100 rounded-pill mt-2">
-                            View History
+                        <h4 class="fw-extrabold mt-3">Performance</h4>
+                        <p class="text-muted small mb-4">View your progress, mistakes, and certificates.</p>
+                        <a href="/student/history" class="btn btn-action-pill btn-blue-glow">
+                            View Reports <i class="fas fa-chevron-right ms-2"></i>
                         </a>
                     </div>
                 </div>
-
             </div>
 
         </div>

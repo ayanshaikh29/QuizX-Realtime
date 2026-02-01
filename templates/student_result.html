@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Final Leaderboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_result.css') }}">
+</head>
+<body>
+
+<header class="top-nav">
+    <a href="/" class="logo">Quiz<span>X</span></a>
+    <a href="/student/quizzes" class="btn-home">
+        <i class="fas fa-home"></i> Home
+    </a>
+</header>
+
+<div class="container">
+    <div id="podium-area" class="podium"></div>
+    <div id="leaderboard-list" class="list-container"></div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+(function () {
+    var quizId = {{ quiz_id }};
+    var currentUserName = "{{ session.username or 'Guest' }}";
+
+    var socket = io();
+    socket.emit('join_quiz', { quiz_id: quizId });
+
+    socket.on('leaderboard_update', function (data) {
+        renderLeaderboard(data);
+    });
+
+    fetch('/api/leaderboard/' + quizId)
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+            renderLeaderboard(json.leaderboard);
+        })
+        .catch(function (err) {
+            renderLeaderboard([]);
+        });
+
+    function renderLeaderboard(data) {
+        var podiumArea = document.getElementById('podium-area');
+        var listArea   = document.getElementById('leaderboard-list');
+        podiumArea.innerHTML = '';
+        listArea.innerHTML   = '';
+
+        if (!data || data.length === 0) {
+            listArea.innerHTML = '<div class="empty-state"><i class="fas fa-ghost fa-3x"></i><p>Waiting for results...</p></div>';
+            return;
+        }
+
+        // Sorting Logic: By Correct answers first, then points
+        data.sort(function (a, b) {
+            if (b.correct !== a.correct) return b.correct - a.correct;
+            return b.points - a.points;
+        });
+
+        var top3   = data.slice(0, 3);
+        var others = data.slice(3);
+
+        // Render Top 3 Podium
+        top3.forEach(function (player, index) {
+            var rank = index + 1;
+            var initials = player.student.charAt(0).toUpperCase();
+            
+            podiumArea.innerHTML += `
+                <div class="podium-item rank-${rank}">
+                    <div class="avatar-wrap">
+                        ${rank === 1 ? '<i class="fas fa-crown winner-crown"></i>' : ''}
+                        <div class="avatar-circle">${initials}</div>
+                        <div class="rank-badge">${rank}</div>
+                    </div>
+                    <div class="p-name">${player.student === currentUserName ? 'You' : player.student}</div>
+                    <div class="p-score"><i class="fas fa-bolt"></i> ${player.points} pts</div>
+                </div>`;
+        });
+
+        // Render Others List
+        others.forEach(function (player, index) {
+            var rank = index + 4;
+            var isMe = (player.student === currentUserName);
+            listArea.innerHTML += `
+                <div class="list-row ${isMe ? 'is-me' : ''}">
+                    <div class="r-rank">${rank}</div>
+                    <div class="r-avatar">${player.student.charAt(0).toUpperCase()}</div>
+                    <div class="r-name">${player.student === currentUserName ? 'You' : player.student}</div>
+                    <div class="r-score">${player.points} pts</div>
+                </div>`;
+        });
+    }
+})();
+</script>
+</body>
+</html>

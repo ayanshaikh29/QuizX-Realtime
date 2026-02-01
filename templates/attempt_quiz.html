@@ -3,227 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | {{ quiz.title }} - Attempt</title>
+    <title>QuizX | {{ quiz.title }}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/attempt_quiz.css') }}">
 </head>
 <body>
 
-<nav class="quiz-navbar">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="nav-brand-area">
-            <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo">
-            <span class="badge bg-success-soft">Live</span>
-        </div>
-        <div class="quiz-meta-info d-none d-md-block">
-            <strong>{{ quiz.title }}</strong>
-        </div>
-        <div class="user-pill">
-            <i class="fas fa-user-circle"></i> {{ session.username }}
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-
-    <!-- CHEAT ALERT -->
-    <div class="cheat-alert animate-shake" id="cheatAlert" style="display:none;">
-        <i class="fas fa-shield-alt me-2"></i>
-        Violation <span id="warnCount">0</span>/3
-    </div>
-
-    <!-- MAIN CARD -->
-    <div class="quiz-main-card animate-slide-up" id="quizCard">
-
-        <!-- HEADER -->
-        <div class="quiz-header-status">
-            <div class="progress-container">
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Question {{ current_index + 1 }} of {{ total_questions }}</span>
-                    <span>{{ ((current_index + 1) / total_questions * 100)|round|int }}%</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-bar-fill"
-                         style="width: {{ ((current_index + 1) / total_questions * 100) }}%">
-                    </div>
-                </div>
-            </div>
-
-            <!-- TIMER -->
-            <div class="timer-widget">
-                <div class="timer-circle" id="timerCircle">
-                    <div class="timer-content">
-                        <span id="timeText">{{ current_question.time_limit }}</span>
-                        <small>SEC</small>
-                    </div>
-                </div>
+<!-- ========== QUIZ NAV ========== -->
+<div class="container d-flex justify-content-center sticky-top" style="z-index: 100;" id="quizNav">
+    <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
+        <div class="brand-text">Quiz<span>X</span></div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="fw-bold text-success" id="timerLabel">{{ current_question.time_limit }}s</div>
+            <div class="bg-dark text-white rounded-pill px-3 py-1 fw-bold fs-7">
+                {{ current_index + 1 }} / {{ total_questions }}
             </div>
         </div>
-
-        <hr>
-
-        <!-- QUESTION -->
-        <div class="question-body">
-            <h3>{{ current_question.question }}</h3>
-
-            <form id="quizForm">
-                <input type="hidden" name="question_id" value="{{ current_question.id }}">
-                <input type="hidden" name="qindex" value="{{ current_index }}">
-
-                <div class="options-container mt-4">
-                    {% for opt in [current_question.option1, current_question.option2,
-                                   current_question.option3, current_question.option4] %}
-                    <label class="option-item">
-                        <input type="radio" name="selected_answer" value="{{ opt }}">
-                        <div class="option-design">
-                            <span class="option-marker"></span>
-                            <span>{{ opt }}</span>
-                        </div>
-                    </label>
-                    {% endfor %}
-                </div>
-
-                <div class="warning-msg" id="warningMsg" style="display:none;">
-                    <i class="fas fa-exclamation-circle"></i> Please select an option
-                </div>
-
-                <div class="form-actions mt-4">
-                    <button type="button" class="btn btn-submit-quiz" id="submitBtn">
-                        Submit Answer <i class="fas fa-chevron-right ms-2"></i>
-                    </button>
-                </div>
-
-                <div id="feedback" class="feedback-toast" style="display:none;"></div>
-            </form>
-        </div>
-    </div>
-
-    <!-- WAIT SCREEN -->
-    <div id="waitingBox" class="text-center mt-5" style="display:none;">
-        <h3>⏳ Waiting for admin to start next question…</h3>
-        <p class="text-muted">Please stay on this screen</p>
-    </div>
-
+    </nav>
 </div>
 
+<!-- ========== QUESTION PAGE ========== -->
+<div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
+    <div class="question-card mt-4">
+        <div class="timer-bar"><div id="progressBar" class="timer-progress"></div></div>
+
+        <div class="text-center mt-3">
+            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">LIVE QUIZ</span>
+        </div>
+        <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
+
+        <form id="quizForm">
+            <div class="options-grid mt-4">
+                {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
+                <label class="option-label animate__animated animate__zoomIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                    <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                    <div class="option-content" data-option="{{ opt }}">
+                        <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                        <div class="option-text">{{ opt }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="text-center mt-5">
+                <button type="button" id="submitBtn" class="btn-submit">
+                    SUBMIT ANSWER <i class="fas fa-lock ms-2"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========== LEADERBOARD OVERLAY (NEW UI) ========== -->
+<div id="leaderboardOverlay">
+
+    <!-- Top bar -->
+    <div class="lb-overlay-header">
+        <div class="logo">Quiz<span>X</span></div>
+        <div class="live-tag"><span class="live-dot"></span> LIVE LEADERBOARD</div>
+        <div style="width:120px;"></div><!-- spacer for centering -->
+    </div>
+
+    <div class="lb-inner">
+
+        <!-- INTERMEDIATE: waiting + full list -->
+        <div id="waitingSection" class="waiting-section d-none">
+            <div class="waiting-pulse"><div class="waiting-pulse-inner"></div></div>
+            <h4>Waiting for Host...</h4>
+            <p>The next question will start shortly.</p>
+        </div>
+
+        <!-- FINAL: podium (top 3 avatars) -->
+        <div id="podiumArea" class="podium d-none"></div>
+
+        <!-- FINAL: quiz complete banner -->
+        <div id="completeBanner" class="text-center d-none">
+            <div class="complete-banner">
+                <h4><i class="fas fa-trophy me-2"></i> Quiz Complete!</h4>
+            </div>
+        </div>
+
+        <!-- Ranked list (all rounds) -->
+        <div id="leaderboardList" class="lb-list-wrap mt-4"></div>
+
+    </div>
+</div>
+
+<!-- ========== SCRIPTS ========== -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    let timeLeft = {{ current_question.time_limit }};
-    let totalTime = {{ current_question.time_limit }};
-    let timer;
-    let warnings = 0;
-    let quizId = {{ quiz_id }};
-    let isSubmitting = false;
+    const socket   = io();
+    const quizId   = {{ quiz.id }};
+    const user     = "{{ session.username }}";
+    const curIdx   = {{ current_index }};
+    const totalQs  = {{ total_questions }};
+    const correctAnswer = "{{ current_question.correct_answer }}";
 
-    const timeText = document.getElementById("timeText");
-    const timerCircle = document.getElementById("timerCircle");
-    const cheatAlert = document.getElementById("cheatAlert");
-    const warnCount = document.getElementById("warnCount");
-    const warningMsg = document.getElementById("warningMsg");
-    const submitBtn = document.getElementById("submitBtn");
-    const quizForm = document.getElementById("quizForm");
+    let timeLimit  = {{ current_question.time_limit }};
+    let timeLeft   = timeLimit;
+    let submitted  = false;
+    let start      = Date.now();
+    let pendingLeaderboardData = null;
 
-    /* SOCKET */
-    const socket = io();
     socket.emit("join_quiz", { quiz_id: quizId });
 
-    socket.on("load_next_question", data => {
-        window.location.href = `/student/quiz/${quizId}?qindex=${data.qindex}`;
-    });
-
-    socket.on("quiz_finished", () => {
-        window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-    });
-
-    /* TIMER */
-    timer = setInterval(() => {
+    // ─────────────────────────────────────────────
+    // TIMER
+    // ─────────────────────────────────────────────
+    const timerTick = setInterval(() => {
         timeLeft--;
-        updateTimer();
+        const label = document.getElementById("timerLabel");
+        const bar   = document.getElementById("progressBar");
+        if (label) label.innerText = Math.max(0, timeLeft) + "s";
+        if (bar)   bar.style.width = ((timeLeft / timeLimit) * 100) + "%";
         if (timeLeft <= 0) {
-            clearInterval(timer);
-            forceSubmit();
+            clearInterval(timerTick);
+            if (!submitted) handleSubmission();
         }
     }, 1000);
 
-    function updateTimer() {
-        timeText.innerText = Math.max(0, timeLeft);
-        const deg = (timeLeft / totalTime) * 360;
-        let color = '#22c55e';
-        if (timeLeft <= 5) color = '#ef4444';
-        else if (timeLeft <= 10) color = '#f59e0b';
-
-        timerCircle.style.background =
-            `conic-gradient(${color} ${deg}deg, #e5e7eb 0deg)`;
-    }
-
-    submitBtn.addEventListener("click", handleSubmit);
-
-    function handleSubmit() {
-        if (isSubmitting) return;
-
-        const selected = document.querySelector("input[name='selected_answer']:checked");
-        if (!selected) {
-            warningMsg.style.display = "block";
+    // ─────────────────────────────────────────────
+    // SUBMIT CLICK
+    // ─────────────────────────────────────────────
+    document.getElementById("submitBtn").onclick = () => {
+        const sel = document.querySelector("input[name='answer']:checked");
+        if (!sel) {
+            const btn = document.getElementById("submitBtn");
+            btn.classList.add("animate__animated", "animate__shakeX");
+            btn.style.background = "#ef4444";
+            setTimeout(() => {
+                btn.classList.remove("animate__animated", "animate__shakeX");
+                btn.style.background = "";
+            }, 500);
             return;
         }
+        handleSubmission(sel.value);
+    };
 
-        isSubmitting = true;
-        clearInterval(timer);
+    // ─────────────────────────────────────────────
+    // SUBMIT TO SERVER
+    // ─────────────────────────────────────────────
+    function handleSubmission(val = "No Answer") {
+        if (submitted) return;
+        submitted = true;
+        clearInterval(timerTick);
 
-        const formData = new FormData(quizForm);
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Processing...`;
+        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+
+        const timeTaken = (Date.now() - start) / 1000;
 
         fetch(`/student/quiz/${quizId}`, {
             method: "POST",
-            body: formData
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                question_id: "{{ current_question.id }}",
+                qindex: curIdx,
+                selected_answer: val,
+                time_taken: timeTaken
+            })
         })
-        .then(res => res.json())
+        .then(r => r.json())
         .then(data => {
-            const feedback = document.getElementById("feedback");
-            feedback.style.display = "block";
-            feedback.className = data.is_correct
-                ? "feedback-toast correct"
-                : "feedback-toast incorrect";
-            feedback.innerHTML = data.is_correct ? "Correct!" : "Incorrect";
+            showAnswerFeedback(val, data.is_correct || (val === correctAnswer));
+        })
+        .catch(err => {
+            console.error("Submission error:", err);
+            showAnswerFeedback(val, val === correctAnswer);
+        });
+    }
 
+    // ─────────────────────────────────────────────
+    // ANSWER FEEDBACK BANNER (correct / incorrect)
+    // ─────────────────────────────────────────────
+    function showAnswerFeedback(selectedAnswer, isCorrect) {
+        // Highlight options
+        document.querySelectorAll('.option-content').forEach(opt => {
+            const t = opt.getAttribute('data-option');
+            if (t === correctAnswer)                opt.classList.add('correct');
+            if (t === selectedAnswer && !isCorrect) opt.classList.add('incorrect');
+        });
+
+        // Create banner
+        const banner = document.createElement('div');
+        banner.id = 'answerResultBanner';
+        banner.className = `result-banner ${isCorrect ? 'correct' : 'incorrect'} animate__animated animate__zoomIn`;
+        banner.innerHTML = `
+            <div class="result-icon ${isCorrect ? 'correct' : 'incorrect'}">
+                <i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i>
+            </div>
+            <h3 class="fw-bold mb-2">${isCorrect ? 'Correct!' : 'Incorrect'}</h3>
+            <p class="text-muted mb-0">
+                ${isCorrect ? 'Well done! Great job!' : `Correct answer: <strong>${correctAnswer}</strong>`}
+            </p>`;
+        document.body.appendChild(banner);
+
+        // Dismiss after 1.2s → then show leaderboard if data ready
+        setTimeout(() => {
+            banner.classList.remove('animate__zoomIn');
+            banner.classList.add('animate__zoomOut');
             setTimeout(() => {
-                if (data.is_last) {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-                } else {
-                    document.getElementById("quizCard").style.display = "none";
-                    document.getElementById("waitingBox").style.display = "block";
+                banner.remove();
+                if (pendingLeaderboardData) {
+                    showLeaderboard(pendingLeaderboardData);
+                    pendingLeaderboardData = null;
                 }
-            }, 1200);
-        });
+            }, 300);
+        }, 1200);
     }
 
-    function forceSubmit() {
-        if (isSubmitting) return;
-        isSubmitting = true;
+    // ─────────────────────────────────────────────
+    // SOCKET — leaderboard_update
+    // ─────────────────────────────────────────────
+    socket.on("leaderboard_update", (data) => {
+        console.log("Received leaderboard_update:", data);
 
-        const formData = new FormData(quizForm);
-        fetch(`/student/quiz/${quizId}`, { method: "POST", body: formData })
-        .then(res => res.json())
-        .then(() => {
-            document.getElementById("quizCard").style.display = "none";
-            document.getElementById("waitingBox").style.display = "block";
-        });
-    }
+        // Backend emits a plain array; wrap it for showLeaderboard
+        const wrapped = { leaderboard: Array.isArray(data) ? data : (data.leaderboard || []) };
 
-    /* ANTI-CHEAT */
-    function triggerWarning() {
-        warnings++;
-        warnCount.innerText = warnings;
-        cheatAlert.style.display = "block";
-        if (warnings >= 3) forceSubmit();
-    }
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) triggerWarning();
+        // Queue if answer banner is still visible, else show immediately
+        if (document.getElementById('answerResultBanner')) {
+            pendingLeaderboardData = wrapped;
+        } else {
+            showLeaderboard(wrapped);
+        }
     });
-    window.addEventListener("blur", triggerWarning);
+
+    // ─────────────────────────────────────────────
+    // SHOW LEADERBOARD (new UI)
+    // ─────────────────────────────────────────────
+    function showLeaderboard(data) {
+        const isFinal = (curIdx + 1 >= totalQs);
+
+        // Swap pages
+        document.getElementById("attemptPage").style.display = "none";
+        document.getElementById("quizNav").style.display     = "none";
+        document.getElementById("leaderboardOverlay").style.display = "block";
+
+        // Sort: points desc → correct desc → time asc
+        const sorted = [...data.leaderboard].sort((a, b) => {
+            if (b.points  !== a.points)  return b.points  - a.points;
+            if (b.correct !== a.correct) return b.correct - a.correct;
+            return (a.time || 0) - (b.time || 0);
+        });
+
+        if (isFinal) {
+            document.getElementById("waitingSection").classList.add("d-none");
+            document.getElementById("podiumArea").classList.remove("d-none");
+            document.getElementById("completeBanner").classList.remove("d-none");
+
+            renderPodium(sorted);
+            renderList(sorted, true);   // #4 onwards (top 3 on podium)
+
+            setTimeout(() => fireConfetti(), 600);
+        } else {
+            document.getElementById("waitingSection").classList.remove("d-none");
+            document.getElementById("podiumArea").classList.add("d-none");
+            document.getElementById("completeBanner").classList.add("d-none");
+
+            renderList(sorted, false);  // full list #1 onwards
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // RENDER PODIUM — avatar circles for top 3
+    // ─────────────────────────────────────────────
+    function renderPodium(lb) {
+        const container = document.getElementById("podiumArea");
+        container.innerHTML = "";
+        if (lb.length === 0) return;
+
+        // Visual order: 2nd, 1st, 3rd  (pyramid layout via CSS order)
+        [1, 0, 2].forEach((idx) => {
+            if (!lb[idx]) {
+                container.innerHTML += '<div style="width:160px;"></div>';
+                return;
+            }
+            const p      = lb[idx];
+            const rank   = idx + 1;
+            const isMe   = isCurrentUser(p.student);
+            const letter = p.student.charAt(0).toUpperCase();
+
+            container.innerHTML += `
+                <div class="podium-item rank-${rank}">
+                    <div class="avatar-wrap">
+                        ${rank === 1 ? '<i class="fas fa-crown winner-crown"></i>' : ''}
+                        <div class="avatar-circle">${letter}</div>
+                        <div class="rank-badge">${rank}</div>
+                    </div>
+                    <div class="p-name">${isMe ? 'You' : p.student}</div>
+                    <div class="p-score">${p.points} pts</div>
+                </div>`;
+        });
+    }
+
+    // ─────────────────────────────────────────────
+    // RENDER LIST — ranked rows below podium / full list
+    // ─────────────────────────────────────────────
+    function renderList(lb, isFinal) {
+        const container = document.getElementById("leaderboardList");
+        container.innerHTML = "";
+
+        if (lb.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No participants yet...</p>
+                </div>`;
+            return;
+        }
+
+        const startIdx = isFinal ? 3 : 0;   // final skips top 3 (on podium)
+        const slice    = lb.slice(startIdx);
+
+        if (slice.length === 0) return;      // ≤3 players, podium covers all
+
+        slice.forEach((p, i) => {
+            const rank   = startIdx + i + 1;
+            const isMe   = isCurrentUser(p.student);
+            const letter = p.student.charAt(0).toUpperCase();
+
+            container.innerHTML += `
+                <div class="list-row ${isMe ? 'is-me' : ''}">
+                    <div class="r-rank">${rank}</div>
+                    <div class="r-avatar">${letter}</div>
+                    <div class="r-name">${isMe ? 'You' : p.student}</div>
+                    <div class="r-score">${p.points} pts</div>
+                </div>`;
+        });
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPER: check if a name belongs to current user
+    // ─────────────────────────────────────────────
+    function isCurrentUser(name) {
+        if (name === user) return true;
+        if (name.includes("Guest") && user && user.includes("Guest")) return true;
+        return false;
+    }
+
+    // ─────────────────────────────────────────────
+    // CONFETTI (final round only)
+    // ─────────────────────────────────────────────
+    function fireConfetti() {
+        const end = Date.now() + 3000;
+        (function frame() {
+            confetti({ particleCount: 5, angle: 60,  spread: 55, origin: { x: 0 } });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+    }
+
+    // ─────────────────────────────────────────────
+    // SOCKET — navigation events
+    // ─────────────────────────────────────────────
+    socket.on("load_next_question", (d) => {
+        document.body.classList.add("animate__animated", "animate__fadeOut");
+        setTimeout(() => {
+            window.location.href = `/student/quiz/${quizId}?qindex=${d.qindex}`;
+        }, 500);
+    });
+
+    socket.on("quiz_finished", () => {
+        setTimeout(() => {
+            window.location.href = `/leaderboard/live/${quizId}`;
+        }, 1000);
+    });
+
+    socket.on("quiz_stopped", () => {
+        window.location.href = `/student/quizzes`;
+    });
+
+    socket.on("connect_error", (err) => console.error("Socket error:", err));
+    socket.on("disconnect",    (r)   => console.log("Socket disconnected:", r));
 </script>
+
 </body>
 </html>

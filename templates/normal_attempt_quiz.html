@@ -3,180 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | {{ quiz.title }} - Attempt</title>
+    <title>QuizX | {{ quiz.title }}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normal_attempt_quiz.css') }}">
 </head>
 <body>
 
-<nav class="quiz-navbar">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="nav-brand-area">
-            <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo">
-            <span class="brand-text">QuizX <span class="badge bg-primary-soft">Standard</span></span>
-        </div>
-        <div class="quiz-meta-info d-none d-md-block">
-            <strong>{{ quiz.title }}</strong>
-        </div>
-        <div class="user-pill">
-            <i class="fas fa-user-circle"></i> {{ session.username }}
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-
-    <!-- CHEAT ALERT -->
-    <div class="cheat-alert animate-shake" id="cheatAlert" style="display:none;">
-        <i class="fas fa-shield-alt me-2"></i>
-        Violation <span id="warnCount">0</span>/3
-    </div>
-
-    <!-- QUIZ CARD -->
-    <div class="quiz-main-card animate-slide-up" id="quizCard">
-
-        <!-- HEADER -->
-        <div class="quiz-header-status">
-            <div class="progress-container w-100">
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Question {{ current_index + 1 }} of {{ total_questions }}</span>
-                    <span>{{ ((current_index + 1) / total_questions * 100)|round|int }}%</span>
+    <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;">
+        <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
+            <div class="brand-text">Quiz<span>X</span></div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-muted fw-bold d-none d-md-block">
+                    <i class="fas fa-user-circle me-1"></i> {{ session.username }}
                 </div>
-                <div class="progress-track">
-                    <div class="progress-bar-fill"
-                         style="width: {{ ((current_index + 1) / total_questions * 100) }}%">
-                    </div>
+                <div class="bg-dark text-white rounded-pill px-3 py-1 fw-bold fs-7">
+                    {{ current_index + 1 }} / {{ total_questions }}
                 </div>
             </div>
-        </div>
+        </nav>
+    </div>
 
-        <hr>
+    <div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
+        <div class="question-card mt-4">
+            <div class="d-flex justify-content-between align-items-center mt-2 mb-4">
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">SELF PACED</span>
+                <span class="text-muted small">Points: {{ current_question.points|default(10) }}</span>
+            </div>
 
-        <!-- QUESTION -->
-        <div class="question-body">
-            <h3>{{ current_question.question }}</h3>
-
-            <form id="quizForm" class="mt-4">
-                <input type="hidden" name="question_id" value="{{ current_question.id }}">
-                <input type="hidden" name="qindex" value="{{ current_index }}">
-
-                <div class="options-container">
-                    {% for opt in [current_question.option1, current_question.option2,
-                                   current_question.option3, current_question.option4] %}
-                    <label class="option-item">
-                        <input type="radio" name="selected_answer" value="{{ opt }}">
-                        <div class="option-design">
-                            <span class="option-marker"></span>
-                            <span>{{ opt }}</span>
+            <h1 class="question-title text-center">{{ current_question.question }}</h1>
+            
+            <form id="quizForm">
+                <div class="options-grid mt-4">
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
+                    <label class="option-label animate__animated animate__zoomIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" id="opt-container-{{ loop.index0 }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
                         </div>
                     </label>
                     {% endfor %}
                 </div>
 
-                <div class="warning-msg" id="warningMsg" style="display:none;">
-                    <i class="fas fa-exclamation-circle"></i> Please choose an option
-                </div>
-
-                <div class="form-actions mt-4">
-                    <button type="button" class="btn btn-submit-quiz" id="submitBtn">
-                        Submit Answer <i class="fas fa-chevron-right ms-2"></i>
+                <div class="text-center mt-5">
+                    <button type="button" id="submitBtn" class="btn-submit">
+                        SUBMIT ANSWER <i class="fas fa-paper-plane ms-2"></i>
                     </button>
                 </div>
-
-                <div id="feedback" class="feedback-toast" style="display:none;"></div>
             </form>
         </div>
     </div>
 
-    <!-- WAIT SCREEN -->
-    <div id="waitingBox" class="text-center mt-5" style="display:none;">
-        <h3>⏳ Waiting for admin to start next question…</h3>
-        <p class="text-muted">Please stay on this screen</p>
+    <div id="feedbackOverlay" class="result-banner animate__animated d-none">
+        <div id="feedbackIcon" class="result-icon"></div>
+        <h2 id="feedbackTitle" class="fw-bold"></h2>
+        <p id="feedbackText" class="text-muted"></p>
     </div>
 
-</div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    let warnings = 0;
-    let quizId = {{ quiz_id }};
-    let isSubmitting = false;
+    const quizId = "{{ quiz.id }}";
+    const curIdx = parseInt("{{ current_index }}");
+    const totalQs = parseInt("{{ total_questions }}");
+    let submitted = false;
 
-    const cheatAlert = document.getElementById("cheatAlert");
-    const warnCount = document.getElementById("warnCount");
-    const warningMsg = document.getElementById("warningMsg");
-    const submitBtn = document.getElementById("submitBtn");
-    const quizForm = document.getElementById("quizForm");
-
-    /* SOCKET */
-    const socket = io();
-    socket.emit("join_quiz", { quiz_id: quizId });
-
-    socket.on("load_next_question", data => {
-        window.location.href = `/student/quiz/${quizId}?qindex=${data.qindex}`;
-    });
-
-    socket.on("quiz_finished", () => {
-        window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-    });
-
-    submitBtn.addEventListener("click", handleSubmit);
-
-    function handleSubmit() {
-        if (isSubmitting) return;
-
-        const selected = document.querySelector("input[name='selected_answer']:checked");
-        if (!selected) {
-            warningMsg.style.display = "block";
-            return;
+    document.getElementById("submitBtn").onclick = () => {
+        const selected = document.querySelector("input[name='answer']:checked");
+        
+        if(!selected) {
+            const btn = document.getElementById("submitBtn");
+            btn.classList.add("animate__animated", "animate__shakeX");
+            btn.style.background = "#ef4444";
+            setTimeout(() => {
+                btn.classList.remove("animate__animated", "animate__shakeX");
+                btn.style.background = "";
+            }, 500);
+            return; 
         }
+        
+        handleSubmission(selected.value);
+    };
 
-        isSubmitting = true;
-        submitBtn.disabled = true;
+    function handleSubmission(selectedVal) {
+        if(submitted) return;
+        submitted = true;
 
-        const formData = new FormData(quizForm);
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Checking...`;
+        
+        // Disable all radios
+        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
 
         fetch(`/student/quiz/${quizId}`, {
             method: "POST",
-            body: formData
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                question_id: "{{ current_question.id }}",
+                qindex: curIdx,
+                selected_answer: selectedVal
+            })
         })
-        .then(res => res.json())
+        .then(response => response.json())
         .then(data => {
-            const feedback = document.getElementById("feedback");
-            feedback.style.display = "block";
-            feedback.className = data.is_correct
-                ? "feedback-toast correct"
-                : "feedback-toast incorrect";
-            feedback.innerHTML = data.is_correct ? "Correct!" : "Incorrect";
-
-            setTimeout(() => {
-                if (data.is_last) {
-                    window.location.href = `/leaderboard/live/${quizId}?qindex=done`;
-                } else {
-                    document.getElementById("quizCard").style.display = "none";
-                    document.getElementById("waitingBox").style.display = "block";
-                }
-            }, 1200);
+            showAnswerFeedback(data, selectedVal);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error submitting answer. Please try again.");
+            submitted = false;
+            btn.disabled = false;
+            btn.innerHTML = `SUBMIT ANSWER <i class="fas fa-paper-plane ms-2"></i>`;
         });
     }
 
-    /* ANTI-CHEAT */
-    function triggerWarning() {
-        if (isSubmitting) return;
-        warnings++;
-        warnCount.innerText = warnings;
-        cheatAlert.style.display = "block";
-        if (warnings >= 3) handleSubmit();
-        setTimeout(() => cheatAlert.style.display = "none", 3000);
-    }
+    function showAnswerFeedback(data, selectedVal) {
+        const overlay = document.getElementById("feedbackOverlay");
+        const icon = document.getElementById("feedbackIcon");
+        const title = document.getElementById("feedbackTitle");
+        
+        overlay.classList.remove("d-none", "animate__zoomIn", "animate__fadeOut");
+        overlay.classList.add("animate__zoomIn");
 
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) triggerWarning();
-    });
-    window.addEventListener("blur", triggerWarning);
+        // Highlight options
+        document.querySelectorAll(".option-label").forEach(label => {
+            const radio = label.querySelector("input");
+            const content = label.querySelector(".option-content");
+            
+            if (radio.value === data.correct_answer) {
+                content.classList.add("correct");
+            } else if (radio.value === selectedVal && !data.is_correct) {
+                content.classList.add("incorrect");
+            }
+        });
+
+        if (data.is_correct) {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            overlay.classList.add("correct");
+            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            title.innerText = "CORRECT!";
+        } else {
+            overlay.classList.add("incorrect");
+            icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+            title.innerText = "INCORRECT";
+        }
+
+        // Wait 2 seconds and move to next
+        setTimeout(() => {
+            overlay.classList.replace("animate__zoomIn", "animate__fadeOut");
+            window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
+        }, 1000);
+    }
 </script>
 </body>
 </html>

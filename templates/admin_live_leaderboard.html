@@ -3,103 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | Live Leaderboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>QuizX | {{ quiz.title }}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_leaderboard.css') }}">
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <div class="title">Quiz<span>X</span></div>
-        <div class="live"><span class="dot"></span> LIVE LEADERBOARD</div>
+    <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;">
+        <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
+            <div class="brand-text">Quiz<span>X</span></div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="fw-bold text-success" id="timerLabel">{{ current_question.time_limit }}s</div>
+                <div class="bg-dark text-white rounded-pill px-3 py-1 fw-bold fs-7">
+                    {{ current_index + 1 }} / {{ total_questions }}
+                </div>
+            </div>
+        </nav>
     </div>
 
-    <div id="podium" class="podium"></div>
+    <div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
+        <div class="question-card mt-4">
+            <div class="timer-bar"><div id="progressBar" class="timer-progress"></div></div>
+            
+            <div class="text-center mt-3">
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">LIVE QUIZ</span>
+            </div>
+            <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
+            
+            <form id="quizForm">
+                <div class="options-grid mt-4">
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
+                    <label class="option-label animate__animated animate__zoomIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
 
-    <div id="list" class="list"></div>
-</div>
+                <div class="text-center mt-5">
+                    <button type="button" id="submitBtn" class="btn-submit">
+                        SUBMIT ANSWER <i class="fas fa-lock ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-<div class="gamification">
-    <div class="fast">⚡ Fast Answer : +10 pts</div>
-    <div class="normal">🕒 Normal Answer : +5 pts</div>
-    <div class="late">🐢 Late Answer : +2 pts</div>
-</div>
+    <div id="leaderboardOverlay">
+        <div class="container text-center">
+            <h2 class="display-6 fw-800 text-dark mb-1 mt-4" id="lbTitle">Round Results</h2>
+            <p class="text-muted" id="lbSubtitle">Calculating positions...</p>
+
+            <div id="finalPodium" class="d-none">
+                <div class="podium-wrapper">
+                    <div class="podium-section" id="podiumContainer"></div>
+                </div>
+                <div class="alert alert-success d-inline-block shadow-sm rounded-4 px-5 py-3 mt-3 animate__animated animate__bounceIn">
+                    <h4 class="fw-800 m-0"><i class="fas fa-trophy me-2"></i> Quiz Complete!</h4>
+                </div>
+            </div>
+
+            <div id="waitingArea" class="my-5 d-none">
+                <div class="waiting-pulse"></div>
+                <h4 class="fw-700 text-dark animate__animated animate__pulse animate__infinite">Waiting for Host...</h4>
+                <p class="text-muted small">The next question will start shortly.</p>
+            </div>
+
+            <div class="row justify-content-center mt-4">
+                <div class="col-lg-8 col-md-10" id="listContainer"></div>
+            </div>
+        </div>
+    </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const quizId = {{ quiz_id }};
-    const currentUserName = "{{ session.username or 'Guest' }}";
-    const medalMap = {1:'🥇',2:'🥈',3:'🥉'};
-
-    /* 🔹 FETCH INITIAL DATA */
-    fetch(`/api/leaderboard/${quizId}`)
-    .then(res => res.json())
-    .then(res => {
-        const data = res.leaderboard.map(p => ({
-            name: p.student,
-            score: p.points
-        }));
-        updateLeaderboard(data);
-    });
-
-    /* 🔹 SOCKET LIVE UPDATE */
     const socket = io();
+    const quizId = {{ quiz.id }};
+    const user = "{{ session.username }}";
+    const curIdx = {{ current_index }};
+    const totalQs = {{ total_questions }};
+    const correctAnswer = "{{ current_question.correct_answer }}";
+    
+    let timeLimit = {{ current_question.time_limit }};
+    let timeLeft = timeLimit;
+    let submitted = false;
+    let start = Date.now();
+    let pendingLeaderboardData = null;
+
     socket.emit("join_quiz", { quiz_id: quizId });
 
-    socket.on("leaderboard_update", data => {
-        updateLeaderboard(data);
-    });
+    // --- TIMER LOGIC ---
+    const timerTick = setInterval(() => {
+        timeLeft--;
+        const label = document.getElementById("timerLabel");
+        const bar = document.getElementById("progressBar");
+        
+        if(label) label.innerText = Math.max(0, timeLeft) + "s";
+        if(bar) bar.style.width = ((timeLeft / timeLimit) * 100) + "%";
 
-    /* 🔹 RENDER FUNCTION */
-    function updateLeaderboard(data){
-        const podium = document.getElementById("podium");
-        const list = document.getElementById("list");
-        podium.innerHTML = "";
-        list.innerHTML = "";
-
-        if(!data || data.length === 0){
-            list.innerHTML = "<div class='empty'>Waiting for players…</div>";
-            return;
+        if(timeLeft <= 0) {
+            clearInterval(timerTick);
+            if(!submitted) handleSubmission("No Answer");
         }
+    }, 1000);
 
-        const top3 = data.slice(0,3);
-        const others = data.slice(3);
-        const order = [1,0,2]; // Rank 2, Rank 1, Rank 3 for visual podium
+    // --- SUBMISSION LOGIC ---
+    document.getElementById("submitBtn").onclick = () => {
+        const sel = document.querySelector("input[name='answer']:checked");
+        if(!sel) {
+            const btn = document.getElementById("submitBtn");
+            btn.classList.add("animate__animated", "animate__shakeX");
+            setTimeout(() => btn.classList.remove("animate__shakeX"), 500);
+            return; 
+        }
+        handleSubmission(sel.value);
+    };
 
-        order.forEach(i=>{
-            if(!top3[i]) return;
-            const rank = i===0?2:i===1?1:3;
-            const p = top3[i];
-            const isMe = p.name === currentUserName;
+    function handleSubmission(val) {
+        if(submitted) return;
+        submitted = true;
+        clearInterval(timerTick);
 
-            const div=document.createElement("div");
-            div.className=`podium-item rank-${rank} ${isMe?'is-me':''}`;
-            div.innerHTML=`
-                <div class="avatar">
-                    <span class="medal">${medalMap[rank]}</span>
-                    ${p.name.charAt(0).toUpperCase()}
-                </div>
-                <div class="bar">
-                    <div class="p-name">${p.name}${isMe?' <span class="you">YOU</span>':''}</div>
-                    <div class="p-score">${p.score}</div>
-                </div>`;
-            podium.appendChild(div);
-        });
-
-        others.forEach((p,i)=>{
-            const isMe=p.name===currentUserName;
-            const row=document.createElement("div");
-            row.className=`row ${isMe?'me':''}`;
-            row.innerHTML=`
-                <div class="num">${i+4}</div>
-                <div class="avatar-sm">${p.name.charAt(0).toUpperCase()}</div>
-                <div class="name">${p.name}${isMe?' <span class="you">YOU</span>':''}</div>
-                <div class="score">${p.score}</div>`;
-            list.appendChild(row);
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Processing...`;
+        
+        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+        const timeTaken = (Date.now() - start) / 1000;
+        
+        fetch(`/student/quiz/${quizId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                question_id: "{{ current_question.id }}",
+                qindex: curIdx,
+                selected_answer: val,
+                time_taken: timeTaken
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showAnswerFeedback(val, data.is_correct);
+        })
+        .catch(() => {
+            // Fallback: Check correctness manually if fetch response fails
+            showAnswerFeedback(val, val === correctAnswer);
         });
     }
-</script>
 
+    function showAnswerFeedback(selectedAnswer, isCorrect) {
+        document.querySelectorAll('.option-content').forEach(opt => {
+            const optionText = opt.getAttribute('data-option');
+            if(optionText === correctAnswer) opt.classList.add('correct');
+            if(optionText === selectedAnswer && !isCorrect) opt.classList.add('incorrect');
+        });
+
+        const banner = document.createElement('div');
+        banner.id = 'answerResultBanner';
+        banner.className = `result-banner ${isCorrect ? 'correct' : 'incorrect'} animate__animated animate__zoomIn`;
+        banner.innerHTML = `
+            <div class="result-icon ${isCorrect ? 'correct' : 'incorrect'}">
+                <i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i>
+            </div>
+            <h3 class="fw-bold mb-2">${isCorrect ? 'Correct!' : 'Incorrect'}</h3>
+            <p class="text-muted mb-0">${isCorrect ? 'Well done!' : `Correct: <strong>${correctAnswer}</strong>`}</p>
+        `;
+        document.body.appendChild(banner);
+
+        setTimeout(() => {
+            banner.classList.replace('animate__zoomIn', 'animate__zoomOut');
+            setTimeout(() => {
+                banner.remove();
+                if (pendingLeaderboardData) {
+                    showLeaderboard(pendingLeaderboardData);
+                    pendingLeaderboardData = null;
+                }
+            }, 500);
+        }, 2000);
+    }
+
+    socket.on("leaderboard_update", (data) => {
+        const wrapped = { leaderboard: Array.isArray(data) ? data : (data.leaderboard || []) };
+        if (document.getElementById('answerResultBanner')) {
+            pendingLeaderboardData = wrapped;
+        } else {
+            showLeaderboard(wrapped);
+        }
+    });
+
+    function showLeaderboard(data) {
+        document.getElementById("attemptPage").style.display = "none";
+        document.getElementById("leaderboardOverlay").style.display = "block";
+        const sorted = [...data.leaderboard].sort((a, b) => b.points - a.points);
+
+        if(curIdx + 1 >= totalQs) {
+            document.getElementById("lbTitle").innerText = "Grand Podium";
+            document.getElementById("finalPodium").classList.remove("d-none");
+            renderPodium(sorted);
+            renderList(sorted, true);
+            fireConfetti();
+        } else {
+            document.getElementById("waitingArea").classList.remove("d-none");
+            renderList(sorted, false);
+        }
+    }
+
+    function renderList(lb, isFinal) {
+        const container = document.getElementById("listContainer");
+        container.innerHTML = "";
+        const sliceStart = isFinal ? 3 : 0;
+        lb.slice(sliceStart).forEach((p, i) => {
+            const isMe = p.student === user;
+            const div = document.createElement("div");
+            div.className = `lb-card animate__animated animate__fadeInUp ${isMe ? 'is-me' : ''}`;
+            div.innerHTML = `
+                <div class="lb-rank">#${sliceStart + i + 1}</div>
+                <div class="lb-name">${p.student} ${isMe ? '<span class="badge bg-success">YOU</span>' : ''}</div>
+                <div class="lb-points">${p.points} pts</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderPodium(lb) {
+        const container = document.getElementById("podiumContainer");
+        const order = [1, 0, 2]; // 2nd, 1st, 3rd
+        order.forEach(idx => {
+            if(!lb[idx]) return;
+            const p = lb[idx];
+            container.innerHTML += `
+                <div class="pod-bar pod-${idx+1}">
+                    ${idx === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
+                    <div class="pod-rank-badge">#${idx+1}</div>
+                    <div class="pod-name">${p.student}</div>
+                    <div class="pod-points">${p.points}</div>
+                </div>`;
+        });
+    }
+
+    function fireConfetti() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
+
+    socket.on("load_next_question", d => {
+        window.location.href = `/student/quiz/${quizId}?qindex=${d.qindex}`;
+    });
+</script>
 </body>
 </html>

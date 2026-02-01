@@ -111,7 +111,7 @@
                                         </button>
                                     </div>
 
-                                    <div class="mb-2"><small class="text-danger">Code: {{ q.join_code or 'None' }}</small></div>
+                                    
                                     
                                     <div class="quiz-info">
                                         <div class="info-item"><i class="fas fa-calendar-alt"></i><span>{% if q.published_at %}{{ q.published_at.strftime('%d %b, %H:%M') }}{% else %}Not Started{% endif %}</span></div>
@@ -140,18 +140,21 @@
                                             <a href="{{ url_for('admin_live_control', quiz_id=q.id) }}" class="btn action-btn btn-danger text-white w-100 mb-2">
                                                 <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
                                             </a>
+                                            <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
                                         {% endif %}
 
-                                        {% if not q.is_locked and not q.is_active %}
+                                        {% if not q.is_locked and not q.is_active and not q.is_published %}
                                             <a href="/admin/add-question/{{ q.id }}" class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
                                         {% endif %}
 
-                                        {% if q.is_locked and not q.is_published %}
+                                        {% if q.is_locked and not q.is_published and not q.is_active %}
                                             <a href="/admin/publish-quiz/{{ q.id }}" class="btn action-btn start"><i class="fas fa-play"></i> Start</a>
                                         {% endif %}
 
-                                        {% if q.is_active %}
-                                            <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
+                                        {% if q.is_published and not q.is_active %}
+                                            <a href="/admin/relive-quiz/{{ q.id }}" class="btn action-btn text-white w-100" style="background-color: #fd7e14;" onclick="return confirm('Are you sure you want to ReLive this quiz?')">
+                                                <i class="fas fa-history me-2"></i>RELive Quiz
+                                            </a>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -173,7 +176,10 @@
                             <div class="col-xl-4 col-md-6 animate-slide-up">
                                 <div class="quiz-card-pro timer-border">
                                     <div class="card-status">
-                                        <span class="status-pill timer">Timer-Based</span>
+                                        {% if q.is_active %}<span class="status-pill live">Live</span>
+                                        {% elif q.is_published %}<span class="status-pill ended">Ended</span>
+                                        {% else %}<span class="status-pill timer">Timer-Based</span>{% endif %}
+                                        
                                         <a href="/admin/delete-quiz/{{ q.id }}" class="ms-auto text-danger delete-icon" onclick="return confirm('Permanently delete this quiz?')">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>
@@ -212,18 +218,21 @@
                                             <a href="{{ url_for('admin_live_control', quiz_id=q.id) }}" class="btn action-btn btn-danger text-white w-100 mb-2">
                                                 <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
                                             </a>
+                                            <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
                                         {% endif %}
 
-                                        {% if not q.is_locked and not q.is_active %}
+                                        {% if not q.is_locked and not q.is_active and not q.is_published %}
                                             <a href="/admin/add-question/{{ q.id }}" class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
                                         {% endif %}
 
-                                        {% if q.is_locked and not q.is_published %}
+                                        {% if q.is_locked and not q.is_published and not q.is_active %}
                                             <a href="/admin/publish-quiz/{{ q.id }}" class="btn action-btn start"><i class="fas fa-play"></i> Start</a>
                                         {% endif %}
 
-                                        {% if q.is_active %}
-                                            <a href="/admin/stop-quiz/{{ q.id }}" class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
+                                        {% if q.is_published and not q.is_active %}
+                                            <a href="/admin/relive-quiz/{{ q.id }}" class="btn action-btn text-white w-100" style="background-color: #fd7e14;" onclick="return confirm('Are you sure you want to ReLive this quiz?')">
+                                                <i class="fas fa-history me-2"></i>RELive Quiz
+                                            </a>
                                         {% endif %}
                                     </div>
                                 </div>
