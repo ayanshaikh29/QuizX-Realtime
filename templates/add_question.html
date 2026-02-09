@@ -3,107 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | Timer Studio</title>
+    <title>QuizX | Advanced Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_question.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-green: #6fbf4a;
+            --active-bg: #effaf3; /* Soft green from your image */
+            --text-inactive: #64748b;
+            --text-dark: #1e293b;
+            --border-light: #f1f5f9;
+        }
+
+        body {
+            background: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--text-dark);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .dashboard-wrapper { display: flex; min-height: 100vh; }
+
+        /* --- UPDATED SIDEBAR (MATCHING IMAGE) --- */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--border-light);
+            padding: 2rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-brand {
+            padding: 0 1rem 2.5rem 1rem;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            color: var(--primary-green);
+        }
+
+        .nav-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--text-inactive);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-item i {
+            margin-right: 15px;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Active State from Image */
+        .nav-item.active {
+            background: var(--active-bg);
+            color: var(--primary-green);
+        }
+
+        .nav-item:hover:not(.active) {
+            background: #f1f5f9;
+            color: var(--text-dark);
+        }
+
+        /* --- CONTENT AREA --- */
+        .content-area { flex: 1; padding: 2.5rem; background: #f8fafc; }
+
+        .glass-card {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        .stat-card { display: flex; align-items: center; gap: 1rem; }
+        .icon-box {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--active-bg); color: var(--primary-green);
+        }
+
+        .live-pulse-container {
+            background: white; padding: 8px 16px; border-radius: 10px;
+            font-weight: 800; font-size: 0.75rem; display: flex; align-items: center; gap: 8px;
+            border: 1px solid var(--primary-green); color: var(--primary-green);
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px; background: var(--primary-green);
+            border-radius: 50%; animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111, 191, 74, 0.4); }
+            70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(111, 191, 74, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111, 191, 74, 0); }
+        }
+
+        .hud-table thead th {
+            color: var(--text-inactive); font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 1px; border: none; padding-bottom: 15px;
+        }
+
+        .diff-tag { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; }
+        .diff-tag.Hard { background: #fee2e2; color: #dc2626; }
+        .diff-tag.Easy { background: #dcfce7; color: #15803d; }
+
+        .rank-circle-sm {
+            width: 28px; height: 28px; background: var(--primary-green); color: white;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+    </style>
 </head>
 <body>
 
-<div class="studio-container">
-    <header class="studio-header">
-        <div class="header-left">
-            <a href="/admin/quizzes" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+<div class="dashboard-wrapper">
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            Quiz<span style="color: var(--text-dark)">X</span>
+        </div>
+        
+        <div class="nav-list">
+            <a href="#" class="nav-item">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-book"></i> Quizzes
+            </a>
+            <a href="#" class="nav-item active">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+        </div>
+
+        <div class="mt-auto">
+            <a href="#" class="nav-item" style="color: #ef4444;">
+                <i class="fas fa-power-off"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <main class="content-area">
+        <header class="d-flex justify-content-between align-items-center mb-5">
             <div>
-                <span class="badge" style="color: #3b82f6;">⏱️ Timer-Based Mode</span>
-                <h4>{{ quiz.title }}</h4>
+                <h2 class="fw-800 m-0" style="letter-spacing: -1.5px;">Analytics Studio</h2>
+                <p class="text-muted small">Viewing metrics for <b>General Science Quiz</b></p>
+            </div>
+            <div class="live-pulse-container">
+                <span class="pulse-dot"></span> LIVE UPDATES
+            </div>
+        </header>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="glass-card stat-card">
+                    <div class="icon-box"><i class="fas fa-users"></i></div>
+                    <div>
+                        <h4 class="fw-800 m-0">1,284</h4>
+                        <p class="text-muted small m-0 uppercase fw-700">Participants</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card stat-card">
+                    <div class="icon-box"><i class="fas fa-bullseye"></i></div>
+                    <div>
+                        <h4 class="fw-800 m-0">78%</h4>
+                        <p class="text-muted small m-0 uppercase fw-700">Avg Accuracy</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card stat-card">
+                    <div class="icon-box"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <h4 class="fw-800 m-0">12s</h4>
+                        <p class="text-muted small m-0 uppercase fw-700">Avg Speed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card stat-card">
+                    <div class="icon-box"><i class="fas fa-check-circle"></i></div>
+                    <div>
+                        <h4 class="fw-800 m-0">94%</h4>
+                        <p class="text-muted small m-0 uppercase fw-700">Completion</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="header-right">
-            {% if not quiz.is_locked %}
-            <a href="/admin/end-questions/{{ quiz.id }}" onclick="return confirm('Lock this quiz?')" class="btn-lock">
-                <i class="fas fa-lock"></i> Finalize Quiz
-            </a>
-            {% endif %}
-        </div>
-    </header>
 
-    <div class="content-wrapper">
-        <form method="POST" id="quizForm">
-            <div id="questions-container">
-                <div class="question-block animate-slide-up">
-                    <div class="block-header">
-                        <span class="q-number">Question 1</span>
-                        <div class="timer-input-group">
-                            <i class="fas fa-stopwatch"></i>
-                            <input type="number" name="time_0" min="5" value="30" required>
-                            <span>sec</span>
-                        </div>
-                    </div>
-
-                    <div class="block-body">
-                        <label>Question Prompt</label>
-                        <div class="editor-wrapper">
-                            <div class="toolbar">
-                                <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
-                                <button type="button" onclick="format('italic')"><i class="fas fa-italic"></i></button>
-                                <button type="button" onclick="format('underline')"><i class="fas fa-underline"></i></button>
-                            </div>
-                            <div class="editor" contenteditable="true" oninput="syncQuestion(this)" data-placeholder="Type your question here..."></div>
-                            <input type="hidden" name="question[]">
-                        </div>
-
-                        <label class="mt-4">Answer Options</label>
-                        <div class="options-grid">
-                            {% for i in range(1, 5) %}
-                            <div class="option-row">
-                                <div class="radio-wrapper">
-                                    <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}" required>
-                                    <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check"></i></label>
-                                </div>
-                                <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..." required>
-                            </div>
-                            {% endfor %}
-                        </div>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="glass-card h-100">
+                    <h5 class="fw-800 mb-4">Performance Trend</h5>
+                    <div style="height: 300px;">
+                        <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="form-actions">
-                <button type="button" onclick="addQuestion(true)" class="btn-add"><i class="fas fa-plus"></i> Add Question</button>
-                <button type="submit" class="btn-save"><i class="fas fa-cloud-upload-alt"></i> Save Questions</button>
+            <div class="col-lg-4">
+                <div class="glass-card h-100">
+                    <h5 class="fw-800 mb-4">Elite Performers</h5>
+                    <div class="performer-list d-flex flex-column gap-3">
+                        <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rank-circle-sm">1</div>
+                                <span class="fw-bold">Ayan</span>
+                            </div>
+                            <span class="badge bg-light text-success fw-800">2,450 XP</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between p-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rank-circle-sm" style="background:#94a3b8">2</div>
+                                <span class="fw-bold">Sarah Miller</span>
+                            </div>
+                            <span class="badge bg-light text-success fw-800">2,310 XP</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </main>
 </div>
 
 <script>
-let qIndex = 1;
-function format(cmd) { document.execCommand(cmd, false, null); }
-function syncQuestion(div) { div.nextElementSibling.value = div.innerHTML; }
-
-function addQuestion(hasTimer) {
-    const container = document.getElementById("questions-container");
-    const clone = container.querySelector(".question-block").cloneNode(true);
-    clone.querySelector(".q-number").innerText = `Question ${qIndex + 1}`;
-    clone.querySelector(".editor").innerHTML = "";
-    clone.querySelectorAll("input").forEach(input => {
-        if(input.type === "radio") {
-            input.name = `answer_${qIndex}`;
-            input.checked = false;
-            input.id = `q${qIndex}_opt${input.value}`;
-            input.nextElementSibling.setAttribute('for', input.id);
-        } else if(input.type === "text") {
-            input.name = input.name.replace("_0", `_${qIndex}`);
-            input.value = "";
-        } else if(input.type === "number") {
-            input.name = `time_${qIndex}`;
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Avg Score',
+                data: [65, 78, 72, 85, 82, 90, 88],
+                borderColor: '#6fbf4a',
+                backgroundColor: 'rgba(111, 191, 74, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { display: false },
+                x: { grid: { display: false } }
+            }
         }
     });
-    container.appendChild(clone);
-    qIndex++;
-    clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
 </script>
+
 </body>
 </html>

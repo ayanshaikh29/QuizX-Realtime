@@ -15,12 +15,12 @@
     <nav class="side-hud">
         <div class="hud-logo">Q<span>X</span></div>
         <div class="hud-links">
-            <a href="/admin/dashboard" class="active"><i class="fas fa-chart-pie"></i></a>
-            <a href="/admin/quizzes"><i class="fas fa-list"></i></a>
-            <a href="/admin/settings"><i class="fas fa-cog"></i></a>
+            <a href="{{ url_for('admin.dashboard') }}" class="active"><i class="fas fa-chart-pie"></i></a>
+            <a href="{{ url_for('admin.quizzes') }}"><i class="fas fa-list"></i></a>
+            <a href="{{ url_for('auth.profile') }}"><i class="fas fa-cog"></i></a>
         </div>
         <div class="hud-logout">
-            <a href="/logout"><i class="fas fa-power-off"></i></a>
+            <a href="{{ url_for('auth.logout') }}"><i class="fas fa-power-off"></i></a>
         </div>
     </nav>
 
