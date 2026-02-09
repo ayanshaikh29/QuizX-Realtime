@@ -53,7 +53,7 @@ body { background-color: var(--bg-color); color: var(--text-dark); padding-botto
 .btn-dash { background: var(--text-dark); color: var(--primary-lime); padding: 1.1rem 2rem; border-radius: 100px; text-decoration: none; font-weight: 800; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transition: transform 0.2s; }
 .btn-dash:active { transform: scale(0.98); }
 
-/* Gradients */
+
 .avatar-grad-1 { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
 .avatar-grad-2 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
 .avatar-grad-3 { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }

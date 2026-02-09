@@ -304,7 +304,7 @@ body {
     border-radius: 100px;
     letter-spacing: 0.5px;
 }
-
+/* abc */
 /* Responsive Design */
 @media (max-width: 768px) {
     .question-card { padding: 2rem 1.5rem; border-radius: 2rem; }
