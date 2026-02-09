@@ -1,538 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leaderboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | {{ quiz.title }}</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<style>
-:root {
-    --primary-lime: #D4F469;
-    --text-dark: #1F2937;
-    --text-grey: #6B7280;
-    --bg-color: #FAFAFA;
-    --gold: #FFD700;
-    --silver: #C0C0C0;
-    --bronze: #CD7F32;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
-body {
-    background-color: var(--bg-color);
-    color: var(--text-dark);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-    padding-bottom: 100px; /* Extra padding so content isn't hidden behind the fixed button */
-}
-
-/* --- Header --- */
-.app-header {
-    display: flex;
-    align-items: center;
-    padding: 1.5rem;
-    background: var(--bg-color);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.back-btn {
-    font-size: 1.2rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    margin-right: 1rem;
-}
-
-.header-title {
-    flex: 1;
-    text-align: center;
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-right: 2rem;
-}
-
-/* --- Status Banner --- */
-.status-container {
-    padding: 0 1.5rem;
-    margin-bottom: 0.5rem;
-    min-height: 10px;
-}
-
-.status-banner {
-    background: var(--text-dark);
-    color: white;
-    padding: 1rem;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    font-size: 1rem;
-    font-weight: 600;
-    animation: slideDown 0.5s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-/* --- Podium Section --- */
-.podium-section {
-    padding: 1rem 1rem 2.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 0.5rem;
-    margin-bottom: 0;
-    min-height: 220px;
-}
-
-.podium-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    width: 30%;
-    max-width: 110px;
-    animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    opacity: 0;
-    transform: translateY(50px);
-}
-
-.podium-item.first { animation-delay: 0.2s; width: 38%; max-width: 130px; z-index: 10; }
-.podium-item.second { animation-delay: 0.1s; }
-.podium-item.third { animation-delay: 0.3s; }
-
-.avatar-wrapper {
-    position: relative;
-    margin-bottom: 0.8rem;
-}
-
-.podium-avatar {
-    width: 65px;
-    height: 65px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: white;
-}
-
-.podium-item.first .podium-avatar { 
-    width: 90px; 
-    height: 90px; 
-    border-color: var(--primary-lime);
-    font-size: 2rem;
-}
-.podium-item.second .podium-avatar { border-color: var(--silver); }
-.podium-item.third .podium-avatar { border-color: var(--bronze); }
-
-.crown-icon {
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-10deg);
-    font-size: 2rem;
-    color: var(--primary-lime);
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-    animation: floatCrown 2s infinite ease-in-out;
-}
-
-.rank-badge {
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--text-dark);
-    background: var(--bg-color);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.first .rank-badge { background-color: var(--primary-lime); }
-.second .rank-badge { background-color: var(--silver); }
-.third .rank-badge { background-color: var(--bronze); }
-
-.podium-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 0.2rem;
-    text-align: center;
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.podium-points {
-    font-size: 0.8rem;
-    color: var(--text-grey);
-    font-weight: 600;
-}
-
-/* --- List Section --- */
-.list-section {
-    padding: 0 1.5rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    flex: 1;
-}
-
-.player-row {
-    background: white;
-    border-radius: 16px;
-    padding: 0.8rem 1rem;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    opacity: 0;
-    animation: slideIn 0.5s ease forwards;
-}
-
-.player-row.current-user {
-    background-color: var(--primary-lime);
-    box-shadow: 0 4px 15px rgba(212, 244, 105, 0.5);
-    transform: scale(1.02);
-}
-
-.row-rank {
-    width: 25px;
-    font-weight: 700;
-    color: var(--text-dark);
-    font-size: 0.9rem;
-}
-
-.row-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.row-info { flex: 1; overflow: hidden; }
-
-.row-name {
-    font-weight: 600;
-    color: var(--text-dark);
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.row-points {
-    font-weight: 600;
-    color: var(--text-dark);
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(0,0,0,0.05);
-    padding: 4px 10px;
-    border-radius: 20px;
-}
-
-/* --- Dashboard Button (Hidden by default) --- */
-.action-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 1.5rem;
-    background: linear-gradient(to top, var(--bg-color) 80%, transparent);
-    z-index: 200;
-    display: none; /* Controlled by JS */
-    justify-content: center;
-    animation: fadeInUp 0.5s ease;
-}
-
-.btn-finish {
-    background-color: var(--text-dark);
-    color: var(--primary-lime);
-    border: none;
-    width: 100%;
-    max-width: 400px;
-    padding: 1rem;
-    border-radius: 100px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-decoration: none;
-    transition: transform 0.2s;
-}
-
-.btn-finish:active { transform: scale(0.98); }
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-grey);
-    display: none;
-}
-
-/* Animations */
-@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes popUp { to { opacity: 1; transform: translateY(0); } }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes floatCrown { 0%, 100% { transform: translateX(-50%) rotate(-10deg) translateY(0); } 50% { transform: translateX(-50%) rotate(-10deg) translateY(-8px); } }
-@keyframes fadeInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-/* Avatar Gradients */
-.avatar-grad-1 { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
-.avatar-grad-2 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
-.avatar-grad-3 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); }
-.avatar-grad-4 { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
-</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_leaderboard.css') }}">
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
-        <div class="header-title">Leaderboard</div>
+    <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;">
+        <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
+            <div class="brand-text">Quiz<span>X</span></div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="fw-bold text-success" id="timerLabel">{{ current_question.time_limit }}s</div>
+                <div class="bg-dark text-white rounded-pill px-3 py-1 fw-bold fs-7">
+                    {{ current_index + 1 }} / {{ total_questions }}
+                </div>
+            </div>
+        </nav>
     </div>
 
-    <div class="status-container" id="statusMessage"></div>
+    <div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
+        <div class="question-card mt-4">
+            <div class="timer-bar"><div id="progressBar" class="timer-progress"></div></div>
+            
+            <div class="text-center mt-3">
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">LIVE QUIZ</span>
+            </div>
+            <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
+            
+            <form id="quizForm">
+                <div class="options-grid mt-4">
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
+                    <label class="option-label animate__animated animate__zoomIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
 
-    <div class="podium-section" id="podiumContainer"></div>
-
-    <div class="list-section" id="playerList"></div>
-
-    <div class="empty-state" id="emptyState">
-        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-        <p>Waiting for results...</p>
+                <div class="text-center mt-5">
+                    <button type="button" id="submitBtn" class="btn-submit">
+                        SUBMIT ANSWER <i class="fas fa-lock ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="action-footer" id="actionFooter">
-        <a href="/student_dashboard.html" class="btn-finish">
-            Return to Dashboard <i class="fas fa-arrow-right"></i>
-        </a>
+    <div id="leaderboardOverlay">
+        <div class="container text-center">
+            <h2 class="display-6 fw-800 text-dark mb-1 mt-4" id="lbTitle">Round Results</h2>
+            <p class="text-muted" id="lbSubtitle">Calculating positions...</p>
+
+            <div id="finalPodium" class="d-none">
+                <div class="podium-wrapper">
+                    <div class="podium-section" id="podiumContainer"></div>
+                </div>
+                <div class="alert alert-success d-inline-block shadow-sm rounded-4 px-5 py-3 mt-3 animate__animated animate__bounceIn">
+                    <h4 class="fw-800 m-0"><i class="fas fa-trophy me-2"></i> Quiz Complete!</h4>
+                </div>
+            </div>
+
+            <div id="waitingArea" class="my-5 d-none">
+                <div class="waiting-pulse"></div>
+                <h4 class="fw-700 text-dark animate__animated animate__pulse animate__infinite">Waiting for Host...</h4>
+                <p class="text-muted small">The next question will start shortly.</p>
+            </div>
+
+            <div class="row justify-content-center mt-4">
+                <div class="col-lg-8 col-md-10" id="listContainer"></div>
+            </div>
+        </div>
     </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const socket = io();
-const quizId = {{ quiz_id }};
-// If the template variable {{ quiz_status }} is passed as 'done' or 'finished', we catch it here
-let quizStatus = "{{ quiz_status }}".toLowerCase(); 
-const currentStudent = "{{ session.get('username', 'Guest') }}";
-
-console.log('=== LEADERBOARD LIVE ===');
-
-// Join quiz room
-socket.emit("join_quiz", { quiz_id: quizId });
-
-// Listen for next question
-socket.on("load_next_question", (data) => {
-    if (parseInt(data.quiz_id) !== quizId) return;
-    window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
-});
-
-// Listen for quiz finished
-socket.on("quiz_finished", (data) => {
-    console.log("Quiz Finished Event Received");
-    quizStatus = 'done'; // Set status to done
-    renderGameDoneUI(); // Show the button IMMEDIATELY
+    const socket = io();
+    const quizId = {{ quiz.id }};
+    const user = "{{ session.username }}";
+    const curIdx = {{ current_index }};
+    const totalQs = {{ total_questions }};
+    const correctAnswer = "{{ current_question.correct_answer }}";
     
-    // Refresh leaderboard to ensure final scores are accurate
-    setTimeout(() => fetchLeaderboard(), 500);
-});
+    let timeLimit = {{ current_question.time_limit }};
+    let timeLeft = timeLimit;
+    let submitted = false;
+    let start = Date.now();
+    let pendingLeaderboardData = null;
 
-// Listen for leaderboard updates
-socket.on("leaderboard_update", (data) => {
-    const list = Array.isArray(data) ? data : data.leaderboard;
-    renderLeaderboard(list);
-});
+    socket.emit("join_quiz", { quiz_id: quizId });
 
-// --- MAIN UI LOGIC ---
-
-function checkStatusAndRender() {
-    const statusDiv = document.getElementById('statusMessage');
-    const footerDiv = document.getElementById('actionFooter');
-    
-    // Check if the quiz is marked as done by the server or JS
-    if (quizStatus === 'done' || quizStatus === 'finished' || quizStatus === 'completed') {
-        renderGameDoneUI();
-    } else {
-        // Game is ongoing: HIDE "Waiting" message (as requested)
-        statusDiv.innerHTML = ''; 
-        footerDiv.style.display = 'none';
-    }
-}
-
-function renderGameDoneUI() {
-    const statusDiv = document.getElementById('statusMessage');
-    const footerDiv = document.getElementById('actionFooter');
-
-    // 1. Show "Quiz Complete" Banner
-    statusDiv.innerHTML = `
-        <div class="status-banner">
-            <i class="fas fa-flag-checkered"></i>
-            Quiz Complete! Final Results.
-        </div>
-    `;
-
-    // 2. Show the "Return to Dashboard" Button
-    footerDiv.style.display = 'flex';
-}
-
-function getInitials(name) {
-    if (!name) return '?';
-    const parts = name.split(/[-\s]/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return name.substring(0, 2).toUpperCase();
-}
-
-function isCurrentUser(studentName) {
-    if (currentStudent.startsWith('Guest-')) return studentName === currentStudent;
-    return studentName === currentStudent;
-}
-
-function getAvatarClass(name) {
-    const len = name.length;
-    if(len % 4 === 0) return 'avatar-grad-1';
-    if(len % 4 === 1) return 'avatar-grad-2';
-    if(len % 4 === 2) return 'avatar-grad-3';
-    return 'avatar-grad-4';
-}
-
-// --- RENDER LEADERBOARD ---
-
-function renderLeaderboard(leaderboard) {
-    if (!leaderboard || leaderboard.length === 0) {
-        document.getElementById('emptyState').style.display = 'block';
-        return;
-    }
-    document.getElementById('emptyState').style.display = 'none';
-
-    // Sort: Points DESC -> Correct DESC -> Time ASC
-    leaderboard.sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.correct !== a.correct) return b.correct - a.correct;
-        return a.time - b.time;
-    });
-
-    const top3 = leaderboard.slice(0, 3);
-    const others = leaderboard.slice(3);
-
-    renderPodium(top3);
-    renderOthers(others, 4);
-}
-
-function renderPodium(top3) {
-    const container = document.getElementById('podiumContainer');
-    container.innerHTML = '';
-
-    let displayOrder = [];
-    
-    if (top3.length === 1) {
-        displayOrder = [{ data: top3[0], class: 'first', rank: 1 }];
-    } else if (top3.length === 2) {
-        displayOrder = [
-            { data: top3[1], class: 'second', rank: 2 },
-            { data: top3[0], class: 'first', rank: 1 }
-        ];
-    } else {
-        displayOrder = [
-            { data: top3[1], class: 'second', rank: 2 },
-            { data: top3[0], class: 'first', rank: 1 },
-            { data: top3[2], class: 'third', rank: 3 }
-        ];
-    }
-
-    displayOrder.forEach(pos => {
-        if (!pos.data) return;
-        const p = pos.data;
-        const isUser = isCurrentUser(p.student);
-        const nameDisplay = isUser ? 'You' : p.student.split(' ')[0];
+    // --- TIMER LOGIC ---
+    const timerTick = setInterval(() => {
+        timeLeft--;
+        const label = document.getElementById("timerLabel");
+        const bar = document.getElementById("progressBar");
         
-        const html = `
-            <div class="podium-item ${pos.class}">
-                ${pos.rank === 1 ? '<div class="crown-icon"><i class="fas fa-crown"></i></div>' : ''}
-                <div class="avatar-wrapper">
-                    <div class="podium-avatar ${getAvatarClass(p.student)}">
-                        ${getInitials(p.student)}
-                    </div>
-                    <div class="rank-badge">${pos.rank}</div>
-                </div>
-                <div class="podium-name">${nameDisplay}</div>
-                <div class="podium-points">${p.points}</div>
-            </div>
-        `;
-        container.innerHTML += html;
-    });
-}
+        if(label) label.innerText = Math.max(0, timeLeft) + "s";
+        if(bar) bar.style.width = ((timeLeft / timeLimit) * 100) + "%";
 
-function renderOthers(players, startRank) {
-    const container = document.getElementById('playerList');
-    container.innerHTML = ''; 
+        if(timeLeft <= 0) {
+            clearInterval(timerTick);
+            if(!submitted) handleSubmission("No Answer");
+        }
+    }, 1000);
 
-    players.forEach((p, index) => {
-        const rank = startRank + index;
-        const isUser = isCurrentUser(p.student);
-        const delay = index * 0.05; 
+    // --- SUBMISSION LOGIC ---
+    document.getElementById("submitBtn").onclick = () => {
+        const sel = document.querySelector("input[name='answer']:checked");
+        if(!sel) {
+            const btn = document.getElementById("submitBtn");
+            btn.classList.add("animate__animated", "animate__shakeX");
+            setTimeout(() => btn.classList.remove("animate__shakeX"), 500);
+            return; 
+        }
+        handleSubmission(sel.value);
+    };
+
+    function handleSubmission(val) {
+        if(submitted) return;
+        submitted = true;
+        clearInterval(timerTick);
+
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Processing...`;
         
-        const html = `
-            <div class="player-row ${isUser ? 'current-user' : ''}" style="animation-delay: ${delay}s">
-                <div class="row-rank">${rank}</div>
-                <div class="row-avatar ${getAvatarClass(p.student)}">
-                    ${getInitials(p.student)}
-                </div>
-                <div class="row-info">
-                    <div class="row-name">${isUser ? 'You' : p.student}</div>
-                </div>
-                <div class="row-points">
-                    ${p.points} pts
-                </div>
+        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+        const timeTaken = (Date.now() - start) / 1000;
+        
+        fetch(`/student/quiz/${quizId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                question_id: "{{ current_question.id }}",
+                qindex: curIdx,
+                selected_answer: val,
+                time_taken: timeTaken
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showAnswerFeedback(val, data.is_correct);
+        })
+        .catch(() => {
+            // Fallback: Check correctness manually if fetch response fails
+            showAnswerFeedback(val, val === correctAnswer);
+        });
+    }
+
+    function showAnswerFeedback(selectedAnswer, isCorrect) {
+        document.querySelectorAll('.option-content').forEach(opt => {
+            const optionText = opt.getAttribute('data-option');
+            if(optionText === correctAnswer) opt.classList.add('correct');
+            if(optionText === selectedAnswer && !isCorrect) opt.classList.add('incorrect');
+        });
+
+        const banner = document.createElement('div');
+        banner.id = 'answerResultBanner';
+        banner.className = `result-banner ${isCorrect ? 'correct' : 'incorrect'} animate__animated animate__zoomIn`;
+        banner.innerHTML = `
+            <div class="result-icon ${isCorrect ? 'correct' : 'incorrect'}">
+                <i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i>
             </div>
+            <h3 class="fw-bold mb-2">${isCorrect ? 'Correct!' : 'Incorrect'}</h3>
+            <p class="text-muted mb-0">${isCorrect ? 'Well done!' : `Correct: <strong>${correctAnswer}</strong>`}</p>
         `;
-        container.innerHTML += html;
+        document.body.appendChild(banner);
+
+        setTimeout(() => {
+            banner.classList.replace('animate__zoomIn', 'animate__zoomOut');
+            setTimeout(() => {
+                banner.remove();
+                if (pendingLeaderboardData) {
+                    showLeaderboard(pendingLeaderboardData);
+                    pendingLeaderboardData = null;
+                }
+            }, 500);
+        }, 2000);
+    }
+
+    socket.on("leaderboard_update", (data) => {
+        const wrapped = { leaderboard: Array.isArray(data) ? data : (data.leaderboard || []) };
+        if (document.getElementById('answerResultBanner')) {
+            pendingLeaderboardData = wrapped;
+        } else {
+            showLeaderboard(wrapped);
+        }
     });
-}
 
-function fetchLeaderboard() {
-    fetch(`/student/api/leaderboard/${quizId}`)
-        .then(r => r.json())
-        .then(data => renderLeaderboard(data.leaderboard))
-        .catch(err => console.error(err));
-}
+    function showLeaderboard(data) {
+        document.getElementById("attemptPage").style.display = "none";
+        document.getElementById("leaderboardOverlay").style.display = "block";
+        const sorted = [...data.leaderboard].sort((a, b) => b.points - a.points);
 
-// Initial Logic
-checkStatusAndRender();
-fetchLeaderboard();
+        if(curIdx + 1 >= totalQs) {
+            document.getElementById("lbTitle").innerText = "Grand Podium";
+            document.getElementById("finalPodium").classList.remove("d-none");
+            renderPodium(sorted);
+            renderList(sorted, true);
+            fireConfetti();
+        } else {
+            document.getElementById("waitingArea").classList.remove("d-none");
+            renderList(sorted, false);
+        }
+    }
 
+    function renderList(lb, isFinal) {
+        const container = document.getElementById("listContainer");
+        container.innerHTML = "";
+        const sliceStart = isFinal ? 3 : 0;
+        lb.slice(sliceStart).forEach((p, i) => {
+            const isMe = p.student === user;
+            const div = document.createElement("div");
+            div.className = `lb-card animate__animated animate__fadeInUp ${isMe ? 'is-me' : ''}`;
+            div.innerHTML = `
+                <div class="lb-rank">#${sliceStart + i + 1}</div>
+                <div class="lb-name">${p.student} ${isMe ? '<span class="badge bg-success">YOU</span>' : ''}</div>
+                <div class="lb-points">${p.points} pts</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderPodium(lb) {
+        const container = document.getElementById("podiumContainer");
+        const order = [1, 0, 2]; // 2nd, 1st, 3rd
+        order.forEach(idx => {
+            if(!lb[idx]) return;
+            const p = lb[idx];
+            container.innerHTML += `
+                <div class="pod-bar pod-${idx+1}">
+                    ${idx === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
+                    <div class="pod-rank-badge">#${idx+1}</div>
+                    <div class="pod-name">${p.student}</div>
+                    <div class="pod-points">${p.points}</div>
+                </div>`;
+        });
+    }
+
+    function fireConfetti() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
+
+    socket.on("load_next_question", d => {
+        window.location.href = `/student/quiz/${quizId}?qindex=${d.qindex}`;
+    });
 </script>
 </body>
 </html>

@@ -23,25 +23,22 @@
         </div>
 
         <nav class="sidebar-nav">
-            <!-- FIXED: Use url_for() -->
-            <a href="{{ url_for('student.dashboard') }}" class="nav-link">
+            <a href="/student/dashboard" class="nav-link">
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
-            <!-- FIXED: Use url_for() -->
-            <a href="{{ url_for('student.quizzes') }}" class="nav-link">
+            <a href="/student/quizzes" class="nav-link">
                 <i class="fas fa-play-circle"></i> Live Quizzes
             </a>
-            <!-- FIXED: Use url_for() -->
-            <a href="{{ url_for('student.history') }}" class="nav-link active">
+            <a href="/student/history" class="nav-link active">
                 <i class="fas fa-history"></i> My History
             </a>
-            <a href="{{ url_for('auth.profile') }}" class="nav-link">
+            <a href="{{ url_for('profile') }}" class="nav-link">
                 <i class="fas fa-user-circle"></i> Profile
             </a>
         </nav>
 
         <div class="sidebar-footer">
-            <a href="{{ url_for('auth.logout') }}" class="logout-link">
+            <a href="{{ url_for('logout') }}" class="logout-link">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </div>
@@ -97,9 +94,8 @@
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
                 <h5>No Quiz History</h5>
-                <p>You haven't attempted any quizzes yet.</p>
-                <!-- FIXED: Use url_for() -->
-                <a href="{{ url_for('student.quizzes') }}" class="btn-success-custom">Join a Quiz</a>
+                <p>You haven’t attempted any quizzes yet.</p>
+                <a href="/student/quizzes" class="btn-success-custom">Join a Quiz</a>
             </div>
             {% endif %}
         </div>

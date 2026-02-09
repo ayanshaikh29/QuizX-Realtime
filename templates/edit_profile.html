@@ -23,35 +23,40 @@
             </div>
         </div>
         <nav class="sidebar-nav">
-            {% if user.role == 'admin' %}
-            <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="{{ url_for('admin.quizzes') }}" class="nav-link"><i class="fas fa-list-ul"></i> Quizzes</a>
-            {% else %}
-            <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
-            {% endif %}
-            <a href="{{ url_for('auth.edit_profile') }}" class="nav-link active"><i class="fas fa-user-circle"></i> Profile</a>
+            <a href="{{ '/admin/dashboard' if user.role == 'admin' else '/student/dashboard' }}" class="nav-link">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-link active">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
         </nav>
         <div class="sidebar-footer">
-            <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </aside>
 
     <main class="main-content">
+        <header class="content-header">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Edit Profile</h4>
+                <small class="text-muted">Update your account details</small>
+            </div>
+        </header>
+
         <div class="container-fluid p-4">
             <div class="row justify-content-center">
                 <div class="col-lg-6">
-                    <div class="glass-card p-5 animate-fade-in">
-                        <div class="text-center mb-5">
-                            <div class="profile-avatar-wrapper mx-auto mb-3">
-                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&size=128&background=6fbf4a&color=fff" class="profile-avatar" alt="User">
+                    <div class="profile-container p-5 animate-slide-up">
+                        <div class="text-center mb-4">
+                            <div class="main-avatar mx-auto mb-3">
+                                {{ user.username[0]|upper }}
                             </div>
-                            <h3 class="fw-800">Edit Your Profile</h3>
-                            <p class="text-muted">Update your account information</p>
+                            <h5 class="fw-bold">Modify Information</h5>
                         </div>
 
-                        <form action="{{ url_for('auth.edit_profile') }}" method="POST">
+                        <form method="POST">
                             <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted">Username (Fixed)</label>
+                                <label class="form-label small fw-bold text-muted">Username (Cannot be changed)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="fas fa-at text-muted"></i></span>
                                     <input class="form-control custom-input bg-light" value="{{ user.username }}" disabled>
@@ -67,7 +72,7 @@
                             </div>
 
                             <div class="d-flex gap-2 mt-5">
-                                <a href="{{ url_for('auth.profile') }}" class="btn btn-light w-100 rounded-pill fw-bold">Cancel</a>
+                                <a href="{{ url_for('profile') }}" class="btn btn-light w-100 rounded-pill fw-bold">Cancel</a>
                                 <button type="submit" class="btn btn-save-profile w-100 rounded-pill">Save Changes</button>
                             </div>
                         </form>
