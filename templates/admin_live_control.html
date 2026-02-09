@@ -6,164 +6,376 @@
     <title>QuizX Admin | Live Command Center</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_control.css') }}">
+    <style>
+        :root { --primary-color: #6fbf4a; --bg-light: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-light); color: #1e293b; }
+        
+        /* Layout & Cards */
+        .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; position: fixed; height: 100vh; z-index: 1000; }
+        .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 20px; }
+        .glass-card { background: white; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04); transition: transform 0.3s; }
+        .glass-card:hover { transform: translateY(-5px); }
+
+        /* Controls */
+        .btn-live-control { background: linear-gradient(135deg, #6fbf4a 0%, #529c35 100%); color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: 700; width: 100%; transition: 0.3s; }
+        .btn-live-control:hover { transform: scale(1.02); color: white; }
+        
+        .control-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .btn-control { padding: 12px 20px; border-radius: 50px; border: none; font-weight: 600; color: white; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-primary-c { background: #6fbf4a; }
+        .btn-warning-c { background: #f59e0b; }
+        .btn-danger-c { background: #ef4444; }
+        .btn-info-c { background: #3b82f6; }
+        .btn-control:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* Question Preview */
+        .question-preview-card { background: #f8fafc; border-radius: 15px; padding: 20px; border-left: 5px solid var(--primary-color); margin: 20px 0; text-align: left; }
+        .question-text { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .option-badge { display: block; background: white; border: 2px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; color: #475569; font-weight: 500; transition: 0.2s; }
+        .option-badge:hover { border-color: #6fbf4a; }
+        .correct-indicator { background: #dcfce7; border-color: #6fbf4a; color: #166534; }
+        
+        /* Mobile */
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <a href="#" class="brand-logo"><i class="fas fa-bolt"></i> QuizX Admin</a>
-    <ul class="nav-menu">
-        <li class="nav-item"><a href="/admin/dashboard" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a></li>
-        <li class="nav-item"><a href="/admin/quizzes" class="nav-link active"><i class="fas fa-list-ul"></i> Quizzes</a></li>
-    </ul>
-    <a href="/logout" class="nav-link logout-link text-danger mt-auto"><i class="fas fa-sign-out-alt"></i> Logout</a>
-</div>
-
-<div class="main-wrapper">
-    <header class="page-header animate__animated animate__fadeInDown">
-        <div class="header-title">
-            <h2>Live Command Center</h2>
-            <p>Managing: <b>{{ quiz.title }}</b></p>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-none d-lg-block">
+        <div class="p-4">
+            <h4 class="fw-bold" style="color: #6fbf4a;"><i class="fas fa-bolt me-2"></i>QuizX</h4>
         </div>
-        <div class="user-avatar">AD</div>
-    </header>
+        <div class="p-3">
+            <a href="{{ url_for('admin.quizzes') }}" class="btn btn-light w-100 text-start mb-2 fw-bold">
+                <i class="fas fa-arrow-left me-2"></i> Back to Quizzes
+            </a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light w-100 text-start fw-bold">
+                <i class="fas fa-th-large me-2"></i> Dashboard
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-light w-100 text-start fw-bold mt-2">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </div>
+    </aside>
 
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="glass-card">
-                <h5 class="fw-bold mb-4">Connection</h5>
-                <div class="copy-box">
-                    <label>Join Code</label>
-                    <div class="copy-inner">
-                        <span class="fw-bold fs-4">{{ quiz.join_code }}</span>
-                        <button class="btn-icon" title="Copy Code" onclick="copyText('{{ quiz.join_code }}')">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-0">Live Control Center</h2>
+                    <p class="text-muted mb-0">Managing: <strong>{{ quiz.title }}</strong></p>
                 </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted fw-bold">Active Players</span>
-                    <span class="fw-bold text-success" id="playerCount">0</span>
-                </div>
-                <div class="progress" style="height: 8px;">
-                    <div id="progressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                <div>
+                    <span class="badge {{ 'bg-warning text-dark' if quiz.has_timer else 'bg-info' }} fs-6 px-3 py-2 rounded-pill">
+                        <i class="fas fa-{{ 'stopwatch' if quiz.has_timer else 'infinity' }} me-1"></i>
+                        {{ 'Timer Quiz' if quiz.has_timer else 'Self-Paced' }}
+                    </span>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-8">
-            <div class="glass-card mb-4">
-                <div class="text-center">
-                    <div class="status-pill"><span class="pulse-dot"></span> LIVE SESSION</div>
-                    <h1 class="display-4 fw-bold" id="qCounterDisplay">{{ current_index + 1 }} / {{ total_questions }}</h1>
-                    <div class="row justify-content-center mt-4">
-                        <div class="col-md-6">
-                            <button id="nextBtn" class="btn-live-control" onclick="nextQuestion()">
-                                NEXT QUESTION <i class="fas fa-chevron-right ms-2"></i>
-                            </button>
-                            <button class="btn-stop" onclick="endQuiz()">STOP SESSION</button>
+            <div class="row g-4">
+                <!-- Left Sidebar Info -->
+                <div class="col-lg-4">
+                    <!-- Join Info Card -->
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3 text-success"><i class="fas fa-qrcode me-2"></i>Join Info</h5>
+                        <div class="bg-light p-3 rounded text-center mb-3">
+                            <div class="fs-1 fw-800 text-dark">{{ quiz.join_code }}</div>
+                            <small class="text-muted">JOIN CODE</small>
+                        </div>
+                        <div class="text-center text-muted small">
+                            Students can join using code above
+                        </div>
+                    </div>
+
+                    <!-- Live Stats Card -->
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-users me-2"></i>Live Players</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Active Now:</span>
+                            <span id="playerCount" class="fs-3 fw-bold text-success">0</span>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 10px;">
+                            <div id="progressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Updates in real-time</small>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="glass-card p-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-chart-line me-2"></i>Quiz Status</h5>
+                        <div class="alert {{ 'alert-success' if quiz.is_active else 'alert-warning' }} fw-bold text-center mb-3">
+                            <i class="fas fa-{{ 'play-circle' if quiz.is_active else 'pause-circle' }} me-2"></i>
+                            {{ 'LIVE NOW' if quiz.is_active else 'WAITING TO START' }}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Progress:</span>
+                            <span class="fw-bold fs-5">
+                                <span class="text-success">{{ current_index + 1 }}</span> 
+                                <span class="text-muted">/</span> 
+                                {{ total_questions }}
+                            </span>
+                        </div>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: {{ ((current_index + 1) / total_questions * 100) if total_questions > 0 else 0 }}%"></div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="glass-card">
-                <h5 class="fw-bold mb-4 text-success"><i class="fas fa-trophy me-2"></i> Real-time Leaderboard</h5>
-                <div id="leaderboardList">
-                    <div class="text-center py-4 text-muted">Connecting to session...</div>
+                <!-- Main Control Panel -->
+                <div class="col-lg-8">
+                    <div class="glass-card p-5">
+                        
+                        <!-- Check if quiz has questions -->
+                        {% if total_questions > 0 %}
+                            
+                            <!-- Header -->
+                            <div class="text-center mb-4">
+                                <h1 class="display-4 fw-bold text-success mb-2">
+                                    {% if not quiz.is_active %}
+                                        <i class="fas fa-play-circle"></i> READY
+                                    {% else %}
+                                        Q{{ current_index + 1 }}
+                                    {% endif %}
+                                </h1>
+                                <p class="text-muted fs-5">
+                                    {% if not quiz.is_active %}
+                                        Press START to begin the quiz
+                                    {% else %}
+                                        Question {{ current_index + 1 }} of {{ total_questions }}
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <!-- Current Question Preview -->
+                            {% if current_question %}
+                            <div class="question-preview-card">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 class="text-muted mb-0">
+                                        <i class="fas fa-question-circle me-2"></i>Current Question Preview
+                                    </h6>
+                                    {% if quiz.has_timer %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>{{ current_question.time_limit }}s
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <h5 class="question-text">{{ current_question.question }}</h5>
+                                
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <span class="option-badge {{ 'correct-indicator' if current_question.answer == current_question.option1 else '' }}">
+                                            <strong>A.</strong> {{ current_question.option1 }}
+                                            {% if current_question.answer == current_question.option1 %}
+                                            <i class="fas fa-check-circle text-success float-end"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="option-badge {{ 'correct-indicator' if current_question.answer == current_question.option2 else '' }}">
+                                            <strong>B.</strong> {{ current_question.option2 }}
+                                            {% if current_question.answer == current_question.option2 %}
+                                            <i class="fas fa-check-circle text-success float-end"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="option-badge {{ 'correct-indicator' if current_question.answer == current_question.option3 else '' }}">
+                                            <strong>C.</strong> {{ current_question.option3 }}
+                                            {% if current_question.answer == current_question.option3 %}
+                                            <i class="fas fa-check-circle text-success float-end"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="option-badge {{ 'correct-indicator' if current_question.answer == current_question.option4 else '' }}">
+                                            <strong>D.</strong> {{ current_question.option4 }}
+                                            {% if current_question.answer == current_question.option4 %}
+                                            <i class="fas fa-check-circle text-success float-end"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Control Buttons -->
+                            <div class="d-grid gap-3 col-md-10 mx-auto mt-4">
+                                {% if not quiz.is_active %}
+                                    <!-- Start Quiz Button -->
+                                    <a href="{{ url_for('admin.start_quiz', quiz_id=quiz.id) }}" class="btn-live-control">
+                                        <i class="fas fa-play me-2"></i> START QUIZ
+                                    </a>
+                                {% else %}
+                                    <!-- Navigation Buttons -->
+                                    <div class="control-buttons">
+                                        {% if current_index > 0 %}
+                                        <button onclick="prevQuestion()" class="btn-control btn-warning-c">
+                                            <i class="fas fa-arrow-left"></i> Previous
+                                        </button>
+                                        {% endif %}
+
+                                        {% if current_index < total_questions - 1 %}
+                                        <button onclick="nextQuestion()" id="nextBtn" class="btn-control btn-primary-c flex-grow-1 justify-content-center">
+                                            Next Question <i class="fas fa-arrow-right ms-2"></i>
+                                        </button>
+                                        {% else %}
+                                        <button onclick="finishQuiz()" class="btn-control btn-info-c flex-grow-1 justify-content-center">
+                                            <i class="fas fa-flag-checkered me-2"></i> Finish Quiz
+                                        </button>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Admin Actions -->
+                                    <div class="control-buttons mt-3 pt-3 border-top">
+                                        <button onclick="viewLeaderboard()" class="btn-control btn-info-c">
+                                            <i class="fas fa-trophy me-2"></i> View Leaderboard
+                                        </button>
+                                        <button onclick="endQuiz()" class="btn-control btn-danger-c">
+                                            <i class="fas fa-stop me-2"></i> Stop Quiz
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        {% else %}
+                            <!-- No Questions Alert -->
+                            <div class="text-center py-5">
+                                <div class="alert alert-danger d-inline-block px-5 py-4 shadow-sm">
+                                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                                    <h4 class="fw-bold mb-2">No Questions Found!</h4>
+                                    <p class="text-muted mb-4">This quiz doesn't have any questions yet. Add questions to start.</p>
+                                    <a href="{{ url_for('admin.add_question', quiz_id=quiz.id) }}" class="btn btn-success btn-lg">
+                                        <i class="fas fa-plus me-2"></i> Add Questions Now
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 
+<!-- Socket.IO Script -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+    console.log("═══════════════════════════════════════");
+    console.log("🎮 ADMIN LIVE CONTROL INITIALIZED");
+    console.log("═══════════════════════════════════════");
+    
     const socket = io();
     const quizId = {{ quiz.id }};
     const totalQuestions = {{ total_questions }};
     let currentIndex = {{ current_index }};
 
+    console.log("Quiz ID:", quizId);
+    console.log("Total Questions:", totalQuestions);
+    console.log("Current Index:", currentIndex);
+
+    // Join quiz room
     socket.emit("join_quiz", { quiz_id: quizId });
+    console.log("✅ Joined quiz room:", quizId);
 
-    // Initial load
-    fetch('/api/leaderboard/' + quizId)
-        .then(res => res.json())
-        .then(data => renderLeaderboard(data.leaderboard || data))
-        .catch(err => console.error("Initial fetch failed:", err));
+    // Socket connection monitoring
+    socket.on("connect", () => {
+        console.log("✅ Socket connected:", socket.id);
+        socket.emit("join_quiz", { quiz_id: quizId });
+    });
 
-    function copyText(text) {
-        navigator.clipboard.writeText(text);
-        const icon = document.querySelector('.btn-icon i');
-        icon.className = 'fas fa-check text-success';
-        setTimeout(() => icon.className = 'far fa-copy', 2000);
-    }
+    socket.on("disconnect", (reason) => {
+        console.log("🔌 Socket disconnected:", reason);
+    });
 
-    function updateProgress() {
-        const percent = ((currentIndex + 1) / totalQuestions) * 100;
-        document.getElementById('progressBar').style.width = percent + '%';
-        document.getElementById("qCounterDisplay").innerText = `${currentIndex + 1} / ${totalQuestions}`;
+    // Real-time player count update
+    socket.on("leaderboard_update", (data) => {
+        const list = Array.isArray(data) ? data : (data.leaderboard || []);
+        const count = list.length;
         
-        if (currentIndex >= totalQuestions - 1) {
-            const btn = document.getElementById("nextBtn");
+        console.log("📊 Leaderboard update:", count, "players");
+        
+        document.getElementById("playerCount").innerText = count;
+        
+        const pct = Math.min((count / 50) * 100, 100);
+        document.getElementById("progressBar").style.width = pct + "%";
+    });
+
+    // Sync admin UI when next question is triggered
+    socket.on("load_next_question", (data) => {
+        console.log("📨 Next question event:", data);
+        
+        if (parseInt(data.quiz_id) === parseInt(quizId)) {
+            if (data.qindex !== currentIndex) {
+                console.log("🔄 Reloading to sync with new question");
+                setTimeout(() => location.reload(), 500);
+            }
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // CONTROL FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+    
+    function nextQuestion() {
+        if (!confirm("Push next question to all students?")) return;
+        
+        console.log("📤 Triggering next question");
+        
+        const btn = document.getElementById("nextBtn");
+        if (btn) {
             btn.disabled = true;
-            btn.innerText = "FINISH QUIZ";
-            btn.onclick = endQuiz; // Change behavior for last step
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+        }
+        
+        socket.emit("admin_next_question", { quiz_id: quizId });
+        
+        setTimeout(() => location.reload(), 800);
+    }
+
+    function prevQuestion() {
+        if (!confirm("Go back to the previous question?")) return;
+        
+        console.log("📤 Triggering previous question");
+        socket.emit("admin_previous_question", { quiz_id: quizId });
+        
+        setTimeout(() => location.reload(), 800);
+    }
+
+    function finishQuiz() {
+        if (confirm("Show final leaderboard to all students?")) {
+            console.log("🏁 Finishing quiz");
+            window.location.href = "{{ url_for('admin.live_leaderboard', quiz_id=quiz.id) }}";
         }
     }
-    updateProgress();
 
-    function nextQuestion() {
-        if (currentIndex < totalQuestions - 1) {
-            currentIndex++;
-            updateProgress();
-            socket.emit("admin_next_question", { 
-                quiz_id: quizId, 
-                new_index: currentIndex 
-            });
-        }
+    function viewLeaderboard() {
+        console.log("📊 Opening leaderboard");
+        window.open("{{ url_for('admin.live_leaderboard', quiz_id=quiz.id) }}", "_blank");
     }
 
     function endQuiz() {
-        if (confirm("End the session for all students? This will redirect everyone to the final results.")) {
-            socket.emit("quiz_finished", { quiz_id: quizId });
-            window.location.href = "/admin/quizzes";
+        if (confirm("⚠️ Stop the quiz completely? This will end the session for all students.")) {
+            console.log("⛔ Stopping quiz");
+            window.location.href = "{{ url_for('admin.stop_quiz', quiz_id=quiz.id) }}";
         }
     }
 
-    function renderLeaderboard(data) {
-        const list = document.getElementById("leaderboardList");
-        const countSpan = document.getElementById("playerCount");
-        
-        const students = Array.isArray(data) ? data : [];
-        countSpan.innerText = students.length;
-
-        if (students.length === 0) {
-            list.innerHTML = `<div class="text-center py-4 text-muted">No players joined yet.</div>`;
-            return;
-        }
-
-        list.innerHTML = "";
-        students.sort((a, b) => b.points - a.points);
-
-        students.forEach((p, i) => {
-            list.innerHTML += `
-                <div class="leader-item animate__animated animate__fadeInRight" style="animation-delay: ${i * 0.05}s">
-                    <div class="rank-badge">${i + 1}</div>
-                    <div class="flex-grow-1 fw-bold">${p.student}</div>
-                    <div class="fw-bold text-success">${p.points} pts</div>
-                </div>
-            `;
-        });
-    }
-
-    socket.on("leaderboard_update", (data) => {
-        renderLeaderboard(data);
-    });
+    console.log("✅ Admin control panel ready");
 </script>
+
 </body>
 </html>

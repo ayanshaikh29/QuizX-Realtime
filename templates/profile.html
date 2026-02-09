@@ -23,15 +23,22 @@
             </div>
         </div>
         <nav class="sidebar-nav">
-            <a href="{{ '/admin/dashboard' if user.role == 'admin' else '/student/dashboard' }}" class="nav-link">
+            <!-- FIXED: Use proper url_for based on user role -->
+            {% if user.role == 'admin' %}
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
+            {% else %}
+            <a href="{{ url_for('student.dashboard') }}" class="nav-link">
+            {% endif %}
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
-            <a href="{{ url_for('profile') }}" class="nav-link active">
+            <a href="{{ url_for('admin.quizzes') }}" class="nav-link active"><i class="fas fa-book"></i> Quizzes</a>
+            <a href="{{ url_for('admin.quizzes') }}" class="nav-link"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="{{ url_for('auth.profile') }}" class="nav-link active">
                 <i class="fas fa-user-circle"></i> Profile
             </a>
         </nav>
         <div class="sidebar-footer">
-            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </aside>
 
@@ -63,7 +70,7 @@
                             
                             <div class="detail-row">
                                 <div class="detail-label"><i class="far fa-envelope me-2"></i> Email Address</div>
-                                <div class="detail-value">{{ user.email }}</div>
+                                <div class="detail-value">{{ user.email if user.email else 'Not set' }}</div>
                             </div>
 
                             <div class="detail-row">
@@ -77,10 +84,10 @@
                             </div>
 
                             <div class="action-footer mt-5">
-                                <a href="{{ url_for('edit_profile') }}" class="btn btn-save-profile">
+                                <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-save-profile">
                                     <i class="fas fa-user-edit me-2"></i>Edit Profile
                                 </a>
-                                <a href="{{ url_for('logout') }}" class="btn btn-logout-alt">
+                                <a href="{{ url_for('auth.logout') }}" class="btn btn-logout-alt">
                                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                                 </a>
                             </div>

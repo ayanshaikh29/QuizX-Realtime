@@ -10,63 +10,43 @@ import uuid
 import pytz
 from functools import wraps
 from sqlalchemy import func
-
-
 # ================== APP CONFIG ==================
 app = Flask(__name__)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = False  # True when HTTPS
-
-app.secret_key = "quizx_secret_key_change_later"  # CHANGE THIS IN PRODUCTION!
-
+app.config["SESSION_COOKIE_SECURE"] = False # True when HTTPS
+app.secret_key = "quizx_secret_key_change_later" # CHANGE THIS IN PRODUCTION!
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "postgresql+psycopg2://postgres:12345678@localhost:5432/quizx"
 )
-
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_size": 10,
     "max_overflow": 20,
     "pool_recycle": 1800,
     "pool_pre_ping": True
 }
-
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db = SQLAlchemy(app)
-
 app.jinja_env.globals['pytz'] = pytz
-
-
-
 # ================== SOCKETIO SETUP ==================
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 quiz_state = {}
-
-
+active_participants = {}
 # ================== HELPERS ==================
 def now_utc():
     return datetime.now(timezone.utc)
-
-
 def generate_join_code():
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
-
-
 def get_current_user():
     if "user_id" not in session or session.get("user_id") == -1:
         return None
     return User.query.get(session["user_id"])
-
-
 def calculate_points(is_correct, time_taken=None, time_limit=None, rank=None, has_timer=False):
     """
     Calculate points based on correctness, speed (if timer enabled), and rank.
     """
     if not is_correct:
         return 0
-
-    points = 100  # Base points
-
+    points = 100 # Base points
     # Speed bonus only if quiz has timer
     if has_timer and time_taken is not None and time_limit is not None:
         time_percentage = (time_taken / time_limit) * 100
@@ -79,7 +59,6 @@ def calculate_points(is_correct, time_taken=None, time_limit=None, rank=None, ha
         else:
             speed_bonus = 20
         points += speed_bonus
-
     # Rank bonus
     if rank == 1:
         points += 50
@@ -89,10 +68,7 @@ def calculate_points(is_correct, time_taken=None, time_limit=None, rank=None, ha
         points += 20
     elif rank in [4, 5]:
         points += 10
-
     return points
-
-
 def update_question_rank_bonuses(quiz_id, question_id):
     """
     Update rank bonuses for all correct answers to a question.
@@ -100,7 +76,6 @@ def update_question_rank_bonuses(quiz_id, question_id):
     quiz = Quiz.query.get(quiz_id)
     if not quiz:
         return
-
     # Get all correct answers for this question, ordered by time (if timer) or submission time
     if quiz.has_timer:
         correct_answers = PartialAnswer.query.filter_by(
@@ -120,12 +95,10 @@ def update_question_rank_bonuses(quiz_id, question_id):
         ).order_by(
             PartialAnswer.submitted_at.asc(),
         ).all()
-
     # Get the question to access time_limit
     question = Question.query.get(question_id)
     if not question:
         return
-
     # Recalculate points with rank bonuses
     for idx, partial in enumerate(correct_answers):
         rank = idx + 1
@@ -137,30 +110,21 @@ def update_question_rank_bonuses(quiz_id, question_id):
             has_timer=quiz.has_timer,
         )
         partial.points = new_points
-
     db.session.commit()
-
-
 def require_admin(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("role") != "admin":
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-
     return decorated_function
-
-
 def require_student(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("role") != "student":
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-
     return decorated_function
-
-
 def ensure_guest_student():
     if "user_id" not in session:
         session["role"] = "student"
@@ -171,8 +135,6 @@ def ensure_guest_student():
         # Unique guest ID
         if "guest_id" not in session:
             session["guest_id"] = str(uuid.uuid4())[:8]
-
-
 # ================== SHARED HELPER: build full leaderboard payload ==================
 def build_leaderboard_payload(quiz_id):
     """
@@ -181,7 +143,6 @@ def build_leaderboard_payload(quiz_id):
     Used by both the API endpoint AND the socket emit so they stay in sync.
     """
     total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
-
     rows = db.session.query(
         PartialAnswer.student,
         func.sum(PartialAnswer.points).label("total_points"),
@@ -193,20 +154,17 @@ def build_leaderboard_payload(quiz_id):
         ).label("incorrect_count"),
         func.sum(PartialAnswer.time_taken).label("total_time"),
     ).filter_by(quiz_id=quiz_id).group_by(PartialAnswer.student).all()
-
     return [
         {
-            "student":   row.student,
-            "points":    int(row.total_points or 0),
-            "correct":   int(row.correct_count or 0),
+            "student": row.student,
+            "points": int(row.total_points or 0),
+            "correct": int(row.correct_count or 0),
             "incorrect": int(row.incorrect_count or 0),
-            "time":      int(row.total_time or 0),
-            "total":     total_questions,
+            "time": int(row.total_time or 0),
+            "total": total_questions,
         }
         for row in rows
     ]
-
-
 def get_leaderboard_data(quiz_id):
     points_query = db.session.query(
         PartialAnswer.student.label('name'),
@@ -214,14 +172,10 @@ def get_leaderboard_data(quiz_id):
     ).filter_by(quiz_id=quiz_id)\
      .group_by(PartialAnswer.student)\
      .order_by(func.sum(PartialAnswer.points).desc()).all()
-
     leaderboard = [{"name": r.name, "score": int(r.score)} for r in points_query]
-
     return leaderboard
-
 def get_question_leaderboard(quiz_id, question_id):
     quiz = Quiz.query.get(quiz_id)
-
     if quiz.has_timer:
         answers = PartialAnswer.query.filter_by(
             quiz_id=quiz_id,
@@ -239,7 +193,6 @@ def get_question_leaderboard(quiz_id, question_id):
         ).order_by(
             PartialAnswer.submitted_at.asc()
         ).limit(10).all()
-
     return [
         {
             "rank": i + 1,
@@ -249,26 +202,18 @@ def get_question_leaderboard(quiz_id, question_id):
         }
         for i, a in enumerate(answers)
     ]
-
-
-
 # ================== MODELS ==================
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(10), nullable=False)
-
-
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-
     has_timer = db.Column(db.Boolean, default=False)
-
     published_at = db.Column(db.DateTime)
     publish_count = db.Column(db.Integer, default=0)
-
     start_time = db.Column(db.DateTime)
     is_locked = db.Column(db.Boolean, default=False)
     is_published = db.Column(db.Boolean, default=False)
@@ -277,9 +222,6 @@ class Quiz(db.Model):
     is_paused = db.Column(db.Boolean, default=False)
     paused_at = db.Column(db.DateTime)
     paused_seconds = db.Column(db.Integer, default=0)
-
-
-
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     quiz_id = db.Column(db.Integer, db.ForeignKey("quiz.id"), nullable=False)
@@ -290,29 +232,22 @@ class Question(db.Model):
     option3 = db.Column(db.String(200), nullable=False)
     option4 = db.Column(db.String(200), nullable=False)
     answer = db.Column(db.String(200), nullable=False)
-    time_limit = db.Column(db.Integer, default=30)  # Only used if quiz.has_timer=True
-
-
+    time_limit = db.Column(db.Integer, default=30) # Only used if quiz.has_timer=True
 class PartialAnswer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-
     quiz_id = db.Column(db.Integer, nullable=False, index=True)
     question_id = db.Column(db.Integer, nullable=False, index=True)
     student = db.Column(db.String(100), nullable=False, index=True)
-
     is_correct = db.Column(db.Boolean, nullable=False)
     time_taken = db.Column(db.Integer, nullable=False, default=0)
     points = db.Column(db.Integer, default=0)
     submitted_at = db.Column(db.DateTime, default=now_utc)
-
     __table_args__ = (
         db.UniqueConstraint(
             "quiz_id", "question_id", "student",
             name="unique_answer_per_question"
         ),
     )
-
-
 class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     quiz_id = db.Column(db.Integer)
@@ -322,28 +257,21 @@ class Result(db.Model):
     time_taken = db.Column(db.Integer)
     total_points = db.Column(db.Integer)
     submitted_at = db.Column(db.DateTime)
-
-
 # ================== INIT DB ==================
 with app.app_context():
     print(">>> Creating database tables...")
     db.create_all()
     print(">>> Tables created")
-
-
 # ================== AUTH ==================
 @app.route("/")
 def index():
     return render_template("index.html")
-
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
         role = request.form.get("role")
-
         if not username or not password or role not in ["admin", "student"]:
             flash("Invalid input", "error")
         elif User.query.filter_by(username=username).first():
@@ -360,17 +288,13 @@ def register():
             return redirect(url_for("login"))
         return render_template("register.html")
     return render_template("register.html")
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
         role = request.form.get("role")
-
         user = User.query.filter_by(username=username, role=role).first()
-
         if not user:
             flash("User not found or role mismatch", "error")
         elif not check_password_hash(user.password, password):
@@ -383,18 +307,13 @@ def login():
             return redirect(
                 url_for("admin_dashboard" if user.role == "admin" else "student_dashboard")
             )
-
         return render_template("login.html")
     return render_template("login.html")
-
-
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Logged out successfully.", "info")
     return redirect(url_for("index"))
-
-
 # ================== ADMIN ==================
 @app.route("/admin/dashboard")
 @require_admin
@@ -404,28 +323,23 @@ def admin_dashboard():
     total_students = User.query.filter_by(role='student').count()
     total_responses = Result.query.count()
     recent_results = Result.query.order_by(Result.submitted_at.desc()).limit(5).all()
-
     return render_template(
-        "admin_dashboard.html", 
+        "admin_dashboard.html",
         total_quizzes=total_quizzes,
         active_quizzes=active_quizzes,
         total_students=total_students,
         total_responses=total_responses,
         recent_results=recent_results
     )
-
-
 @app.route("/admin/quizzes", methods=["GET", "POST"])
 @require_admin
 def admin_quizzes():
     if request.method == "POST":
         title = request.form.get("title")
         quiz_type = request.form.get("quiz_type")
-
         if not title:
             flash("Quiz title is required", "error")
             return redirect(url_for("admin_quizzes"))
-
         has_timer = (quiz_type == "timer")
         quiz = Quiz(title=title, has_timer=has_timer)
         db.session.add(quiz)
@@ -435,11 +349,8 @@ def admin_quizzes():
             "success",
         )
         return redirect(url_for("add_question", quiz_id=quiz.id))
-
     quizzes = Quiz.query.all()
     return render_template("admin_quiz.html", quizzes=quizzes)
-
-
 @app.route("/admin/add-question/<int:quiz_id>", methods=["GET", "POST"])
 @require_admin
 def add_question(quiz_id):
@@ -447,7 +358,6 @@ def add_question(quiz_id):
     if quiz.is_active:
         flash("Cannot add questions to an active quiz.", "error")
         return redirect(url_for("admin_quizzes"))
-
     if request.method == "POST":
         questions_data = request.form.getlist("question[]")
         added = False
@@ -461,7 +371,6 @@ def add_question(quiz_id):
             correct_answer = request.form.get(option_key)
             if not correct_answer:
                 continue
-
             if quiz.has_timer:
                 time_str = request.form.get(f"time_{i}", "30")
                 try:
@@ -470,7 +379,6 @@ def add_question(quiz_id):
                     time_limit = 30
             else:
                 time_limit = 0
-
             q = Question(
                 quiz_id=quiz_id,
                 order=i + 1,
@@ -484,22 +392,18 @@ def add_question(quiz_id):
             )
             db.session.add(q)
             added = True
-
         if added:
             db.session.commit()
             flash("Questions added successfully!", "success")
         else:
             flash("No valid questions were added.", "warning")
         return redirect(url_for("add_question", quiz_id=quiz_id))
-    
+   
     if quiz.has_timer:
         template_name = "add_question.html"
     else:
         template_name = "normal_add_question.html"
-
     return render_template(template_name, quiz=quiz)
-
-
 @app.route("/admin/end-questions/<int:quiz_id>")
 @require_admin
 def end_questions(quiz_id):
@@ -508,46 +412,31 @@ def end_questions(quiz_id):
     db.session.commit()
     flash("Question adding locked.", "info")
     return redirect(url_for("admin_quizzes"))
-
-
 @app.route("/admin/publish-quiz/<int:quiz_id>")
 @require_admin
 def publish_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     if not quiz.is_locked:
         flash("Lock questions first before publishing!", "error")
         return redirect(url_for("admin_quizzes"))
-
     quiz.is_published = True
     quiz.is_active = True
-
     quiz.start_time = now_utc()
     quiz.published_at = now_utc()
     quiz.publish_count = (quiz.publish_count or 0) + 1
-
     quiz.paused_seconds = 0
     quiz.is_paused = False
-
     if not quiz.join_code:
         quiz.join_code = generate_join_code()
-
     quiz_state[quiz.id] = {"current_qindex": 0}
-
     db.session.commit()
-
     ist_time = utc_to_ist(quiz.published_at)
-
     flash(
         f"Quiz published at {ist_time.strftime('%d %b %Y, %I:%M %p')} IST "
         f"(Published {quiz.publish_count} times)",
         "success",
     )
-
     return redirect(url_for("admin_quizzes"))
-
-
-
 @app.route("/admin/pause-quiz/<int:quiz_id>")
 @require_admin
 def pause_quiz(quiz_id):
@@ -558,8 +447,6 @@ def pause_quiz(quiz_id):
         db.session.commit()
         flash("Quiz paused.", "info")
     return redirect(url_for("admin_quizzes"))
-
-
 @app.route("/admin/resume-quiz/<int:quiz_id>")
 @require_admin
 def resume_quiz(quiz_id):
@@ -572,43 +459,60 @@ def resume_quiz(quiz_id):
         db.session.commit()
         flash("Quiz resumed.", "info")
     return redirect(url_for("admin_quizzes"))
-
-
 @app.route("/admin/stop-quiz/<int:quiz_id>")
 @require_admin
 def stop_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     quiz.is_active = False
     quiz.is_published = False
     quiz.is_paused = False
     quiz.paused_at = None
     quiz.paused_seconds = 0
-
     db.session.commit()
-
     quiz_state.pop(quiz_id, None)
-
     socketio.emit(
         "quiz_stopped",
         {"quiz_id": quiz_id},
         room=str(quiz_id)
     )
-
     flash("Quiz stopped successfully.", "info")
     return redirect(url_for("admin_quizzes"))
-
-
+@app.route("/waiting-room/<int:quiz_id>")
+def waiting_room(quiz_id):
+    ensure_guest_student()
+    quiz = Quiz.query.get_or_404(quiz_id)
+   
+    # If admin already started it, redirect to the actual quiz
+    if quiz.is_active:
+        return redirect(url_for("attempt_quiz", quiz_id=quiz.id))
+       
+    return render_template("waiting_room.html", quiz=quiz)
+# --- Update your Admin Start Route ---
+@app.route("/admin/start-quiz/<int:quiz_id>")
+@require_admin
+def start_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    quiz.is_active = True
+    db.session.commit()
+    # The Magic: Tell everyone in the room to start!
+    socketio.emit("begin_quiz", {"quiz_id": quiz_id}, room=str(quiz_id))
+   
+    flash("Quiz is now LIVE!", "success")
+    return redirect(url_for("admin_live_leaderboard", quiz_id=quiz_id))
 @app.route("/admin/live-leaderboard/<int:quiz_id>")
 @require_admin
 def admin_live_leaderboard(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     if request.args.get('json'):
         return jsonify({"results": build_leaderboard_payload(quiz_id)})
-   
+  
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
     total_questions = len(questions)
+   
+    current_question = None
+    if questions:
+        current_question = questions[0]
+   
     return render_template(
         "admin_live_leaderboard.html",
         quiz=quiz,
@@ -617,34 +521,29 @@ def admin_live_leaderboard(quiz_id):
         qindex="live",
         total_questions=total_questions,
         is_last=False,
+        current_question=current_question,
     )
-
-
 # ================== STUDENT DASHBOARD (LOGIN REQUIRED) ==================
 @app.route("/student/dashboard")
 @require_student
 def student_dashboard():
     return render_template("student_dashboard.html", username=session.get("username"))
-
-
 # ================== PUBLIC / GUEST ACCESS ROUTES (NO LOGIN REQUIRED) ==================
 @app.route("/student/quizzes")
 def student_quizzes():
-    ensure_guest_student()
-    quizzes = Quiz.query.filter_by(is_active=True, is_published=True).all()
-    return render_template("student_quiz.html", quizzes=quizzes)
-
-
-@app.route("/join", methods=["GET", "POST"])
-def join_by_code():
-
     if session.get("role") == "admin":
         flash("Admins cannot join quizzes ❌", "danger")
         return redirect(url_for("admin_dashboard"))
-
     ensure_guest_student()
-
-
+    quizzes = Quiz.query.filter_by(is_active=True, is_published=True).all()
+    return render_template("student_quiz.html", quizzes=quizzes)
+@app.route("/join", methods=["GET", "POST"])
+def join_by_code():
+    # Block admin from joining quizzes
+    if session.get("role") == "admin":
+        flash("Admins cannot join quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
+    ensure_guest_student()
     if request.method == "POST":
         code = request.form.get("code", "").strip().upper()
         quiz = Quiz.query.filter_by(
@@ -654,76 +553,55 @@ def join_by_code():
             return redirect(url_for("attempt_quiz", quiz_id=quiz.id))
         flash("Invalid or inactive quiz code.", "error")
     return render_template("student_quiz.html")
-
-
 @app.route("/join/<code>")
 def join_by_link(code):
-
-    # 🔒 ADMIN BLOCK
+    # Block admin from joining quizzes
     if session.get("role") == "admin":
         flash("Admins are not allowed to attempt quizzes ❌", "danger")
         return redirect(url_for("admin_dashboard"))
-
     ensure_guest_student()
-
     quiz = Quiz.query.filter_by(
         join_code=code.upper(), is_active=True, is_published=True
     ).first()
-
     if not quiz:
         return render_template("quiz_closed.html", message="Quiz not found or not active.")
-
     return redirect(url_for("attempt_quiz", quiz_id=quiz.id))
-
 @app.route("/admin/analytics/<int:quiz_id>")
 @require_admin
 def admin_analytics(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     total_participants = db.session.query(
         PartialAnswer.student
     ).filter_by(quiz_id=quiz_id).distinct().count()
-
     total_answers = PartialAnswer.query.filter_by(quiz_id=quiz_id).count()
     correct_answers = PartialAnswer.query.filter_by(
         quiz_id=quiz_id, is_correct=True
     ).count()
-
     accuracy_rate = int((correct_answers / total_answers) * 100) if total_answers else 0
-
     avg_time = int(
         db.session.query(func.avg(PartialAnswer.time_taken))
         .filter_by(quiz_id=quiz_id).scalar() or 0
     )
-
     completion_rate = 100
-
     question_data = []
     questions = Question.query.filter_by(quiz_id=quiz_id).all()
-
     for q in questions:
         total_q = PartialAnswer.query.filter_by(
             quiz_id=quiz_id, question_id=q.id
         ).count()
-
         correct_q = PartialAnswer.query.filter_by(
             quiz_id=quiz_id, question_id=q.id, is_correct=True
         ).count()
-
         avg_q_time = db.session.query(func.avg(PartialAnswer.time_taken))\
             .filter_by(quiz_id=quiz_id, question_id=q.id).scalar() or 0
-
         correct_pct = int((correct_q / total_q) * 100) if total_q else 0
-
         difficulty = "easy" if correct_pct > 70 else "medium" if correct_pct > 40 else "hard"
-
         question_data.append({
             "text": q.question,
             "difficulty": difficulty,
             "correct_pct": correct_pct,
             "avg_time": int(avg_q_time),
         })
-
     top_students = db.session.query(
         PartialAnswer.student.label("name"),
         func.sum(PartialAnswer.points).label("score")
@@ -731,7 +609,6 @@ def admin_analytics(quiz_id):
      .group_by(PartialAnswer.student)\
      .order_by(func.sum(PartialAnswer.points).desc())\
      .limit(5).all()
-
     return render_template(
         "admin_analytics.html",
         quiz=quiz,
@@ -742,51 +619,40 @@ def admin_analytics(quiz_id):
         question_data=question_data,
         top_students=top_students
     )
-
-
 @app.route("/student/quiz/<int:quiz_id>", methods=["GET", "POST"])
 def attempt_quiz(quiz_id):
-
+    # Block admin from attempting quizzes
     if session.get("role") == "admin":
         flash("Admins cannot solve quizzes ❌", "danger")
         return redirect(url_for("admin_dashboard"))
-
     ensure_guest_student()
     quiz = Quiz.query.get_or_404(quiz_id)
-
-    if not quiz.is_active or not quiz.is_published:
+    if not quiz.is_active:
+        return redirect(url_for("waiting_room", quiz_id=quiz.id))
+    if not quiz.is_published:
         return render_template("quiz_closed.html", message="Quiz has ended or is not available.")
-
     if quiz.is_paused:
         return render_template("quiz_closed.html", message="Quiz is currently paused by admin.")
-
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
-
     if not questions:
-        return render_template("quiz_closed.html", 
+        return render_template("quiz_closed.html",
                              message="This quiz has no questions yet. Please contact the admin to add questions.")
-
     if session.get("user_id") == -1:
         student_name = f"Guest-{session.get('guest_id', '00000000')}"
     else:
         student_name = session["username"]
-
     # RETAKE LOGIC
     if request.method == "GET" and request.args.get("retake") == "1":
         Result.query.filter_by(quiz_id=quiz_id, student=student_name).delete()
         PartialAnswer.query.filter_by(quiz_id=quiz_id, student=student_name).delete()
         db.session.commit()
         flash("Previous attempt cleared. Starting fresh!", "info")
-
     start_key = f"quiz_start_{quiz_id}"
-
     if start_key not in session:
         session[start_key] = time.time()
-
     if request.method == "POST":
         print("=== POST REQUEST RECEIVED ===")
         print(f"Form data: {dict(request.form)}")
-
         action = request.form.get("start_question")
         if action == "1":
             question_id = int(request.form.get("question_id"))
@@ -794,23 +660,17 @@ def attempt_quiz(quiz_id):
             if q_start_key not in session:
                 session[q_start_key] = time.time()
             return jsonify({"success": True})
-
         # Per-question submission
         qindex = int(request.form.get("qindex", 0))
         question_id = int(request.form.get("question_id"))
         selected_answer = request.form.get("selected_answer")
-
         print(f"Question Index: {qindex}, Question ID: {question_id}")
         print(f"Selected answer: '{selected_answer}'")
-
         q_start_key = f"q_start_{quiz_id}_{question_id}"
         q_start_ts = session.get(q_start_key, time.time())
         time_taken = int(time.time() - q_start_ts)
-
         current_question = Question.query.get_or_404(question_id)
-
         print(f"Correct answer: '{current_question.answer}'")
-
         if not selected_answer:
             is_correct = False
             print("No answer selected - marking as incorrect")
@@ -819,7 +679,6 @@ def attempt_quiz(quiz_id):
             print(
                 f"Comparison: '{selected_answer.strip()}' == '{current_question.answer.strip()}' = {is_correct}"
             )
-
         # Prevent duplicates
         PartialAnswer.query.filter_by(
             quiz_id=quiz_id,
@@ -827,7 +686,6 @@ def attempt_quiz(quiz_id):
             student=student_name,
         ).delete()
         db.session.commit()
-
         # Calculate points
         question_points = 0
         if is_correct:
@@ -838,7 +696,6 @@ def attempt_quiz(quiz_id):
                 time_limit,
                 has_timer=quiz.has_timer,
             )
-
         try:
             partial = PartialAnswer(
                 quiz_id=quiz_id,
@@ -851,30 +708,19 @@ def attempt_quiz(quiz_id):
             )
             db.session.add(partial)
             db.session.commit()
-
             print(
                 f"✓ Saved answer: correct={is_correct}, time={time_taken}s, points={question_points}"
             )
-
             update_question_rank_bonuses(quiz_id, question_id)
-
-            # ======================================================
-            # 🔥 FIX: Use build_leaderboard_payload for socket emit
-            #    This gives every player: student, points, correct,
-            #    incorrect, time — matching what the HTML expects.
-            # ======================================================
+            # Build leaderboard payload
             leaderboard_list = build_leaderboard_payload(quiz_id)
-
             print(f"Emitting leaderboard_update with {len(leaderboard_list)} students")
-
         except Exception as e:
             print(f"ERROR saving answer: {e}")
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 500
-
         total_questions = len(questions)
         is_last = (qindex + 1) >= total_questions
-
         if is_last:
             partials = PartialAnswer.query.filter_by(
                 quiz_id=quiz_id, student=student_name
@@ -883,12 +729,10 @@ def attempt_quiz(quiz_id):
             total_time = sum(p.time_taken for p in partials)
             total_points = sum(p.points for p in partials)
             total = total_questions
-
             print("=== QUIZ COMPLETE ===")
             print(
                 f"Score: {score}/{total}, Time: {total_time}s, Points: {total_points}"
             )
-
             existing = Result.query.filter_by(
                 quiz_id=quiz_id, student=student_name
             ).first()
@@ -903,59 +747,44 @@ def attempt_quiz(quiz_id):
                 )
                 db.session.add(result)
                 db.session.commit()
-
             session.pop(start_key, None)
-
             for k in list(session.keys()):
                 if k.startswith(f"q_start_{quiz_id}_") or k == start_key:
                     session.pop(k, None)
-
-            # ======================================================
-            # 🔥 FIX: Emit "leaderboard_update" (not "question_result")
-            #    with the full payload. Both HTML files listen on
-            #    "leaderboard_update".
-            # ======================================================
             socketio.emit(
                 "leaderboard_update",
-                leaderboard_list,          # <-- direct list, matches what HTML expects
+                leaderboard_list,
                 room=str(quiz_id)
             )
-
             return jsonify({
                 "success": True,
                 "is_correct": is_correct,
                 "correct_answer": current_question.answer,
             })
-
-        # ======================================================
-        # 🔥 FIX: Same event name + same payload for non-final too
-        # ======================================================
         socketio.emit(
             "leaderboard_update",
             leaderboard_list,
             room=str(quiz_id)
         )
-
         return jsonify({
             "success": True,
             "is_correct": is_correct,
             "correct_answer": current_question.answer,
         })
-
     # ========== GET REQUEST: SHOW QUESTION ==========
-    if quiz.has_timer:
-        qindex = quiz_state.get(quiz_id, {}).get("current_qindex", 0)
-    else:
-        qindex = request.args.get("qindex", 0, type=int)
-
+    qindex = request.args.get("qindex", type=int)
+   
+    if qindex is None:
+        if quiz.has_timer:
+            qindex = quiz_state.get(quiz_id, {}).get("current_qindex", 0)
+        else:
+            qindex = 0
     total_questions = len(questions)
-
     if qindex >= total_questions:
         if not quiz.has_timer:
             return redirect(url_for("student_result", quiz_id=quiz_id))
         else:
             return redirect(url_for("leaderboard_live", quiz_id=quiz_id, qindex="done"))
-
     current_q = questions[qindex]
     current_question = {
         "id": current_q.id,
@@ -967,12 +796,10 @@ def attempt_quiz(quiz_id):
         "correct_answer": current_q.answer,
         "time_limit": current_q.time_limit,
     }
-
     if quiz.has_timer:
         template_name = "attempt_quiz.html"
     else:
         template_name = "normal_attempt_quiz.html"
-
     return render_template(
         template_name,
         quiz=quiz,
@@ -981,40 +808,34 @@ def attempt_quiz(quiz_id):
         current_index=qindex,
         quiz_id=quiz_id,
     )
-
-
 @app.route("/student/quiz/result/<int:quiz_id>")
 def student_result(quiz_id):
+    if session.get("role") == "admin":
+        flash("Admins cannot join quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
     ensure_guest_student()
-
     quiz = Quiz.query.get_or_404(quiz_id)
-
     student_name = (
         f"Guest-{session.get('guest_id', '00000000')}"
         if session.get("user_id") == -1
         else session["username"]
     )
-
     result = Result.query.filter_by(
         quiz_id=quiz_id,
         student=student_name
     ).first()
-
     partials = PartialAnswer.query.filter_by(
         quiz_id=quiz_id,
         student=student_name
     ).all()
-
     if not partials and not result:
         flash("No quiz attempt found. Please take the quiz first.", "error")
         return redirect(url_for("student_quizzes"))
-
     if partials:
         score = sum(1 for p in partials if p.is_correct)
         total_points = sum(p.points for p in partials)
         total_time = sum(p.time_taken for p in partials)
         total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
-
         if not result:
             result = Result(
                 quiz_id=quiz_id,
@@ -1029,9 +850,7 @@ def student_result(quiz_id):
             result.score = score
             result.total_points = total_points
             result.time_taken = total_time
-
         db.session.commit()
-
     return render_template(
         "student_result.html",
         quiz=quiz,
@@ -1039,25 +858,25 @@ def student_result(quiz_id):
         quiz_id=quiz_id,
         result=result
     )
-
-
-
 # ================== LEADERBOARD ==================
 @app.route("/leaderboard/live/<int:quiz_id>")
 def leaderboard_live(quiz_id):
+    if session.get("role") == "admin":
+        flash("Admins cannot join quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
     ensure_guest_student()
     qindex = request.args.get("qindex", 0, type=str)
     quiz = Quiz.query.get_or_404(quiz_id)
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
     total_questions = len(questions)
-
     try:
         qindex_int = int(qindex) if qindex != "done" else total_questions
     except Exception:
         qindex_int = 0
-
     is_last = (qindex == "done" or qindex_int >= total_questions)
-
+    current_question = None
+    if questions:
+        current_question = questions[0]
     return render_template(
         "admin_live_leaderboard.html",
         quiz=quiz,
@@ -1066,16 +885,20 @@ def leaderboard_live(quiz_id):
         qindex=qindex,
         total_questions=total_questions,
         is_last=is_last,
+        current_question=current_question,
     )
-
-
 @app.route("/leaderboard/<int:quiz_id>")
 def leaderboard(quiz_id):
+    if session.get("role") == "admin":
+        flash("Admins cannot join quizzes ❌", "danger")
+        return redirect(url_for("admin_dashboard"))
     ensure_guest_student()
     quiz = Quiz.query.get_or_404(quiz_id)
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
     total_questions = len(questions)
-
+    current_question = None
+    if questions:
+        current_question = questions[0]
     return render_template(
         "student_result.html",
         quiz=quiz,
@@ -1084,34 +907,23 @@ def leaderboard(quiz_id):
         qindex="done",
         total_questions=total_questions,
         is_last=True,
-        result=None,          # no personal result context here
+        result=None,
+        current_question=current_question,
     )
-
-
-# ======================================================
-# 🔥 FIX: api_leaderboard now returns correct + incorrect
-#    Uses the same build_leaderboard_payload helper so
-#    API and socket are always identical in shape.
-# ======================================================
 @app.route("/api/leaderboard/<int:quiz_id>")
 def api_leaderboard(quiz_id):
     leaderboard_data = build_leaderboard_payload(quiz_id)
-
     # Sort: most points first, then most correct, then least time
     leaderboard_data.sort(key=lambda x: (-x["points"], -x["correct"], x["time"]))
-
     return jsonify(
         {
             "participants": len(leaderboard_data),
             "leaderboard": leaderboard_data,
         }
     )
-
-
 @app.route("/api/question-leaderboard/<int:quiz_id>/<int:question_id>")
 def api_question_leaderboard(quiz_id, question_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     if quiz.has_timer:
         partials = PartialAnswer.query.filter_by(
             quiz_id=quiz_id,
@@ -1129,7 +941,6 @@ def api_question_leaderboard(quiz_id, question_id):
         ).order_by(
             PartialAnswer.submitted_at.asc(),
         ).limit(10).all()
-
     return jsonify(
         {
             "participants": len(partials),
@@ -1144,36 +955,37 @@ def api_question_leaderboard(quiz_id, question_id):
             ],
         }
     )
-
-
 # ================== SOCKETIO EVENTS ==================
 @socketio.on("join_quiz")
 def join_quiz(data):
     quiz_id = str(data["quiz_id"])
     join_room(quiz_id)
-
+    print(f"✅ User joined room: quiz_{quiz_id}")
 @socketio.on("admin_next_question")
 def admin_next_question(data):
     quiz_id = int(data["quiz_id"])
-
     if quiz_id not in quiz_state:
         quiz_state[quiz_id] = {"current_qindex": 0}
-
-    quiz_state[quiz_id]["current_qindex"] += 1
-
     total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
-
-    if quiz_state[quiz_id]["current_qindex"] >= total_questions:
+   
+    current_index = quiz_state[quiz_id]["current_qindex"]
+   
+    print(f"🎯 Current question: {current_index + 1} of {total_questions}")
+    if current_index >= total_questions - 1:
+        print("🏁 Quiz finished - emitting quiz_finished event")
         socketio.emit("quiz_finished", {}, room=str(quiz_id))
         return
-
+    quiz_state[quiz_id]["current_qindex"] += 1
+    new_qindex = quiz_state[quiz_id]["current_qindex"]
+   
+    print(f"📤 Moving to question {new_qindex + 1} of {total_questions}")
     socketio.emit(
         "load_next_question",
-        {"qindex": quiz_state[quiz_id]["current_qindex"]},
+        {"qindex": new_qindex, "quiz_id": quiz_id},
         room=str(quiz_id)
     )
-
-    
+    print(f"📡 Emitted load_next_question with qindex={new_qindex} to room {quiz_id}")
+   
 @app.route("/admin/delete-quiz/<int:quiz_id>")
 @require_admin
 def delete_quiz(quiz_id):
@@ -1183,7 +995,6 @@ def delete_quiz(quiz_id):
     db.session.commit()
     flash("Quiz deleted successfully.", "info")
     return redirect(url_for("admin_quizzes"))
-
 @app.route("/admin/rename-quiz", methods=["POST"])
 @require_admin
 def rename_quiz_action():
@@ -1195,25 +1006,20 @@ def rename_quiz_action():
         db.session.commit()
         flash("Quiz renamed successfully!", "success")
     return redirect(url_for("admin_quizzes"))
-
 @app.route("/admin/live-control/<int:quiz_id>")
 @require_admin
 def admin_live_control(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-
     if quiz_id not in quiz_state:
         quiz_state[quiz_id] = {"current_qindex": 0}
-
     current_index = quiz_state[quiz_id]["current_qindex"]
     total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
-
     return render_template(
         "admin_live_control.html",
         quiz=quiz,
         current_index=current_index,
         total_questions=total_questions
     )
-
 # ================== PROFILE (OPTIONAL - REQUIRES LOGIN) ==================
 @app.route("/profile")
 def profile():
@@ -1221,14 +1027,11 @@ def profile():
     if not user:
         return redirect(url_for("login"))
     return render_template("profile.html", user=user)
-
-
 @app.route("/profile/edit", methods=["GET", "POST"])
 def edit_profile():
     user = get_current_user()
     if not user:
         return redirect(url_for("login"))
-
     if request.method == "POST":
         new_username = request.form.get("username")
         if new_username and new_username != user.username:
@@ -1240,46 +1043,56 @@ def edit_profile():
                 flash("Profile updated!", "success")
         db.session.commit()
         return redirect(url_for("profile"))
-
     return render_template("edit_profile.html", user=user)
-
-
 def utc_to_ist(utc_dt):
     """Converts UTC datetime to IST for display purposes."""
     if not utc_dt:
         return None
     ist = pytz.timezone('Asia/Kolkata')
     return utc_dt.replace(tzinfo=pytz.utc).astimezone(ist)
-
-@socketio.on("disconnect")
+@socketio.on('join_waiting_room')
+def handle_join_waiting(data):
+    quiz_id = str(data['quiz_id'])
+    username = session.get('username', 'Guest')
+  
+    join_room(quiz_id)
+  
+    if quiz_id not in active_participants:
+        active_participants[quiz_id] = {}
+  
+    # Track user by their socket session ID
+    active_participants[quiz_id][request.sid] = username
+  
+    # Emit updated list to everyone in the room
+    emit_participant_update(quiz_id)
+@socketio.on('disconnect')
 def handle_disconnect():
-    pass
-
-@socketio.on('next_question')
-def handle_next_question(data):
-    quiz_id = int(data['quiz_id'])
-    if quiz_id in quiz_state:
-        quiz_state[quiz_id]['current_qindex'] += 1
-        emit('new_question', {'qindex': quiz_state[quiz_id]['current_qindex']}, room=str(quiz_id))
-
+    for quiz_id in active_participants:
+        if request.sid in active_participants[quiz_id]:
+            del active_participants[quiz_id][request.sid]
+            emit_participant_update(quiz_id)
+            break
+def emit_participant_update(quiz_id):
+    # Get unique names for the list
+    names = list(set(active_participants.get(quiz_id, {}).values()))
+    socketio.emit('update_participants', {
+        'count': len(names),
+        'users': names
+    }, room=quiz_id)
 # ================== STUDENT HISTORY ==================
 @app.route("/student/history")
 @require_student
 def student_history():
     username = session.get("username")
-
     history = (
         Result.query
         .filter_by(student=username)
         .order_by(Result.submitted_at.desc())
         .all()
     )
-
     return render_template("student_history.html", history=history)
-
-
-
 # ================== RUN ==================
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
-    
+    # Fix for Windows + Python 3.13 compatibility
+    # Disable reloader to avoid WERKZEUG_SERVER_FD error
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000, use_reloader=False)
