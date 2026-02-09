@@ -9,59 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
-    <style>
-        :root {
-            --primary-lime: #D4F469;
-            --text-dark: #1F2937;
-            --text-grey: #6B7280;
-            --bg-color: #FAFAFA;
-            --gold: #FFD700;
-            --silver: #C0C0C0;
-            --bronze: #CD7F32;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-dark); padding-bottom: 100px; }
-
-        .header { padding: 2rem 1.5rem; text-align: center; background: white; border-bottom: 1px solid #eee; }
-        .header h1 { font-weight: 800; font-size: 1.8rem; margin-bottom: 0.5rem; }
-        .finish-tag { background: var(--text-dark); color: var(--primary-lime); padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
-
-        /* Stats Section */
-        .stats-container { display: flex; justify-content: center; gap: 1rem; padding: 2rem 1rem; flex-wrap: wrap; }
-        .stat-card { background: white; padding: 1.5rem; border-radius: 20px; text-align: center; min-width: 120px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex: 1; max-width: 180px; }
-        .stat-card i { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-grey); }
-        .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--text-dark); }
-        .stat-label { font-size: 0.75rem; color: var(--text-grey); font-weight: 600; }
-
-        /* Podium (Same as Leaderboard) */
-        .podium-section { padding: 2rem 1rem; display: flex; justify-content: center; align-items: flex-end; gap: 0.5rem; min-height: 250px; }
-        .podium-item { display: flex; flex-direction: column; align-items: center; position: relative; width: 30%; max-width: 110px; }
-        .podium-item.first { width: 38%; max-width: 130px; }
-        .avatar-circle { width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; border: 3px solid transparent; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .first .avatar-circle { width: 90px; height: 90px; border-color: var(--primary-lime); font-size: 1.8rem; }
-        .second .avatar-circle { border-color: var(--silver); }
-        .third .avatar-circle { border-color: var(--bronze); }
-        .crown { position: absolute; top: -25px; color: var(--primary-lime); font-size: 1.5rem; transform: rotate(-10deg); }
-        .p-name { font-weight: 700; font-size: 0.9rem; margin-top: 10px; }
-        .p-score { font-size: 0.8rem; color: var(--text-grey); font-weight: 600; }
-
-        /* List Section */
-        .list-section { padding: 0 1.5rem; max-width: 500px; margin: 0 auto; }
-        .player-row { background: white; border-radius: 16px; padding: 0.8rem 1rem; display: flex; align-items: center; margin-bottom: 0.8rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-        .player-row.is-me { background-color: var(--primary-lime); box-shadow: 0 4px 15px rgba(212, 244, 105, 0.4); }
-        .r-rank { width: 30px; font-weight: 800; font-size: 0.9rem; }
-        .r-avatar { width: 35px; height: 35px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: white; margin-right: 12px; }
-        .r-name { flex: 1; font-weight: 600; font-size: 0.95rem; }
-        .r-score { font-weight: 700; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; }
-
-        .btn-footer { position: fixed; bottom: 0; width: 100%; padding: 1.5rem; background: white; display: flex; justify-content: center; }
-        .btn-dash { background: var(--text-dark); color: var(--primary-lime); padding: 1rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 700; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-
-        .avatar-grad-1 { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
-        .avatar-grad-2 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
-        .avatar-grad-3 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_result.css') }}">
 </head>
 <body>
 
@@ -72,28 +20,27 @@
 </div>
 
 <div class="stats-container">
-    <div class="stat-card">
+    <div class="stat-card animate__animated animate__zoomIn">
         <i class="fas fa-check-circle"></i>
         <span class="stat-val">{{ result.score }} / {{ result.total }}</span>
         <span class="stat-label">Correct</span>
     </div>
-    <div class="stat-card">
+    <div class="stat-card animate__animated animate__zoomIn" style="animation-delay: 0.1s">
         <i class="fas fa-bolt"></i>
         <span class="stat-val">{{ result.total_points }}</span>
         <span class="stat-label">Points</span>
     </div>
-    
 </div>
 
 <div class="text-center mt-4">
-    <h3 style="font-weight: 800;"><i class="fas fa-trophy text-warning me-2"></i>Leaderboard</h3>
+    <h3 class="leaderboard-title"><i class="fas fa-trophy text-warning me-2"></i>Leaderboard</h3>
 </div>
 
 <div id="podium-area" class="podium-section"></div>
 <div id="leaderboard-list" class="list-section"></div>
 
 <div class="btn-footer">
-    <a href="/student/quizzes" class="btn-dash">Back to Dashboard <i class="fas fa-arrow-right ms-2"></i></a>
+    <a href="{{ url_for('student.dashboard') }}" class="btn-dash">Back to Dashboard <i class="fas fa-arrow-right ms-2"></i></a>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -105,9 +52,15 @@
     socket.emit('join_quiz', { quiz_id: quizId });
     socket.on('leaderboard_update', data => renderLeaderboard(Array.isArray(data) ? data : data.leaderboard));
 
+    // Initial fetch for leaderboard
     fetch(`/student/api/leaderboard/${quizId}`)
-        .then(r => r.json()).then(data => renderLeaderboard(data.leaderboard))
-        .catch(() => fetch(`/api/leaderboard/${quizId}`).then(r => r.json()).then(data => renderLeaderboard(data.leaderboard)));
+        .then(r => r.json())
+        .then(data => renderLeaderboard(data.leaderboard))
+        .catch(() => {
+            fetch(`/api/leaderboard/${quizId}`)
+                .then(r => r.json())
+                .then(data => renderLeaderboard(data.leaderboard))
+        });
 
     function renderLeaderboard(data) {
         if (!data) return;
@@ -120,7 +73,6 @@
         const top3 = data.slice(0, 3);
         const others = data.slice(3);
 
-        // Podium Logic (2nd, 1st, 3rd)
         let displayOrder = [];
         if (top3.length === 1) displayOrder = [ {p: top3[0], r: 1, c: 'first'} ];
         else if (top3.length === 2) displayOrder = [ {p: top3[1], r: 2, c: 'second'}, {p: top3[0], r: 1, c: 'first'} ];
@@ -130,7 +82,7 @@
             const isMe = item.p.student === currentUserName;
             podium.innerHTML += `
                 <div class="podium-item ${item.c} animate__animated animate__fadeInUp">
-                    ${item.r === 1 ? '<i class="fas fa-crown crown"></i>' : ''}
+                    ${item.r === 1 ? '<div class="crown"><i class="fas fa-crown"></i></div>' : ''}
                     <div class="avatar-circle avatar-grad-${item.r}">${item.p.student.substring(0,2).toUpperCase()}</div>
                     <div class="p-name">${isMe ? 'You' : item.p.student.split(' ')[0]}</div>
                     <div class="p-score">${item.p.points} pts</div>
@@ -140,9 +92,9 @@
         others.forEach((p, i) => {
             const isMe = p.student === currentUserName;
             list.innerHTML += `
-                <div class="player-row ${isMe ? 'is-me' : ''} animate__animated animate__slideInUp">
+                <div class="player-row ${isMe ? 'is-me' : ''} animate__animated animate__slideInUp" style="animation-delay: ${i * 0.05}s">
                     <div class="r-rank">#${i + 4}</div>
-                    <div class="r-avatar avatar-grad-3">${p.student[0]}</div>
+                    <div class="r-avatar avatar-grad-3">${p.student[0].toUpperCase()}</div>
                     <div class="r-name">${isMe ? 'You' : p.student}</div>
                     <div class="r-score">${p.points} pts</div>
                 </div>`;
