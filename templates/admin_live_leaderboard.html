@@ -3,44 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | Leaderboard</title>
+    <title>QuizX | Live Leaderboard</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_leaderboard.css') }}">
 </head>
 <body>
-<!-- This is a single-line comment -->
-    <div class="app-header">
-        <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
-        <div class="header-title">Leaderboard</div>
+
+<div class="leaderboard-container">
+    <header class="leaderboard-header">
+        <button class="back-btn" onclick="window.location.href='{{ url_for('student.dashboard') }}'">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header-title">
+            <h2>Live Leaderboard</h2>
+        </div>
+    </header>
+
+    <div class="container-fluid p-4">
+        <div class="status-container" id="statusMessage"></div>
+
+        <div class="podium-section" id="podiumContainer"></div>
+
+        <div class="list-section" id="playerList"></div>
+
+        <div class="empty-state" id="emptyState">
+            <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; color: #94a3b8;"></i>
+            <p class="text-muted">Waiting for results...</p>
+        </div>
+
+        <div class="action-footer" id="actionFooter">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary-custom">
+                <i class="fas fa-arrow-left me-2"></i> Return to Dashboard
+            </a>
+        </div>
     </div>
+</div>
 
-    <div class="status-container" id="statusMessage"></div>
-
-    <div class="podium-section" id="podiumContainer"></div>
-
-    <div class="list-section" id="playerList"></div>
-
-    <div class="empty-state" id="emptyState">
-        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-        <p>Waiting for results...</p>
-    </div>
-
-    <div class="action-footer" id="actionFooter">
-        <a href="{{ url_for('student.dashboard') }}" class="btn-finish">
-            Return to Dashboard <i class="fas fa-arrow-right"></i>
-        </a>
-    </div>
-
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 const socket = io();
 const quizId = {{ quiz_id }};
 let quizStatus = "{{ quiz_status }}".toLowerCase(); 
 const currentStudent = "{{ session.get('username', 'Guest') }}";
+let isLastQuestion = false;
 
 console.log('=== LEADERBOARD LIVE ===');
 
@@ -56,7 +68,8 @@ socket.on("load_next_question", (data) => {
 // Listen for quiz finished
 socket.on("quiz_finished", (data) => {
     quizStatus = 'done';
-    renderGameDoneUI(); 
+    isLastQuestion = true;
+    renderStatusMessage(); 
     setTimeout(() => fetchLeaderboard(), 500);
 });
 
@@ -66,29 +79,33 @@ socket.on("leaderboard_update", (data) => {
     renderLeaderboard(list);
 });
 
-function checkStatusAndRender() {
+function renderStatusMessage() {
     const statusDiv = document.getElementById('statusMessage');
     const footerDiv = document.getElementById('actionFooter');
     
-    if (quizStatus === 'done' || quizStatus === 'finished' || quizStatus === 'completed') {
-        renderGameDoneUI();
+    if (quizStatus === 'done' || quizStatus === 'finished' || quizStatus === 'completed' || isLastQuestion) {
+        statusDiv.innerHTML = `
+            <div class="status-banner final-status">
+                <i class="fas fa-flag-checkered"></i>
+                <div>
+                    <div class="status-title">Quiz Complete!</div>
+                    <div class="status-subtitle">Final Leaderboard</div>
+                </div>
+            </div>
+        `;
+        footerDiv.style.display = 'flex';
     } else {
-        statusDiv.innerHTML = ''; 
+        statusDiv.innerHTML = `
+            <div class="status-banner waiting-status">
+                <i class="fas fa-hourglass-half"></i>
+                <div>
+                    <div class="status-title">Waiting for Admin</div>
+                    <div class="status-subtitle">Admin will start the next question soon...</div>
+                </div>
+            </div>
+        `;
         footerDiv.style.display = 'none';
     }
-}
-
-function renderGameDoneUI() {
-    const statusDiv = document.getElementById('statusMessage');
-    const footerDiv = document.getElementById('actionFooter');
-
-    statusDiv.innerHTML = `
-        <div class="status-banner">
-            <i class="fas fa-flag-checkered"></i>
-            Quiz Complete! Final Results.
-        </div>
-    `;
-    footerDiv.style.display = 'flex';
 }
 
 function getInitials(name) {
@@ -195,7 +212,7 @@ function fetchLeaderboard() {
         .catch(err => console.error(err));
 }
 
-checkStatusAndRender();
+renderStatusMessage();
 fetchLeaderboard();
 </script>
 </body>

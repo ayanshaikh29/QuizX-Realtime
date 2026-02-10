@@ -19,17 +19,41 @@
         <div class="sidebar-header">
             <div class="logo">
                 <i class="fas fa-bolt text-warning"></i>
-                <span>QuizX Studio</span>
+                {% if user.role == 'admin' %}
+                <span>QuizX Admin</span>
+                {% else %}
+                <span>QuizX Student</span>
+                {% endif %}
             </div>
         </div>
         <nav class="sidebar-nav">
             {% if user.role == 'admin' %}
-            <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="{{ url_for('admin.quizzes') }}" class="nav-link"><i class="fas fa-list-ul"></i> Quizzes</a>
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
+                    <i class="fas fa-book"></i> Quizzes
+                </a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link active">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
             {% else %}
-            <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="{{ url_for('student.dashboard') }}" class="nav-link">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{{ url_for('student.quizzes') }}" class="nav-link">
+                    <i class="fas fa-play-circle"></i> Live Quizzes
+                </a>
+                <a href="{{ url_for('student.history') }}" class="nav-link">
+                    <i class="fas fa-history"></i> My History
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link active">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
             {% endif %}
-            <a href="{{ url_for('auth.edit_profile') }}" class="nav-link active"><i class="fas fa-user-circle"></i> Profile</a>
         </nav>
         <div class="sidebar-footer">
             <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>

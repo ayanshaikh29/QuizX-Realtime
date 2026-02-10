@@ -479,6 +479,22 @@ def analytics(quiz_id):
         top_students=top_students
     )
 
+from flask import Blueprint, render_template
+
+admin = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin.route('/analytics')
+def analytics():
+    return render_template(
+        'admin_analytics.html',
+        quiz={"title": "Sample Quiz"},
+        total_participants=120,
+        accuracy_rate=78,
+        avg_time=14,
+        completion_rate=92,
+        question_data=[],
+        top_students=[]
+    )
 
 @admin_bp.route('/delete-quiz/<int:quiz_id>')
 @require_admin
