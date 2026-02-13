@@ -598,7 +598,49 @@ def api_leaderboard(quiz_id):
         'leaderboard': leaderboard_data,
     })
 
+# Add this at the bottom of student.py
+@student_bp.route('/review/<int:quiz_id>')
+def review_quiz(quiz_id):
+    """
+    Page for students to review their answers (Correct/Wrong).
+    Fixed to use student name string to match the rest of the app.
+    """
+    # 1. Identify the student name (matches attempt_quiz logic)
+    if session.get('user_id') == -1:
+        student_name = f"Guest-{session.get('guest_id', '00000000')}"
+    else:
+        student_name = session.get('username')
+        
+    if not student_name:
+        flash("Please join the quiz first.", "warning")
+        return redirect(url_for('student.quizzes'))
 
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.id).all()
+    
+    # 2. Get answers using the 'student' column (not student_id)
+    student_answers = PartialAnswer.query.filter_by(
+        quiz_id=quiz_id, 
+        student=student_name  # Corrected from student_id
+    ).all()
+    
+    # 3. Map question_id to the option selected
+    answers_map = {ans.question_id: ans.selected_option for ans in student_answers}
+    
+    return render_template('student_review.html', 
+                           quiz=quiz, 
+                           questions=questions, 
+                           answers_map=answers_map)
+    
+@student_bp.route('/final-leaderboard/<int:quiz_id>')
+def final_leaderboard(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    return render_template(
+        'student_final_leaderboard.html',
+        quiz_id=quiz_id,
+        quiz=quiz
+    )
+   
 @student_bp.route('/api/question-leaderboard/<int:quiz_id>/<int:question_id>')
 def api_question_leaderboard(quiz_id, question_id):
     """

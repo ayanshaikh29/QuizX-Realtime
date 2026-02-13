@@ -5,131 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waiting Room | QuizX</title>
     
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/waiting_room.css') }}">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-left">
-            <a href="{{ url_for('auth.index') }}" class="logo"><i class="fas fa-bolt"></i> QuizX</a>
-            <div class="nav-links">
-                <a href="{{ url_for('student.dashboard') }}" class="btn-nav"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="{{ url_for('student.quizzes') }}" class="btn-nav"><i class="fas fa-play"></i> Live Quizzes</a>
+<div class="dashboard-wrapper">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>QuizX Student</span>
             </div>
         </div>
-        <div class="nav-right">
-            <div class="session-info btn-nav"><i class="fas fa-user-circle"></i> {{ session.username }}</div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="{{ url_for('student.quizzes') }}" class="nav-link active"><i class="fas fa-play-circle"></i> Live Quizzes</a>
+            <a href="{{ url_for('student.history') }}" class="nav-link"><i class="fas fa-history"></i> My History</a>
+            <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
-    </nav>
+    </aside>
 
-    <div class="content-grid">
-        <section class="waiting-area">
-            <div class="badge-live animate__animated animate__pulse animate__infinite">
-                <i class="fas fa-circle" style="font-size: 8px; color: #ef4444;"></i> WAITING FOR HOST
+    <main class="main-content">
+        <header class="content-header">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Live Quiz Lobby</h4>
             </div>
-            
-            <div class="spinner-container">
-                <div class="spinner"></div>
-                <i class="fas fa-hourglass-half spinner-icon"></i>
+            <div class="header-user d-flex align-items-center gap-3">
+                <div class="text-end d-none d-sm-block">
+                    <p class="fw-bold mb-0 small">{{ session.username }}</p>
+                    <p class="text-success mb-0 tiny">Connected</p>
+                </div>
+                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff" class="avatar">
             </div>
+        </header>
 
-            <div class="quiz-details animate__animated animate__fadeIn">
-                <h1 id="quiz-title">{{ quiz.title }}</h1>
-                <p>Sit tight! The quiz will start as soon as the administrator launches the session.</p>
+        <div class="container-fluid p-4">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="waiting-card animate__animated animate__fadeIn">
+                        <div class="badge-live-pro">
+                            <span class="pulse-dot"></span> WAITING FOR HOST
+                        </div>
+                        
+                        <div class="spinner-container-pro">
+                            <div class="spinner-pro"></div>
+                            <i class="fas fa-hourglass-half spinner-icon-pro"></i>
+                        </div>
+
+                        <div class="quiz-details-pro">
+                            <h1 id="quiz-title">{{ quiz.title }}</h1>
+                            <p class="text-muted">The quiz will start as soon as the administrator launches the session. Get ready!</p>
+                        </div>
+
+                        <div class="tip-box-pro">
+                            <div class="tip-header">
+                                <i class="fas fa-lightbulb text-warning"></i>
+                                <span>PRO TIP</span>
+                            </div>
+                            <p id="tip-text">Fast answers give more points, but accuracy is what wins the game!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="lobby-panel animate__animated animate__fadeInRight">
+                        <div class="panel-header-pro">
+                            <h5 class="fw-extrabold mb-0">Participants</h5>
+                            <span class="count-badge-pro"><span id="count-badge">0</span> Online</span>
+                        </div>
+                        
+                        <div class="user-list-wrapper">
+                            <ul id="user-list" class="user-list-pro">
+                                </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+    </main>
+</div>
 
-            <div class="tip-box animate__animated animate__fadeInUp">
-                <small><i class="fas fa-lightbulb me-2"></i> Quick Tip</small>
-                <p id="tip-text">Read each question carefully. Sometimes the most obvious answer is a trap!</p>
-            </div>
-        </section>
+<div id="start-overlay" class="start-overlay-pro d-none">
+    <i class="fas fa-rocket animate__animated animate__bounceOutUp animate__infinite"></i>
+    <h1 class="animate__animated animate__zoomIn">3... 2... 1...</h1>
+</div>
 
-        <aside class="participants-panel">
-            <div class="panel-header">
-                <h3 style="margin:0; font-weight:800;">Lobby</h3>
-                <span class="count-tag"><span id="count-badge">0</span> Online</span>
-            </div>
-            
-            <ul id="user-list" class="user-list">
-                </ul>
-        </aside>
-    </div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const socket = io();
+    const quizId = "{{ quiz.id }}";
+    const myUsername = "{{ session.username }}";
 
-    <footer class="footer">
-        <div>Status: <span style="color:var(--primary); font-weight:700;">Connected</span></div>
-        <div>Ready to shine, {{ session.username }}?</div>
-    </footer>
+    const tips = [
+        "Stay calm and manage your time wisely!",
+        "Double-check your answers before submitting.",
+        "Accuracy is more important than speed for long-term winning!",
+        "Ensure your internet connection is stable."
+    ];
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        const quizId = "{{ quiz.id }}";
-        const myUsername = "{{ session.username }}";
-
-        const tips = [
-            "Stay calm and manage your time wisely!",
-            "Double-check your answers before submitting.",
-            "Fast answers give more points, but accuracy is key!",
-            "Make sure your internet connection is stable."
-        ];
-
-        // Tip Rotation Logic
-        let tipIndex = 0;
-        setInterval(() => {
-            const tipEl = document.getElementById('tip-text');
-            tipIndex = (tipIndex + 1) % tips.length;
-            tipEl.classList.remove('animate__fadeIn');
-            void tipEl.offsetWidth; 
-            tipEl.classList.add('animate__fadeIn');
+    let tipIndex = 0;
+    setInterval(() => {
+        const tipEl = document.getElementById('tip-text');
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipEl.style.opacity = 0;
+        setTimeout(() => {
             tipEl.innerText = tips[tipIndex];
-        }, 5000);
-/* abc */
-        // Join waiting room
-        socket.emit('join_waiting_room', { 
-            quiz_id: quizId, 
-            username: myUsername 
-        });
+            tipEl.style.opacity = 1;
+        }, 500);
+    }, 5000);
 
-        // Handle participants updates
-        socket.on('update_participants', function(data) {
-            const list = document.getElementById('user-list');
-            const badge = document.getElementById('count-badge');
-            badge.innerText = data.count;
-            list.innerHTML = '';
+    socket.emit('join_waiting_room', { quiz_id: quizId, username: myUsername });
 
-            data.users.forEach(user => {
-                const isMe = user === myUsername;
-                const li = document.createElement('li');
-                li.className = 'user-card animate__animated animate__fadeInRight';
-                li.innerHTML = `
-                    <div class="u-avatar" style="${isMe ? 'background:#1e293b' : ''}">${user.charAt(0).toUpperCase()}</div>
-                    <div style="display:flex; flex-direction:column;">
-                        <span class="fw-bold" style="font-weight:700; font-size:0.9rem;">${user}${isMe ? ' (You)' : ''}</span>
-                        <span style="font-size:0.75rem; color:#94a3b8;">${isMe ? 'Ready to play' : 'In lobby'}</span>
-                    </div>
-                `;
-                list.appendChild(li);
-            });
-        });
+    socket.on('update_participants', function(data) {
+        const list = document.getElementById('user-list');
+        document.getElementById('count-badge').innerText = data.count;
+        list.innerHTML = '';
 
-        // Handle countdown and quiz redirection
-        socket.on('begin_quiz', function(data) {
-            if(data.quiz_id == quizId) {
-                document.body.innerHTML = `
-                    <div class="start-overlay">
-                        <i class="fas fa-rocket animate__animated animate__bounceOutUp animate__infinite"></i>
-                        <h1 class="animate__animated animate__zoomIn">3... 2... 1...</h1>
-                    </div>
-                `;
-                setTimeout(() => {
-                    window.location.href = "{{ url_for('student.attempt_quiz', quiz_id=quiz.id) }}";
-                }, 1500);
-            }
+        data.users.forEach(user => {
+            const isMe = user === myUsername;
+            const li = document.createElement('li');
+            li.className = 'user-card-pro animate__animated animate__fadeIn';
+            li.innerHTML = `
+                <div class="u-avatar-pro ${isMe ? 'me-avatar' : ''}">${user.charAt(0).toUpperCase()}</div>
+                <div class="u-info-pro">
+                    <span class="u-name">${user}${isMe ? ' (You)' : ''}</span>
+                    <span class="u-status">${isMe ? 'Ready' : 'In lobby'}</span>
+                </div>
+            `;
+            list.appendChild(li);
         });
-    </script>
+    });
+
+    socket.on('begin_quiz', function(data) {
+        if(data.quiz_id == quizId) {
+            const overlay = document.getElementById('start-overlay');
+            overlay.classList.remove('d-none');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('student.attempt_quiz', quiz_id=quiz.id) }}";
+            }, 2000);
+        }
+    });
+</script>
 </body>
 </html>

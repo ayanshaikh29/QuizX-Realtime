@@ -4,22 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizX | Admin Portal</title>
-
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
-
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
 </head>
 <body>
 
-<div class="dashboard-wrapper">
+<div class="dashboard-wrapper d-flex">
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i class="fas fa-bolt text-warning"></i>
+                <i class="fas fa-user-shield"></i>
                 <span>QuizX Admin</span>
             </div>
         </div>
@@ -28,15 +25,12 @@
             <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
-
             <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
                 <i class="fas fa-book"></i> Quizzes
             </a>
-
             <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
                 <i class="fas fa-chart-line"></i> Analytics
             </a>
-
             <a href="{{ url_for('auth.profile') }}" class="nav-link">
                 <i class="fas fa-user-circle"></i> Profile
             </a>
@@ -51,114 +45,90 @@
 
     <main class="main-content">
         <header class="content-header">
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search data...">
+            <div class="header-title">
+                <h4 class="fw-bold mb-0">Admin Workspace</h4>
             </div>
 
-            <div class="header-user">
-                <div class="user-info">
-                    <span class="username">{{ session.username }}</span>
-                    <span class="role">Administrator</span>
+            <div class="header-user d-flex align-items-center gap-3">
+                <div class="text-end d-none d-sm-block">
+                    <p class="fw-bold mb-0 small">{{ session.username }}</p>
+                    <p class="text-primary mb-0 tiny">Online</p>
                 </div>
-                <img
-                    src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff"
-                    class="avatar"
-                    alt="avatar"
-                >
+                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff" class="avatar">
             </div>
         </header>
 
         <div class="container-fluid p-4">
-
-            <div class="welcome-banner animate-fade-in">
-                <div class="banner-text">
+            
+            <div class="welcome-hero animate-slide-up">
+                <div class="hero-content">
                     <h1>Welcome back, {{ session.username }}! 👋</h1>
-                    <p>Here's what's happening with your quizzes today.</p>
+                    <p class="mb-0 opacity-75">Control and monitor your quiz ecosystem from one place.</p>
                 </div>
-                <div class="banner-img">
-                    <i class="fas fa-user-shield"></i>
+                <div class="d-none d-lg-block">
+                    <i class="fas fa-bolt fa-3x text-warning"></i>
                 </div>
             </div>
 
             <div class="row g-4 mb-4">
                 <div class="col-md-3 animate-slide-up" style="animation-delay: 0.1s;">
                     <div class="stat-card">
-                        <div class="stat-icon icon-blue">
-                            <i class="fas fa-question-circle"></i>
-                        </div>
+                        <div class="stat-icon icon-blue"><i class="fas fa-question-circle"></i></div>
                         <div class="stat-details">
                             <h3>{{ total_quizzes }}</h3>
                             <p>Total Quizzes</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-3 animate-slide-up" style="animation-delay: 0.2s;">
                     <div class="stat-card">
-                        <div class="stat-icon icon-green">
-                            <i class="fas fa-play-circle"></i>
-                        </div>
+                        <div class="stat-icon icon-green"><i class="fas fa-play-circle"></i></div>
                         <div class="stat-details">
                             <h3>{{ active_quizzes }}</h3>
                             <p>Live Sessions</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-3 animate-slide-up" style="animation-delay: 0.3s;">
                     <div class="stat-card">
-                        <div class="stat-icon icon-purple">
-                            <i class="fas fa-users"></i>
-                        </div>
+                        <div class="stat-icon icon-purple"><i class="fas fa-users"></i></div>
                         <div class="stat-details">
                             <h3>{{ total_students }}</h3>
                             <p>Total Students</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-3 animate-slide-up" style="animation-delay: 0.4s;">
                     <div class="stat-card">
-                        <div class="stat-icon icon-orange">
-                            <i class="fas fa-clipboard-check"></i>
-                        </div>
+                        <div class="stat-icon icon-orange"><i class="fas fa-clipboard-check"></i></div>
                         <div class="stat-details">
                             <h3>{{ total_responses }}</h3>
-                            <p>Total Submissions</p>
+                            <p>Submissions</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row g-4">
+            <div class="row g-4 mt-2">
                 <div class="col-md-6 animate-slide-up" style="animation-delay: 0.5s;">
-                    <div class="action-card">
-                        <div class="card-body">
-                            <div class="action-icon">
-                                <i class="fas fa-folder-plus"></i>
-                            </div>
-                            <h5>Quiz Management</h5>
-                            <p>Create new quizzes, add complex questions, and manage your library with ease.</p>
-                            <a href="{{ url_for('admin.quizzes') }}" class="btn btn-primary-custom">
-                                Open Manager <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
-                        </div>
+                    <div class="admin-card-pro">
+                        <div class="stat-icon icon-blue mb-3"><i class="fas fa-folder-plus"></i></div>
+                        <h4 class="fw-extrabold">Quiz Management</h4>
+                        <p class="text-muted small mb-4">Create new quizzes, add complex questions, and manage your library with ease.</p>
+                        <a href="{{ url_for('admin.quizzes') }}" class="btn btn-primary-custom">
+                            Open Manager <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
                     </div>
                 </div>
 
                 <div class="col-md-6 animate-slide-up" style="animation-delay: 0.6s;">
-                    <div class="action-card">
-                        <div class="card-body">
-                            <div class="action-icon live-pulse">
-                                <i class="fas fa-broadcast-tower"></i>
-                            </div>
-                            <h5>Realtime Control</h5>
-                            <p>Monitor live student progress, pause sessions, and view live leaderboards.</p>
-                            <a href="{{ url_for('admin.quizzes') }}" class="btn btn-dark-custom">
-                                Go Live Center <i class="fas fa-bolt ms-2"></i>
-                            </a>
-                        </div>
+                    <div class="admin-card-pro">
+                        <div class="stat-icon icon-green mb-3"><i class="fas fa-broadcast-tower"></i></div>
+                        <h4 class="fw-extrabold">Realtime Control</h4>
+                        <p class="text-muted small mb-4">Monitor live student progress, pause sessions, and view live leaderboards.</p>
+                        <a href="{{ url_for('admin.quizzes') }}" class="btn btn-dark-custom">
+                            Go Live Center <i class="fas fa-bolt ms-2"></i>
+                        </a>
                     </div>
                 </div>
             </div>

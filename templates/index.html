@@ -2,155 +2,287 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QuizX | Realtime Web Quiz Platform</title>
+    <title>QuizX | The Ultimate Realtime Interaction Platform</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- External CSS File -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav id="navbar">
-    <div class="logo-box">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="QuizX">
-    </div>
-    <div class="menu-toggle" id="menuToggle">☰</div>
+    <a href="/" class="logo-box">
+        <i class="fas fa-bolt"></i>
+        <span>QuizX</span>
+    </a>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
     <div class="nav-links" id="navLinks">
-        <a href="/">Home</a>
         <a href="#features">Features</a>
-        <a href="#steps">How it Works</a>
-        <a href="/about">About</a>
+        <a href="#how-it-works">How it Works</a>
+        <a href="#testimonials">Testimonials</a>
     </div>
-    <div class="nav-btns">
-        <a href="/login" class="btn-login">Login</a>
-        <a href="/register" class="btn-primary">Get Started</a>
+    <div class="nav-btns" id="navBtns">
+        <a href="/login" class="btn-login">Log in</a>
+        <a href="/register" class="btn-primary">Sign up free</a>
     </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
     <div class="hero-content">
-        <div class="hero-text">
-            <h1>Powering <span>Realtime Quizzes</span><br>for Smart Engagement</h1>
-            <p>
-                QuizX is the ultimate realtime web quiz platform that transforms learning and engagement.
-                Create interactive live quizzes, see instant results, live leaderboards, and keep your audience hooked — perfect for classrooms, corporate training, and events.
-            </p>
+        <div class="hero-text reveal">
+            <h1>Make learning & meetings <br><span>unforgettable.</span></h1>
+            <p>QuizX is the leading audience interaction platform. Host live quizzes, polls, and Q&As that keep your participants on the edge of their seats.</p>
             <div class="hero-buttons">
-                <a href="/register" class="btn-primary">Create Your First Quiz</a>
-                <a href="/register" class="btn-outline">Join a Quiz Now</a>
+                <a href="/register" class="btn-primary">Create a Quiz</a>
+                <a href="#how-it-works" class="btn-outline">See how it works</a>
             </div>
         </div>
-        <div class="hero-image">
-            <!-- You can add a hero illustration here if you want -->
+        
+        <div class="hero-visual reveal delay-2">
+            <div class="floating-card fc-3">
+                <i class="fas fa-users text-success me-2"></i> 1,240 Participants Joined
+            </div>
+            <div class="floating-card fc-1">
+                <div class="live-badge"><div class="dot"></div> LIVE NOW</div>
+                <h3 style="font-weight: 800; margin-bottom: 10px;">What is the speed of light?</h3>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 15px; overflow: hidden;">
+                    <div style="width: 70%; height: 100%; background: var(--primary);"></div>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); font-weight: 700;">70% ANSWERED CORRECTLY</p>
+            </div>
+            <div class="floating-card fc-2">
+                <h4 style="font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">Leaderboard</h4>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-weight: 700;"><i class="fas fa-trophy text-warning"></i> Sarah J.</span>
+                    <span style="font-weight: 800; color: var(--primary);">4,500 pts</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: 600; color: var(--text-muted);">2. Mike T.</span>
+                    <span style="font-weight: 700;">4,120 pts</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- FEATURES -->
 <section class="features" id="features">
-    <h2 class="section-title">Powerful Features That Make QuizX Stand Out</h2>
-    <p class="section-subtitle">Everything you need to create engaging, realtime quizzes with ease.</p>
-    <div class="feature-grid">
-        <div class="feature-card">
-            <h3>Realtime Results</h3>
-            <p>Live leaderboard updates instantly as participants answer — no refresh needed.</p>
+    <div class="section-header reveal">
+        <h2 class="section-title">Designed for maximum engagement</h2>
+        <p class="section-subtitle">Ditch the boring slides. Everything you need to turn passive listeners into active participants.</p>
+    </div>
+    
+    <div class="bento-grid">
+        <div class="bento-card wide reveal">
+            <div class="icon-box" style="background: rgba(255,255,255,0.1); color: white;"><i class="fas fa-satellite-dish"></i></div>
+            <h3>Ultra-Fast Realtime Sync</h3>
+            <p>Our websocket technology ensures that the moment a student taps an answer, your dashboard updates. Zero lag, zero refreshing. Just pure, instant interaction.</p>
         </div>
-        <div class="feature-card">
-            <h3>Live Participation</h3>
-            <p>Students join instantly with a simple code and compete in realtime.</p>
+        <div class="bento-card reveal delay-1">
+            <div class="icon-box"><i class="fas fa-stopwatch"></i></div>
+            <h3>Time-Attack Mode</h3>
+            <p>Add pressure with customizable timers. Reward faster answers with more points to ignite fierce competition.</p>
         </div>
-        <div class="feature-card">
-            <h3>Full Admin Control</h3>
-            <p>Start, pause, reveal answers, or end quizzes with complete control.</p>
+        <div class="bento-card reveal">
+            <div class="icon-box"><i class="fas fa-qrcode"></i></div>
+            <h3>Frictionless Joining</h3>
+            <p>No app downloads required. Participants simply scan a QR code or enter a 6-digit pin to jump straight into the action.</p>
         </div>
-        <div class="feature-card">
-            <h3>Secure & Role-Based</h3>
-            <p>Separate logins for admins and students with secure authentication.</p>
+        <div class="bento-card reveal delay-1">
+            <div class="icon-box"><i class="fas fa-chart-pie"></i></div>
+            <h3>Deep Analytics</h3>
+            <p>Identify knowledge gaps instantly. Export detailed post-game reports to understand exactly where your audience struggled.</p>
+        </div>
+        <div class="bento-card reveal delay-2">
+            <div class="icon-box"><i class="fas fa-shield-halved"></i></div>
+            <h3>Secure Workspaces</h3>
+            <p>Dedicated admin portals and student hubs. Keep your data safe with enterprise-grade role-based authentication.</p>
         </div>
     </div>
 </section>
 
-<!-- TESTIMONIALS -->
-<section class="testimonials">
-    <h2 class="section-title">Loved by Teachers & Trainers Worldwide</h2>
-    <p class="section-subtitle">See what our users say about QuizX.</p>
-    <div class="testimonial-grid">
-        <div class="testimonial-card">
-            <p>"QuizX has completely transformed my classroom engagement. Students love the live competition!"</p>
-            <h4>— Sarah Johnson, High School Teacher</h4>
-        </div>
-        <div class="testimonial-card">
-            <p>"Perfect for corporate training sessions. Realtime feedback helps us assess understanding instantly."</p>
-            <h4>— Mike Chen, Corporate Trainer</h4>
-        </div>
-        <div class="testimonial-card">
-            <p>"Easy to use and super engaging. My online workshops have never been more interactive."</p>
-            <h4>— Emma Rodriguez, Online Educator</h4>
-        </div>
+<section class="steps" id="how-it-works">
+    <div class="section-header reveal">
+        <h2 class="section-title">From zero to live in 60 seconds</h2>
     </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="steps" id="steps">
-    <h2 class="section-title">How QuizX Works</h2>
-    <p class="section-subtitle">Get started in minutes — simple, powerful, and fun.</p>
-    <div class="step-grid">
-        <div class="step">
+    
+    <div class="step-container">
+        <div class="step-row reveal">
             <div class="step-number">1</div>
-            <p><strong>Create a Quiz</strong><br>Add questions, set timer, and customize.</p>
+            <div class="step-content">
+                <h3>Create your quiz</h3>
+                <p>Use our intuitive builder to add questions, set time limits, and mark correct answers. No coding or complex menus.</p>
+            </div>
         </div>
-        <div class="step">
+        <div class="step-row reveal">
             <div class="step-number">2</div>
-            <p><strong>Go Live</strong><br>Publish and share the unique join code.</p>
+            <div class="step-content">
+                <h3>Share the code on screen</h3>
+                <p>Hit 'Go Live'. Your audience enters the 6-digit join code on their phones or laptops. Watch the lobby fill up in realtime.</p>
+            </div>
         </div>
-        <div class="step">
+        <div class="step-row reveal">
             <div class="step-number">3</div>
-            <p><strong>Participants Join</strong><br>Students enter code and start answering live.</p>
-        </div>
-        <div class="step">
-            <div class="step-number">4</div>
-            <p><strong>See Results Instantly</strong><br>Live leaderboard and detailed analytics.</p>
+            <div class="step-content">
+                <h3>Play and analyze</h3>
+                <p>Advance through questions at your own pace. Reveal the leaderboard after each round to keep the energy high.</p>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- USE CASES -->
-<section class="use-cases">
-    <h2 class="section-title">Perfect For Every Scenario</h2>
-    <div class="cases">
-        <div class="case">Classrooms & Schools</div>
-        <div class="case">Corporate Training</div>
-        <div class="case">Live Events & Webinars</div>
-        <div class="case">Online Courses & Tutoring</div>
-        <div class="case">Team Building Activities</div>
+<section class="testimonials" id="testimonials">
+    <div class="section-header reveal">
+        <h2 class="section-title">Trusted by educators and teams</h2>
+    </div>
+    
+    <div class="testimonial-grid">
+        <div class="test-card reveal">
+            <i class="fas fa-quote-left"></i>
+            <p>"QuizX has completely transformed my classroom. The students beg me to run a session at the end of every week!"</p>
+            <div class="test-author">
+                <div class="test-avatar">SJ</div>
+                <div class="test-info">
+                    <h4>Sarah Johnson</h4>
+                    <span>High School Science Teacher</span>
+                </div>
+            </div>
+        </div>
+        <div class="test-card reveal delay-1">
+            <i class="fas fa-quote-left"></i>
+            <p>"We use this for our weekly all-hands meetings. It breaks the ice and makes corporate updates genuinely fun."</p>
+            <div class="test-author">
+                <div class="test-avatar" style="background: #3b82f6;">MC</div>
+                <div class="test-info">
+                    <h4>Mike Chen</h4>
+                    <span>VP of Engineering, TechCorp</span>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
-<!-- CTA -->
-<section class="cta">
-    <h2>Ready to Transform Your Teaching & Training?</h2>
-    <p>Join thousands of educators and trainers who are making learning interactive and fun with QuizX.</p>
-    <a href="/register">Get Started for Free — No Credit Card Required</a>
+<section class="cta reveal">
+    <h2>Ready to engage your audience?</h2>
+    <p>Join thousands of hosts worldwide. Start creating interactive experiences today.</p>
+    <a href="/register" class="btn-primary">Sign up for free</a>
 </section>
 
-<footer>
-    © 2025 QuizX • Realtime Web Quiz Application • All Rights Reserved
+<footer class="footer-pro">
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <a href="/" class="logo-box footer-logo">
+                <i class="fas fa-bolt"></i>
+                <span>QuizX</span>
+            </a>
+            <p>The ultimate realtime audience interaction platform for classrooms, corporate meetings, and live events.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-discord"></i></a>
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#">Integrations</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">Changelog</a></li>
+                <li><a href="#">API Documentation</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Community Forum</a></li>
+                <li><a href="#">Quiz Templates</a></li>
+                <li><a href="#">Video Tutorials</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h4>Company</h4>
+            <ul>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Careers <span class="badge-hiring">Hiring</span></a></li>
+                <li><a href="#">Contact Support</a></li>
+                <li><a href="#">Partners</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>© 2026 QuizX Inc. Built for modern engagement.</p>
+        <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Cookie Policy</a>
+            <a href="#">Security</a>
+        </div>
+    </div>
 </footer>
 
 <script>
-    // Mobile menu toggle
-    document.getElementById('menuToggle').addEventListener('click', () => {
-        document.getElementById('navLinks').classList.toggle('active');
+    // 1. Sticky Navbar Effect
+    window.addEventListener('scroll', () => {
+        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
     });
 
-    // Navbar shadow on scroll
-    window.addEventListener('scroll', () => {
-        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    // 2. Mobile Menu Toggle
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        const links = document.getElementById('navLinks');
+        const btns = document.getElementById('navBtns');
+        
+        if(links.style.display === 'flex') {
+            links.style.display = 'none';
+            btns.style.display = 'none';
+        } else {
+            links.style.display = 'flex';
+            links.style.flexDirection = 'column';
+            links.style.position = 'absolute';
+            links.style.top = '100%';
+            links.style.left = '0';
+            links.style.width = '100%';
+            links.style.background = 'rgba(255,255,255,0.95)';
+            links.style.padding = '20px';
+            links.style.borderBottom = '1px solid #e2e8f0';
+            
+            btns.style.display = 'flex';
+            btns.style.position = 'absolute';
+            btns.style.top = '220px';
+            btns.style.left = '0';
+            btns.style.width = '100%';
+            btns.style.padding = '0 20px 20px';
+            btns.style.background = 'rgba(255,255,255,0.95)';
+        }
+    });
+
+    // 3. Next-Level Scroll Reveal Animation (Intersection Observer)
+    const revealElements = document.querySelectorAll('.reveal');
+    
+    const revealOptions = {
+        threshold: 0.15,
+        rootMargin: "0px 0px -50px 0px"
+    };
+
+    const revealOnScroll = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('active');
+            observer.unobserve(entry.target); // Only animate once
+        });
+    }, revealOptions);
+
+    revealElements.forEach(el => {
+        revealOnScroll.observe(el);
     });
 </script>
 
