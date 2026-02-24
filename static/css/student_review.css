@@ -1,0 +1,302 @@
+/* ============== Student Review Page ============== */
+
+/* Hero Banner */
+.review-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 24px;
+    padding: 40px 35px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.review-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(111, 191, 74, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.review-hero h1 {
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.review-hero p {
+    opacity: 0.7;
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+.review-badge {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.hero-icon-glass {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Stat Summary Cards */
+.review-stat {
+    background: white;
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.review-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+.review-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.review-stat h5 {
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-bottom: 0;
+}
+
+.review-stat p {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+/* Question Cards */
+.review-q-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    padding: 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.review-q-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.q-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.q-num {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 800;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+.q-tag {
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.q-tag-correct {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.q-tag-wrong {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.q-tag-skipped {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.q-text {
+    font-weight: 800;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    color: #0f172a;
+}
+
+/* Option Items */
+.opt-row {
+    padding: 15px 18px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    border: 2px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: 0.3s;
+}
+
+.opt-row.opt-correct {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.opt-row.opt-wrong {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.opt-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.your-pick {
+    font-size: 10px;
+    background: #6366f1;
+    color: white;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 50px;
+    margin-left: 10px;
+}
+
+/* Explanation Box */
+.explain-box {
+    background: #f8fafc;
+    border-left: 4px solid #22c55e;
+    padding: 16px 20px;
+    border-radius: 0 14px 14px 0;
+    margin-top: 16px;
+}
+
+/* Back Button */
+.btn-back-dash {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #6fbf4a, #5ba33a);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 100px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(111, 191, 74, 0.25);
+    transition: 0.3s;
+    border: none;
+}
+
+.btn-back-dash:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(111, 191, 74, 0.35);
+    color: white;
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anim-up {
+    animation: slideUp 0.5s ease forwards;
+}
+
+.anim-up-d1 {
+    animation-delay: 0.1s;
+}
+
+.anim-up-d2 {
+    animation-delay: 0.2s;
+}
+
+.anim-up-d3 {
+    animation-delay: 0.3s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .review-hero {
+        padding: 28px 22px;
+    }
+
+    .review-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .review-q-card {
+        padding: 20px;
+    }
+
+    .q-text {
+        font-size: 1rem;
+    }
+}
