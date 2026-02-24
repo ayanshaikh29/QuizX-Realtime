@@ -30,10 +30,15 @@ class LeaderboardService:
                 db.case((PartialAnswer.is_correct == False, 1), else_=0)
             ).label("incorrect_count"),
             func.sum(PartialAnswer.time_taken).label("total_time"),
-        ).filter_by(quiz_id=quiz_id).group_by(PartialAnswer.student).all()
+        ).filter_by(quiz_id=quiz_id).group_by(PartialAnswer.student).order_by(
+            func.sum(PartialAnswer.points).desc(),
+            func.sum(db.case((PartialAnswer.is_correct == True, 1), else_=0)).desc(),
+            func.sum(PartialAnswer.time_taken).asc()
+        ).all()
         
         return [
             {
+                "rank": idx + 1,
                 "student": row.student,
                 "points": int(row.total_points or 0),
                 "correct": int(row.correct_count or 0),
@@ -41,7 +46,7 @@ class LeaderboardService:
                 "time": int(row.total_time or 0),
                 "total": total_questions,
             }
-            for row in rows
+            for idx, row in enumerate(rows)
         ]
     
     @staticmethod
@@ -52,7 +57,11 @@ class LeaderboardService:
             func.sum(PartialAnswer.points).label('score')
         ).filter_by(quiz_id=quiz_id)\
          .group_by(PartialAnswer.student)\
-         .order_by(func.sum(PartialAnswer.points).desc()).all()
+         .order_by(
+             func.sum(PartialAnswer.points).desc(),
+             func.sum(db.case((PartialAnswer.is_correct == True, 1), else_=0)).desc(),
+             func.sum(PartialAnswer.time_taken).asc()
+         ).all()
         
         return [{"name": r.name, "score": int(r.score)} for r in points_query]
     

@@ -47,7 +47,10 @@ form {
     flex-direction: column; padding: 0 40px; height: 100%; text-align: center;
 }
 
-.auth-logo { height: 55px; margin-bottom: 10px; }
+.auth-logo { 
+    height: 100px;   
+    margin-bottom: 1px;
+}
 h1 { font-size: 26px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
 .subtitle { color: #64748b; font-size: 13px; margin-bottom: 20px; }
 

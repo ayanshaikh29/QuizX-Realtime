@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizX | Authentication</title>
@@ -15,7 +16,7 @@
     
     <div class="form-container sign-up">
         <form method="POST" action="/register">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="auth-logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="auth-logo">
             <h1>Create Account</h1>
             <p class="subtitle">Join QuizX to start your journey</p>
             
@@ -47,7 +48,7 @@
 
     <div class="form-container sign-in">
         <form method="POST" action="/login">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="auth-logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="auth-logo">
             <h1>Welcome Back</h1>
             <p class="subtitle">Enter your details to continue</p>
 

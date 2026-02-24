@@ -9,7 +9,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.extensions import db, socketio, quiz_state
 from app.models import Quiz, Question, PartialAnswer, Result
 from app.utils import require_student, ensure_guest_student, now_utc
-from app.services import ScoringService, LeaderboardService
+from app.services import PointService, LeaderboardService
 import time
 
 student_bp = Blueprint('student', __name__)
@@ -230,15 +230,7 @@ def attempt_quiz(quiz_id):
         db.session.commit()
         
         # Calculate points
-        question_points = 0
-        if is_correct:
-            time_limit = current_question.time_limit if quiz.has_timer else None
-            question_points = ScoringService.calculate_points(
-                is_correct,
-                time_taken,
-                time_limit,
-                has_timer=quiz.has_timer,
-            )
+        points = PointService.calculate_points(is_correct=is_correct, question_id=current_question.id)
         
         try:
             partial = PartialAnswer(
@@ -247,16 +239,16 @@ def attempt_quiz(quiz_id):
                 student=student_name,
                 is_correct=is_correct,
                 time_taken=time_taken,
-                points=question_points,
+                points=points,
                 submitted_at=now_utc(),
             )
             db.session.add(partial)
             db.session.commit()
             
-            print(f'✓ Saved answer: correct={is_correct}, time={time_taken}s, points={question_points}')
+            print(f'✓ Saved answer: correct={is_correct}, time={time_taken}s, points={points}')
             
             # Update leaderboard - CRITICAL: Only for current quiz
-            ScoringService.update_question_rank_bonuses(quiz_id, question_id)
+            PointService.update_question_rank_bonuses(quiz_id, question_id)
             
             # Build leaderboard ONLY for current quiz
             leaderboard_list = LeaderboardService.build_leaderboard_payload(quiz_id)
@@ -283,12 +275,15 @@ def attempt_quiz(quiz_id):
         
         print(f"Is this the last question? {is_last_question}")
         
-        # Emit leaderboard update for everyone in THIS quiz room only
-        socketio.emit(
-            'leaderboard_update',
-            leaderboard_list,
-            room=f"quiz_{quiz_id}"
-        )
+        # Emit leaderboard update for everyone in THIS quiz room only if config allows
+        if quiz.show_leaderboard_each_question:
+            socketio.emit(
+                'leaderboard_update',
+                leaderboard_list,
+                room=f"quiz_{quiz_id}"
+            )
+        else:
+            print(f"Config set to bypass mid-quiz leaderboard for quiz {quiz_id}")
         
         # CRITICAL FIX: Only mark quiz as complete if this is the last question for this student
         if is_last_question:
@@ -625,7 +620,9 @@ def review_quiz(quiz_id):
     ).all()
     
     # 3. Map question_id to the option selected
-    answers_map = {ans.question_id: ans.selected_option for ans in student_answers}
+    # PartialAnswer doesn't store the exact text string of the selected option, so we cannot show exactly WHAT they answered, 
+    # but we DO know if it was correct or wrong. For a basic review, we'll map is_correct instead.
+    answers_map = {ans.question_id: {'is_correct': ans.is_correct, 'time_taken': ans.time_taken} for ans in student_answers}
     
     return render_template('student_review.html', 
                            quiz=quiz, 

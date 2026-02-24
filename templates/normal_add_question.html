@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizX | Standard Studio</title>
@@ -8,95 +10,162 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/add_question.css') }}">
 </head>
+
 <body>
 
-<div class="studio-container">
-    <header class="studio-header">
-        <div class="header-left">
-            <a href="/admin/quizzes" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-            <div>
-                <span class="badge">📝 Standard Mode</span>
-                <h4>{{ quiz.title }}</h4>
-            </div><!-- This is a single-line comment -->
-        </div>
-        <div class="header-right">
-            {% if not quiz.is_locked %}
-            <a href="/admin/end-questions/{{ quiz.id }}" onclick="return confirm('Lock this quiz?')" class="btn-lock">
-                <i class="fas fa-lock"></i> Finalize Quiz
-            </a>
-            {% endif %}
-        </div>
-    </header>
+    <div class="studio-container">
+        <header class="studio-header">
+            <div class="header-left">
+                <a href="/admin/quizzes" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <span class="badge">📝 Standard Mode</span>
+                    <h4>{{ quiz.title }}</h4>
+                </div>
+            </div>
+            <div class="header-right">
+                {% if not quiz.is_locked %}
+                <a href="/admin/end-questions/{{ quiz.id }}" onclick="return confirm('Lock this quiz?')" class="btn-lock">
+                    <i class="fas fa-lock"></i> Finalize Quiz
+                </a>
+                {% endif %}
+            </div>
+        </header>
 
-    <div class="content-wrapper">
-        <form method="POST" id="quizForm">
-            <div id="questions-container">
-                <div class="question-block animate-slide-up">
-                    <div class="block-header">
-                        <span class="q-number">Question 1</span>
+        <div class="content-wrapper">
+            <form method="POST" id="quizForm">
+                
+                <div class="config-card">
+                    <div class="config-header">
+                        <div class="config-icon-wrapper">
+                            <i class="fas fa-sliders-h"></i>
                         </div>
-
-                    <div class="block-body">
-                        <label>Question Prompt</label>
-                        <div class="editor-wrapper">
-                            <div class="toolbar">
-                                <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
-                                <button type="button" onclick="format('italic')"><i class="fas fa-italic"></i></button>
-                                <button type="button" onclick="format('underline')"><i class="fas fa-underline"></i></button>
-                            </div>
-                            <div class="editor" contenteditable="true" oninput="syncQuestion(this)" data-placeholder="Type your question here..."></div>
-                            <input type="hidden" name="question[]">
+                        <div>
+                            <h3 class="config-title">Quiz Configuration</h3>
+                            <p class="config-subtitle">Customize the behaviour and scoring of this quiz</p>
                         </div>
+                    </div>
 
-                        <label class="mt-4">Answer Options</label>
-                        <div class="options-grid">
-                            {% for i in range(1, 5) %}
-                            <div class="option-row">
-                                <div class="radio-wrapper">
-                                    <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}" required>
-                                    <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check"></i></label>
+                    <div class="config-body">
+                        <div class="config-grid">
+                            <div class="setting-panel">
+                                <div class="setting-icon icon-green">
+                                    <i class="fas fa-trophy"></i>
                                 </div>
-                                <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..." required>
+                                <div class="setting-content">
+                                    <div class="setting-title">Live Leaderboard</div>
+                                    <span class="setting-desc">Show rankings between questions or jump straight to the next one</span>
+                                    
+                                    <div class="toggle-wrapper">
+                                        <label class="custom-switch">
+                                            <input type="checkbox" id="show_leaderboard" name="show_leaderboard_each_question" value="true" checked>
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                        <label for="show_leaderboard" class="toggle-label" id="leaderboard_label">After each question</label>
+                                    </div>
+                                </div>
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="button" onclick="addQuestion(false)" class="btn-add"><i class="fas fa-plus"></i> Add Question</button>
-                <button type="submit" class="btn-save"><i class="fas fa-cloud-upload-alt"></i> Save Questions</button>
-            </div>
-        </form>
+                <div id="questions-container">
+                    <div class="question-block animate-slide-up">
+                        <div class="block-header">
+                            <span class="q-number">Question 1</span>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="points-input-group">
+                                    <i class="fas fa-star text-warning" style="color: #f59e0b;"></i>
+                                    <select name="points_0">
+                                        <option value="1">1 Point</option>
+                                        <option value="2">2 Points</option>
+                                        <option value="5">5 Points</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="block-body">
+                            <div class="editor-wrapper">
+                                <div class="toolbar">
+                                    <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
+                                    <button type="button" onclick="format('italic')"><i class="fas fa-italic"></i></button>
+                                    <button type="button" onclick="format('underline')"><i class="fas fa-underline"></i></button>
+                                </div>
+                                <div class="editor" contenteditable="true" oninput="syncQuestion(this)" data-placeholder="Type your question prompt here..."></div>
+                                <input type="hidden" name="question[]">
+                            </div>
+
+                            <label class="options-label">Answer Options</label>
+                            <div class="options-grid">
+                                {% for i in range(1, 5) %}
+                                <div class="option-row">
+                                    <div class="radio-wrapper">
+                                        <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}" required>
+                                        <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check" style="font-size: 12px;"></i></label>
+                                    </div>
+                                    <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..." required>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="addQuestion(false)" class="btn-add">
+                        <i class="fas fa-plus"></i> Add Question
+                    </button>
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-cloud-upload-alt"></i> Save Questions
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-let qIndex = 1;
-function format(cmd) { document.execCommand(cmd, false, null); }
-function syncQuestion(div) { div.nextElementSibling.value = div.innerHTML; }
+    <script>
+        let qIndex = 1;
+        function format(cmd) { document.execCommand(cmd, false, null); }
+        function syncQuestion(div) { div.nextElementSibling.value = div.innerHTML; }
 
-function addQuestion(hasTimer) {
-    const container = document.getElementById("questions-container");
-    const clone = container.querySelector(".question-block").cloneNode(true);
-    clone.querySelector(".q-number").innerText = `Question ${qIndex + 1}`;
-    clone.querySelector(".editor").innerHTML = "";
-    clone.querySelectorAll("input").forEach(input => {
-        if(input.type === "radio") {
-            input.name = `answer_${qIndex}`;
-            input.checked = false;
-            input.id = `q${qIndex}_opt${input.value}`;
-            input.nextElementSibling.setAttribute('for', input.id);
-        } else if(input.type === "text") {
-            input.name = input.name.replace("_0", `_${qIndex}`);
-            input.value = "";
+        // Update leaderboard toggle label dynamically
+        document.getElementById("show_leaderboard")?.addEventListener("change", function () {
+            const label = document.getElementById("leaderboard_label");
+            if (label) label.textContent = this.checked ? "After each question" : "End of quiz only";
+        });
+
+        function addQuestion(hasTimer) {
+            const container = document.getElementById("questions-container");
+            const clone = container.querySelector(".question-block").cloneNode(true);
+            clone.querySelector(".q-number").innerText = `Question ${qIndex + 1}`;
+            clone.querySelector(".editor").innerHTML = "";
+            clone.querySelector("input[type='hidden']").value = "";
+
+            // Reset points dropdown
+            const pointSelect = clone.querySelector("select");
+            if (pointSelect) {
+                pointSelect.name = `points_${qIndex}`;
+                pointSelect.value = "1"; // Default to 1 point
+            }
+
+            clone.querySelectorAll("input").forEach(input => {
+                if (input.type === "radio") {
+                    input.name = `answer_${qIndex}`;
+                    input.checked = false;
+                    input.id = `q${qIndex}_opt${input.value}`;
+                    input.nextElementSibling.setAttribute('for', input.id);
+                } else if (input.type === "text") {
+                    input.name = input.name.replace(/_\d+$/, `_${qIndex}`); 
+                    input.value = "";
+                }
+            });
+
+            container.appendChild(clone);
+            qIndex++;
+            clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    });
-    container.appendChild(clone);
-    qIndex++;
-    clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-</script>
+    </script>
+{%% include 'components/ai_chat_widget.html' %%}
 </body>
+
 </html>

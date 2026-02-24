@@ -20,5 +20,6 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=True,
-        use_reloader=False  # Fix for Windows + Python 3.13 compatibility
+        use_reloader=False,  # Fix for Windows + Python 3.13 compatibility
+        allow_unsafe_werkzeug=True
     )

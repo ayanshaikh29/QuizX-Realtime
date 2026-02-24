@@ -103,6 +103,21 @@ def add_question(quiz_id):
         return redirect(url_for('admin.quizzes'))
     
     if request.method == 'POST':
+        # 1. Update Quiz Configuration
+        show_leaderboard_str = request.form.get('show_leaderboard_each_question', 'false')
+        quiz.show_leaderboard_each_question = (show_leaderboard_str.lower() == 'true')
+        
+        if quiz.has_timer:
+            quiz.timer_mode = request.form.get('timer_mode', 'per_question')
+            if quiz.timer_mode == 'overall':
+                try:
+                    quiz.total_quiz_time = int(request.form.get('total_quiz_time', 15))
+                except ValueError:
+                    quiz.total_quiz_time = 15
+            else:
+                quiz.total_quiz_time = None
+        
+        # 2. Process Questions
         questions_data = request.form.getlist('question[]')
         added = False
         
@@ -128,6 +143,12 @@ def add_question(quiz_id):
             else:
                 time_limit = 0
             
+            points_str = request.form.get(f'points_{i}', '1')
+            try:
+                points = int(points_str)
+            except ValueError:
+                points = 1
+            
             q = Question(
                 quiz_id=quiz_id,
                 order=i + 1,
@@ -138,6 +159,7 @@ def add_question(quiz_id):
                 option4=request.form.get(f'option4_{i}', ''),
                 answer=correct_answer,
                 time_limit=time_limit,
+                points=points,
             )
             db.session.add(q)
             added = True
@@ -243,7 +265,7 @@ def stop_quiz(quiz_id):
     socketio.emit(
         'quiz_stopped',
         {'quiz_id': quiz_id},
-        room=str(quiz_id)
+        room=f"quiz_{quiz_id}"
     )
     
     flash('Quiz stopped successfully.', 'info')
@@ -468,15 +490,39 @@ def analytics(quiz_id):
      .order_by(func.sum(PartialAnswer.points).desc())\
      .limit(5).all()
     
+    stats = {
+        "total_attempts": total_participants,
+        "avg_score": accuracy_rate,
+        "avg_time": avg_time,
+        "pass_rate": completion_rate
+    }
+
+# Fix performer format for template
+    top_performers = [
+        {
+            "username": student.name,
+            "score": student.score
+        }
+        for student in top_students
+    ]
+
+# Fix question data format for template
+    questions_data = [
+        {
+            "text": q["text"],
+            "success_rate": q["correct_pct"],
+            "avg_time": q["avg_time"],
+            "difficulty": q["difficulty"].capitalize()
+        }
+        for q in question_data
+    ]
+
     return render_template(
         'admin_analytics.html',
         quiz=quiz,
-        total_participants=total_participants,
-        accuracy_rate=accuracy_rate,
-        avg_time=avg_time,
-        completion_rate=completion_rate,
-        question_data=question_data,
-        top_students=top_students
+        stats=stats,
+        top_performers=top_performers,
+        questions_data=questions_data
     )
 
 from flask import Blueprint, render_template
@@ -579,7 +625,7 @@ def handle_admin_start_quiz(data):
             'has_timer': quiz.has_timer,
             'timestamp': time.time()
         },
-        room=str(quiz_id)
+        room=f"quiz_{quiz_id}"
     )
     
     return {
@@ -587,6 +633,31 @@ def handle_admin_start_quiz(data):
         'cleared': cleared['partial_answers_cleared'],
         'quiz_id': quiz_id
     }
+
+
+@socketio.on("admin_finish_quiz")
+def handle_admin_finish_quiz(data):
+    quiz_id = data.get("quiz_id")
+
+    if not quiz_id:
+        return {"error": "No quiz_id provided"}
+
+    # Stop quiz in DB
+    quiz = Quiz.query.get(quiz_id)
+    if quiz:
+        quiz.is_active = False
+        db.session.commit()
+
+    # Emit to ALL students
+    socketio.emit(
+        "quiz_finished",
+        {"quiz_id": quiz_id},
+        room=f"quiz_{quiz_id}"  # ✅ FIXED
+    )
+
+    print(f"Quiz {quiz_id} finished by admin")
+
+    return {"success": True}
 
 
 @socketio.on('admin_reset_quiz')

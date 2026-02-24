@@ -27,5 +27,10 @@ class Quiz(db.Model):
     paused_at = db.Column(db.DateTime)
     paused_seconds = db.Column(db.Integer, default=0)
     
+    # Advanced Configuration
+    show_leaderboard_each_question = db.Column(db.Boolean, default=True)
+    timer_mode = db.Column(db.String(20), default='per_question') # 'per_question' or 'overall'
+    total_quiz_time = db.Column(db.Integer, nullable=True) # in minutes
+    
     def __repr__(self):
         return f'<Quiz {self.title}>'

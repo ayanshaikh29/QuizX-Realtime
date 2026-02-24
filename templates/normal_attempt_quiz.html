@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizX | {{ quiz.title }}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normal_attempt_quiz.css') }}">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
+
 <body>
-<!-- This is a single-line comment -->
+    <!-- This is a single-line comment -->
     <div id="waitingOverlay">
         <div class="waiting-spinner"></div>
         <div class="waiting-text">Waiting for admin to start next question...</div>
@@ -32,9 +36,9 @@
         </div>
     </div>
 
-    <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;">
+    <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;" id="quizNav">
         <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
-            <div class="brand-text">Quiz<span>X</span></div>
+            <a href="/"><img src="{{ url_for('static', filename='logo.jpg') }}" alt="QuizX" style="height:38px; object-fit:contain;"></a>
             <div class="d-flex align-items-center gap-3">
                 <div class="text-muted fw-bold d-none d-md-block">
                     <i class="fas fa-user-circle me-1"></i> {{ session.username }}
@@ -48,21 +52,27 @@
 
     <div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
         <div class="question-card mt-4">
-            <div class="d-flex justify-content-between align-items-center mt-2 mb-4">
+            <div class="d-flex justify-content-center align-items-center gap-2 mt-2 mb-4 flex-wrap">
                 <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">
                     <i class="fas fa-user-clock me-1"></i> ADMIN CONTROLLED
                 </span>
-                <span class="text-muted small">Points: {{ current_question.points|default(10) }}</span>
+                <span class="badge px-3 py-2 rounded-pill fw-bold"
+                    style="background: linear-gradient(135deg,#f59e0b,#f97316); color:#fff; font-size:0.85rem;">
+                    <i class="fas fa-star me-1"></i> {{ current_question.points }} Point{{ 's' if
+                    current_question.points != 1 else '' }}
+                </span>
             </div>
 
-            <h1 class="question-title text-center">{{ current_question.question }}</h1>
-            
+            <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
+
             <form id="quizForm">
                 <div class="options-grid mt-4">
-                    {% for opt in [current_question.option1, current_question.option2, current_question.option3, current_question.option4] %}
-                    <label class="option-label animate__animated animate__zoomIn" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3,
+                    current_question.option4] %}
+                    <label class="option-label animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
                         <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
-                        <div class="option-content" id="opt-container-{{ loop.index0 }}">
+                        <div class="option-content" id="opt-container-{{ loop.index0 }}" data-option="{{ opt }}">
                             <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
                             <div class="option-text">{{ opt }}</div>
                         </div>
@@ -80,7 +90,8 @@
             <div class="mt-4 pt-3 border-top text-center">
                 <small class="text-muted">
                     <i class="fas fa-info-circle me-1"></i>
-                    This quiz is controlled by the host. After submitting, wait for the host to move to the next question.
+                    This quiz is controlled by the host. After submitting, wait for the host to move to the next
+                    question.
                 </small>
             </div>
         </div>
@@ -88,242 +99,241 @@
 
     <div id="feedbackOverlay" class="result-banner animate__animated d-none">
         <div id="feedbackIcon" class="result-icon"></div>
-        <h2 id="feedbackTitle" class="fw-bold"></h2>
-        <p id="feedbackText" class="text-muted"></p>
-        <div id="waitingNote" class="small text-info mt-3 d-none">
+        <h3 id="feedbackTitle" class="fw-bold m-0"></h3>
+        <p id="feedbackText" class="mb-0 mt-3"></p>
+        <div id="waitingNote" class="small mt-3 d-none p-2 rounded bg-dark bg-opacity-25">
             <i class="fas fa-clock me-1"></i>Waiting for host to continue...
         </div>
     </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-    const socket = io();
-    const quizId = "{{ quiz.id }}";
-    const curIdx = parseInt("{{ current_index }}");
-    const totalQs = parseInt("{{ total_questions }}");
-    const correctAnswer = "{{ current_question.correct_answer }}";
-    const isTimerQuiz = false; 
-    
-    let submitted = false;
-    let startTime = Date.now();
-    let waitingForAdmin = false;
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const quizId = parseInt("{{ quiz.id }}");
+        const curIdx = parseInt("{{ current_index }}");
+        const totalQs = parseInt("{{ total_questions }}");
+        const correctAnswer = "{{ current_question.answer }}";
+        const isTimerQuiz = false;
 
-    socket.emit("join_quiz", { quiz_id: quizId });
+        let submitted = false;
+        let startTime = Date.now();
+        let waitingForAdmin = false;
 
-    socket.on("load_next_question", (data) => {
-        if (parseInt(data.quiz_id) !== parseInt(quizId)) return;
-        const waitingOverlay = document.getElementById("waitingOverlay");
-        waitingOverlay.classList.remove("active");
-        setTimeout(() => {
-            window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
-        }, 500);
-    });
+        socket.emit("join_quiz", { quiz_id: quizId });
 
-    socket.on("force_next_question", (data) => {
-        if (parseInt(data.quiz_id) === parseInt(quizId)) {
-            const nextIndex = curIdx + 1;
-            if (nextIndex < totalQs) {
-                window.location.href = `/student/quiz/${quizId}?qindex=${nextIndex}`;
-            } else {
-                window.location.href = `/student/result/${quizId}`;
-            }
-        }
-    });
-
-    socket.on("quiz_paused", (data) => {
-        if (parseInt(data.quiz_id) === parseInt(quizId)) {
-            showToast("Quiz paused by admin", "warning");
-        }
-    });
-
-    socket.on("quiz_resumed", (data) => {
-        if (parseInt(data.quiz_id) === parseInt(quizId)) {
-            showToast("Quiz resumed", "success");
-        }
-    });
-
-    socket.on("quiz_ended", (data) => {
-        if (parseInt(data.quiz_id) === parseInt(quizId)) {
-            showToast("Quiz ended by admin", "info");
+        socket.on("load_next_question", (data) => {
+            if (parseInt(data.quiz_id) !== parseInt(quizId)) return;
+            const waitingOverlay = document.getElementById("waitingOverlay");
+            waitingOverlay.classList.remove("active");
             setTimeout(() => {
-                window.location.href = `/student/result/${quizId}`;
-            }, 2000);
-        }
-    });
-
-    document.getElementById("submitBtn").onclick = () => {
-        const selected = document.querySelector("input[name='answer']:checked");
-        if(!selected) {
-            const btn = document.getElementById("submitBtn");
-            btn.classList.add("animate__animated", "animate__shakeX");
-            btn.style.background = "#ef4444";
-            setTimeout(() => {
-                btn.classList.remove("animate__animated", "animate__shakeX");
-                btn.style.background = "";
+                window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
             }, 500);
-            return; 
-        }
-        handleSubmission(selected.value);
-    };
-
-    function handleSubmission(selectedVal) {
-        if(submitted) return;
-        submitted = true;
-        const btn = document.getElementById("submitBtn");
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Checking...`;
-        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
-        const timeTaken = Math.round((Date.now() - startTime) / 1000);
-
-        fetch(`/student/quiz/${quizId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                question_id: "{{ current_question.id }}",
-                qindex: curIdx,
-                selected_answer: selectedVal,
-                time_taken: timeTaken
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            showAnswerFeedback(data, selectedVal);
-            socket.emit("student_submitted", { 
-                quiz_id: quizId,
-                student: "{{ session.username }}",
-                question_index: curIdx
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Error submitting answer. Please try again.");
-            submitted = false;
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
-            document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
         });
-    }
 
-    function showAnswerFeedback(data, selectedVal) {
-        const overlay = document.getElementById("feedbackOverlay");
-        const icon = document.getElementById("feedbackIcon");
-        const title = document.getElementById("feedbackTitle");
-        const text = document.getElementById("feedbackText");
-        const waitingNote = document.getElementById("waitingNote");
-        
-        overlay.classList.remove("d-none", "animate__zoomIn", "animate__fadeOut", "correct", "incorrect");
-        overlay.classList.add("animate__zoomIn");
-
-        document.querySelectorAll(".option-label").forEach(label => {
-            const radio = label.querySelector("input");
-            const content = label.querySelector(".option-content");
-            content.classList.remove("correct", "incorrect");
-            if (radio.value === data.correct_answer) {
-                content.classList.add("correct");
-            } else if (radio.value === selectedVal && !data.is_correct) {
-                content.classList.add("incorrect");
+        socket.on("force_next_question", (data) => {
+            if (parseInt(data.quiz_id) === parseInt(quizId)) {
+                const nextIndex = curIdx + 1;
+                if (nextIndex < totalQs) {
+                    window.location.href = `/student/quiz/${quizId}?qindex=${nextIndex}`;
+                } else {
+                    window.location.href = `/student/result/${quizId}`;
+                }
             }
         });
 
-        if (data.is_correct) {
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            overlay.classList.add("correct");
-            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-            title.innerText = "CORRECT!";
-            text.innerHTML = "Well done! Great job!";
-        } else {
-            overlay.classList.add("incorrect");
-            icon.innerHTML = '<i class="fas fa-times-circle"></i>';
-            title.innerText = "INCORRECT";
-            text.innerHTML = `Correct answer: <strong>${data.correct_answer}</strong>`;
-        }
+        socket.on("quiz_paused", (data) => {
+            if (parseInt(data.quiz_id) === parseInt(quizId)) {
+                showToast("Quiz paused by admin", "warning");
+            }
+        });
 
-        waitingNote.classList.remove("d-none");
+        socket.on("quiz_resumed", (data) => {
+            if (parseInt(data.quiz_id) === parseInt(quizId)) {
+                showToast("Quiz resumed", "success");
+            }
+        });
 
-        if (data.student_complete) {
-            setTimeout(() => {
-                title.innerText = "QUIZ OVER!";
-                text.innerHTML = `You've finished all questions.<br>Final Score: <strong>${data.score}/${data.total}</strong>`;
-                waitingNote.innerHTML = `<i class="fas fa-trophy me-1"></i> Calculating final standings...`;
+        socket.on("quiz_ended", (data) => {
+            if (parseInt(data.quiz_id) === parseInt(quizId)) {
+                showToast("Quiz ended by admin", "info");
+                window.location.href = `/student/final-leaderboard/${quizId}`;
+            }
+        });
+
+        document.getElementById("submitBtn").onclick = () => {
+            const selected = document.querySelector("input[name='answer']:checked");
+            if (!selected) {
+                const btn = document.getElementById("submitBtn");
+                btn.classList.add("animate__animated", "animate__shakeX");
+                btn.style.background = "#ef4444";
                 setTimeout(() => {
-                    window.location.href = `/student/quiz/result/${quizId}`;
-                }, 3000);
-            }, 1500);
-        } else {
-            waitingForAdmin = true;
-            setTimeout(() => {
-                overlay.classList.replace("animate__zoomIn", "animate__fadeOut");
-                setTimeout(() => {
-                    overlay.classList.add("d-none");
-                    showWaitingOverlay();
+                    btn.classList.remove("animate__animated", "animate__shakeX");
+                    btn.style.background = "";
                 }, 500);
-            }, 3000);
-        }
-    }
+                return;
+            }
+            handleSubmission(selected.value);
+        };
 
-    function showWaitingOverlay() {
-        const waitingOverlay = document.getElementById("waitingOverlay");
-        waitingOverlay.classList.add("active");
-        const waitingText = waitingOverlay.querySelector(".waiting-text");
-        if (curIdx + 1 >= totalQs) {
-            waitingText.textContent = "Quiz complete! Waiting for host to show final results...";
-        } else {
-            waitingText.textContent = `Waiting for host to start question ${curIdx + 2} of ${totalQs}...`;
-        }
-    }
+        function handleSubmission(selectedVal) {
+            if (submitted) return;
+            submitted = true;
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Checking...`;
+            document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+            const timeTaken = Math.round((Date.now() - startTime) / 1000);
 
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-bg-${type} border-0`;
-        toast.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px 15px; border-radius: 10px;';
-        toast.innerHTML = `
+            fetch(`/student/quiz/${quizId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    question_id: "{{ current_question.id }}",
+                    qindex: curIdx,
+                    selected_answer: selectedVal,
+                    time_taken: timeTaken
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    showAnswerFeedback(data, selectedVal);
+                    socket.emit("student_submitted", {
+                        quiz_id: quizId,
+                        student: "{{ session.username }}",
+                        question_index: curIdx
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error submitting answer. Please try again.");
+                    submitted = false;
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
+                    document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                });
+        }
+
+        function showAnswerFeedback(data, selectedVal) {
+            const overlay = document.getElementById("feedbackOverlay");
+            const icon = document.getElementById("feedbackIcon");
+            const title = document.getElementById("feedbackTitle");
+            const text = document.getElementById("feedbackText");
+            const waitingNote = document.getElementById("waitingNote");
+
+            overlay.classList.remove("d-none", "animate__zoomIn", "animate__fadeOut", "correct", "incorrect");
+            overlay.classList.add("animate__zoomIn");
+
+            document.querySelectorAll(".option-label").forEach(label => {
+                const radio = label.querySelector("input");
+                const content = label.querySelector(".option-content");
+                content.classList.remove("correct", "incorrect");
+                if (radio.value === data.correct_answer) {
+                    content.classList.add("correct");
+                } else if (radio.value === selectedVal && !data.is_correct) {
+                    content.classList.add("incorrect");
+                }
+            });
+
+            if (data.is_correct) {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                overlay.classList.add("correct");
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                title.innerText = "CORRECT!";
+                text.innerHTML = "Well done! Great job!";
+            } else {
+                overlay.classList.add("incorrect");
+                icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                title.innerText = "INCORRECT";
+                text.innerHTML = `Correct answer: <strong>${data.correct_answer}</strong>`;
+            }
+
+            waitingNote.classList.remove("d-none");
+
+            if (data.student_complete) {
+                setTimeout(() => {
+                    title.innerText = "QUIZ OVER!";
+                    text.innerHTML = `You've finished all questions.<br>Final Score: <strong>${data.score}/${data.total}</strong>`;
+                    waitingNote.innerHTML = `<i class="fas fa-trophy me-1"></i> Calculating final standings...`;
+                    setTimeout(() => {
+                        window.location.href = `/student/quiz/result/${quizId}`;
+                    }, 3000);
+                }, 1500);
+            } else {
+                waitingForAdmin = true;
+                setTimeout(() => {
+                    overlay.classList.replace("animate__zoomIn", "animate__fadeOut");
+                    setTimeout(() => {
+                        overlay.classList.add("d-none");
+                        showWaitingOverlay();
+                    }, 500);
+                }, 3000);
+            }
+        }
+
+        function showWaitingOverlay() {
+            const waitingOverlay = document.getElementById("waitingOverlay");
+            waitingOverlay.classList.add("active");
+            const waitingText = waitingOverlay.querySelector(".waiting-text");
+            if (curIdx + 1 >= totalQs) {
+                waitingText.textContent = "Quiz complete! Waiting for host to show final results...";
+            } else {
+                waitingText.textContent = `Waiting for host to start question ${curIdx + 2} of ${totalQs}...`;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-bg-${type} border-0`;
+            toast.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px 15px; border-radius: 10px;';
+            toast.innerHTML = `
             <div class="d-flex align-items-center">
                 <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
                 <span>${message}</span>
             </div>
         `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 100);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
-    document.addEventListener('keydown', function(event) {
-        if (submitted) return;
-        if (event.key >= '1' && event.key <= '4') {
-            const index = parseInt(event.key) - 1;
-            const radio = document.querySelectorAll('input[name="answer"]')[index];
-            if (radio) {
-                radio.checked = true;
-                radio.dispatchEvent(new Event('change'));
+        document.addEventListener('keydown', function (event) {
+            if (submitted) return;
+            if (event.key >= '1' && event.key <= '4') {
+                const index = parseInt(event.key) - 1;
+                const radio = document.querySelectorAll('input[name="answer"]')[index];
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                }
             }
-        }
-        if (event.key === 'Enter') {
-            document.getElementById("submitBtn").click();
-        }
-        if (event.key === ' ' && !event.target.matches('input, textarea')) {
-            document.querySelectorAll('input[name="answer"]').forEach(input => {
-                input.checked = false;
-            });
-            event.preventDefault();
-        }
-    });
-
-    document.querySelectorAll('input[name="answer"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.querySelectorAll('.option-label').forEach(label => {
-                label.classList.remove('selected');
-            });
-            if (this.checked) {
-                this.parentElement.classList.add('selected');
+            if (event.key === 'Enter') {
+                document.getElementById("submitBtn").click();
+            }
+            if (event.key === ' ' && !event.target.matches('input, textarea')) {
+                document.querySelectorAll('input[name="answer"]').forEach(input => {
+                    input.checked = false;
+                });
+                event.preventDefault();
             }
         });
-    });
 
-    socket.on('connect', () => { console.log('Connected to server'); });
-    socket.on('disconnect', () => { showToast('Disconnected from server. Reconnecting...', 'warning'); });
-</script>
+        document.querySelectorAll('input[name="answer"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('.option-label').forEach(label => {
+                    label.classList.remove('selected');
+                });
+                if (this.checked) {
+                    this.parentElement.classList.add('selected');
+                }
+            });
+        });
+
+        socket.on('connect', () => { console.log('Connected to server'); });
+        socket.on('disconnect', () => { showToast('Disconnected from server. Reconnecting...', 'warning'); });
+    </script>
 </body>
+
 </html>

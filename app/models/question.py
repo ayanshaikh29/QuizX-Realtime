@@ -18,6 +18,7 @@ class Question(db.Model):
     option4 = db.Column(db.String(200), nullable=False)
     answer = db.Column(db.String(200), nullable=False)
     time_limit = db.Column(db.Integer, default=30)
+    points = db.Column(db.Integer, default=1)
     
     def __repr__(self):
         return f'<Question {self.id}>'

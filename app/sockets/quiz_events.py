@@ -4,11 +4,13 @@ Real-time quiz events and leaderboard updates
 """
 from flask import session, request
 from flask_socketio import emit, join_room, leave_room
-from app.extensions import socketio, quiz_state, active_participants
-from app.models import Question
-
+from app.extensions import db, socketio, quiz_state
+from app.models import Quiz, Question, PartialAnswer
+from app.services.point_service import PointService
+from app.services.leaderboard_service import LeaderboardService
 # Store waiting room participants
 waiting_rooms = {}
+active_participants = {}
 
 def register_socket_events():
     """Register all Socket.IO event handlers"""
@@ -17,13 +19,15 @@ def register_socket_events():
     def join_quiz(data):
         """Student joins a quiz room"""
         quiz_id = str(data['quiz_id'])
-        join_room(quiz_id)
-        print(f'✅ User joined room: quiz_{quiz_id}')
+        room_name = f"quiz_{quiz_id}"
+        join_room(room_name)
+        print(f'✅ User joined room: {room_name}')
     
     @socketio.on('admin_next_question')
     def admin_next_question(data):
         """Admin advances to next question"""
         quiz_id = int(data['quiz_id'])
+        room_name = f"quiz_{quiz_id}"
         
         if quiz_id not in quiz_state:
             quiz_state[quiz_id] = {'current_qindex': 0}
@@ -33,9 +37,10 @@ def register_socket_events():
         
         print(f'🎯 Current question: {current_index + 1} of {total_questions}')
         
+        quiz = Quiz.query.get(quiz_id)
         if current_index >= total_questions - 1:
             print('🏁 Quiz finished - emitting quiz_finished event')
-            socketio.emit('quiz_finished', {}, room=str(quiz_id))
+            socketio.emit('quiz_finished', {}, room=room_name)
             return
         
         quiz_state[quiz_id]['current_qindex'] += 1
@@ -45,9 +50,30 @@ def register_socket_events():
         socketio.emit(
             'load_next_question',
             {'qindex': new_qindex, 'quiz_id': quiz_id},
-            room=str(quiz_id)
+            room=room_name
         )
-        print(f'📡 Emitted load_next_question with qindex={new_qindex} to room {quiz_id}')
+        print(f'📡 Emitted load_next_question with qindex={new_qindex} to room {room_name}')
+    
+    @socketio.on('admin_stop_quiz')
+    def admin_stop_quiz(data):
+        """Admin stops quiz and redirects everyone to final leaderboard"""
+        quiz_id = int(data['quiz_id'])
+        room_name = f"quiz_{quiz_id}"
+        print(f'🛑 Admin stopped quiz {quiz_id}. Redirecting to final leaderboard.')
+        
+        from app.models import Quiz
+        from app.extensions import db
+        quiz = Quiz.query.get(quiz_id)
+        if quiz:
+            quiz.is_active = False
+            db.session.commit()
+            
+        socketio.emit(
+            'quiz_stopped',
+            {'quiz_id': quiz_id},
+            room=room_name
+        )
+        print(f'📡 Emitted quiz_stopped to room {room_name}')
     
     @socketio.on('join_waiting_room')
     def handle_join_waiting_room(data):
@@ -103,7 +129,7 @@ def register_socket_events():
                         break
     
     @socketio.on('disconnect')
-    def handle_disconnect():
+    def handle_disconnect(reason=None):
         """Handle user disconnect"""
         # Clean up from waiting rooms
         for quiz_id in list(waiting_rooms.keys()):
@@ -132,4 +158,4 @@ def emit_participant_update(quiz_id):
     socketio.emit('update_participants', {
         'count': len(names),
         'users': names
-    }, room=str(quiz_id))
+    }, room=f"quiz_{quiz_id}")

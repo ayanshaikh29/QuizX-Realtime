@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizX | Final Results</title>
@@ -101,5 +102,6 @@
         });
     }
 </script>
+{%% include 'components/ai_chat_widget.html' %%}
 </body>
 </html>
