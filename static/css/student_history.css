@@ -95,6 +95,23 @@
     font-weight: 800;
     letter-spacing: 0.5px;
 }
+.logo-box {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 150px;   /* size adjust kar sakta hai */
+    height: 70px;
+    margin-right: 8px;
+}
+
+.logo-box span {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;  /* apne theme ke hisaab se */
+}
 
 .pill-pass { background: #dcfce7; color: #15803d; }
 .pill-fail { background: #fee2e2; color: #b91c1c; }

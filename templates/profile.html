@@ -18,14 +18,9 @@
 <div class="dashboard-wrapper">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-bolt text-warning"></i>
-                {% if user.role == 'admin' %}
-                <span>QuizX Admin</span>
-                {% else %}
-                <span>QuizX Student</span>
-                {% endif %}
-            </div>
+            <a href="/" class="logo-box">
+    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+</a>
         </div>
         <nav class="sidebar-nav">
             {% if user.role == 'admin' %}

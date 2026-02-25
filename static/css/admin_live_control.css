@@ -94,6 +94,23 @@ body {
     min-height: 100vh;
     transition: background-color var(--transition-base), color var(--transition-base);
 }
+.logo-box {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 150px;   /* size adjust kar sakta hai */
+    height: 70px;
+    margin-right: 8px;
+}
+
+.logo-box span {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;  /* apne theme ke hisaab se */
+}
 
 /* ===========================================
    Animated Background

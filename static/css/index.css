@@ -55,7 +55,23 @@ nav.scrolled {
     box-shadow: 0 10px 30px rgba(0,0,0,0.03);
     padding: 15px 8%;
 }
+.logo-box {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
 
+.logo-img {
+    width: 150px;   /* size adjust kar sakta hai */
+    height: 70px;
+    margin-right: 8px;
+}
+
+.logo-box span {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;  /* apne theme ke hisaab se */
+}
 .logo-box { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .logo-box i { font-size: 28px; color: var(--primary); }
 .logo-box span { font-weight: 800; font-size: 24px; color: var(--dark); letter-spacing: -0.5px; }

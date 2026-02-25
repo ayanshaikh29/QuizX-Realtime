@@ -6,7 +6,23 @@
     --bg-light: #f8fafc;
     --glass: rgba(255, 255, 255, 0.7);
 }
+.logo-box {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
 
+.logo-img {
+    width: 150px;   /* size adjust kar sakta hai */
+    height: 70px;
+    margin-right: 8px;
+}
+
+.logo-box span {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;  /* apne theme ke hisaab se */
+}
 body {
     background: var(--bg-light);
     font-family: 'Plus Jakarta Sans', sans-serif;
