@@ -53,13 +53,14 @@ def create_app(config_name=None):
     # ----------------------------
     # Register Blueprints
     # ----------------------------
-    from app.routes import auth_bp, admin_bp, student_bp
+    from app.routes import auth_bp, admin_bp, student_bp, chatbot_bp
     from app.routes.public import public_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(public_bp)
+    app.register_blueprint(chatbot_bp, url_prefix='/api')
 
     # ----------------------------
     # Register Socket Events
