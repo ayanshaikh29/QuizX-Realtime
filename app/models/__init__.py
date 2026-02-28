@@ -7,5 +7,6 @@ from app.models.quiz import Quiz
 from app.models.question import Question
 from app.models.answer import PartialAnswer
 from app.models.result import Result
+from app.models.ai_quiz import AIQuiz, AIQuestion
 
 __all__ = ['User', 'Quiz', 'Question', 'PartialAnswer', 'Result']

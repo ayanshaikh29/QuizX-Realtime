@@ -1,0 +1,309 @@
+<!-- QuizX AI Chat Widget -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --qx-primary: #6fbf4a;
+    --qx-secondary: #3a9d23;
+    --qx-gradient: linear-gradient(135deg, #6fbf4a 0%, #3a9d23 100%);
+    --qx-glow: rgba(111,191,74,0.4);
+    --qx-panel-bg: #0d1f0d;
+    --qx-msg-bg: #132613;
+    --qx-border: rgba(111,191,74,0.2);
+    --qx-text: #e8f5e3;
+    --qx-muted: rgba(232,245,227,0.5);
+}
+
+.quizx-chat-container * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+
+#quizx-chat-fab {
+    position: fixed; bottom: 32px; right: 32px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--qx-gradient); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 9998;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+    box-shadow: 0 4px 24px var(--qx-glow);
+    animation: fabEntrance 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes fabEntrance { from { opacity:0; transform:scale(0) rotate(-180deg); } to { opacity:1; transform:scale(1) rotate(0); } }
+#quizx-chat-fab:hover { transform: scale(1.1) translateY(-4px); box-shadow: 0 8px 40px var(--qx-glow), 0 0 0 8px rgba(111,191,74,0.1); }
+#quizx-chat-fab.open { transform: scale(0.9) rotate(45deg); }
+#quizx-chat-fab::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid var(--qx-primary); opacity:0; animation: ringPulse 2.5s ease-in-out infinite; }
+@keyframes ringPulse { 0%{transform:scale(1);opacity:0.7;} 100%{transform:scale(1.6);opacity:0;} }
+#quizx-notif-dot { position:absolute; top:4px; right:4px; width:13px; height:13px; background:#ff4757; border-radius:50%; border:2px solid #fff; animation: notifBlink 1.8s ease-in-out infinite; transition:opacity 0.3s; }
+@keyframes notifBlink { 0%,100%{transform:scale(1);} 50%{transform:scale(1.3);} }
+#quizx-chat-fab svg { width:30px; height:30px; }
+
+.quizx-chat-panel {
+    position:fixed; bottom:108px; right:32px; width:390px; height:580px;
+    max-height:calc(100vh - 130px); background:var(--qx-panel-bg);
+    border-radius:24px; border:1px solid var(--qx-border);
+    box-shadow:0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(111,191,74,0.15);
+    display:flex; flex-direction:column; overflow:hidden; z-index:9999;
+    opacity:0; visibility:hidden; transform:scale(0.85) translateY(30px);
+    transform-origin:bottom right;
+    transition:opacity 0.4s cubic-bezier(0.25,1,0.5,1), transform 0.4s cubic-bezier(0.25,1,0.5,1), visibility 0s 0.4s;
+}
+.quizx-chat-panel::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(111,191,74,0.012) 2px,rgba(111,191,74,0.012) 4px); pointer-events:none; z-index:1; border-radius:24px; }
+.quizx-chat-panel.open { opacity:1; visibility:visible; transform:scale(1) translateY(0); transition:opacity 0.4s cubic-bezier(0.25,1,0.5,1), transform 0.4s cubic-bezier(0.25,1,0.5,1), visibility 0s 0s; }
+
+.quizx-chat-header { background:linear-gradient(135deg,rgba(111,191,74,0.15),rgba(58,157,35,0.08)); border-bottom:1px solid var(--qx-border); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; position:relative; z-index:2; flex-shrink:0; }
+.quizx-header-left { display:flex; align-items:center; gap:12px; }
+.quizx-avatar { width:42px; height:42px; border-radius:50%; background:var(--qx-gradient); display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0; box-shadow:0 4px 16px var(--qx-glow); }
+.quizx-avatar svg { width:22px; height:22px; color:#fff; }
+.quizx-avatar::after { content:''; position:absolute; bottom:1px; right:1px; width:10px; height:10px; background:#4cd137; border-radius:50%; border:2px solid var(--qx-panel-bg); animation:onlinePulse 2s ease-in-out infinite; }
+@keyframes onlinePulse { 0%,100%{box-shadow:0 0 0 0 rgba(76,209,55,0.5);} 50%{box-shadow:0 0 0 4px rgba(76,209,55,0);} }
+.quizx-header-info { display:flex; flex-direction:column; }
+.quizx-header-name { font-size:0.95rem; font-weight:700; color:var(--qx-text); letter-spacing:0.01em; }
+.quizx-header-status { font-size:0.72rem; color:var(--qx-primary); font-weight:500; display:flex; align-items:center; gap:4px; }
+.quizx-header-status::before { content:''; display:inline-block; width:5px; height:5px; background:var(--qx-primary); border-radius:50%; }
+.quizx-header-actions { display:flex; gap:6px; align-items:center; }
+.quizx-header-btn { width:32px; height:32px; border-radius:8px; background:rgba(111,191,74,0.08); border:1px solid rgba(111,191,74,0.15); color:var(--qx-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease; }
+.quizx-header-btn:hover { background:rgba(111,191,74,0.15); color:var(--qx-text); border-color:rgba(111,191,74,0.3); transform:scale(1.05); }
+.quizx-header-btn svg { width:14px; height:14px; }
+
+#quizx-chat-messages { flex:1; overflow-y:auto; padding:20px 16px; display:flex; flex-direction:column; gap:14px; position:relative; z-index:2; scroll-behavior:smooth; }
+#quizx-chat-messages::-webkit-scrollbar { width:4px; }
+#quizx-chat-messages::-webkit-scrollbar-track { background:transparent; }
+#quizx-chat-messages::-webkit-scrollbar-thumb { background:rgba(111,191,74,0.25); border-radius:4px; }
+.quizx-date-sep { display:flex; align-items:center; gap:10px; font-size:0.7rem; color:var(--qx-muted); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; }
+.quizx-date-sep::before,.quizx-date-sep::after { content:''; flex:1; height:1px; background:rgba(111,191,74,0.12); }
+
+.quizx-msg { display:flex; align-items:flex-end; gap:8px; animation:msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; opacity:0; }
+@keyframes msgIn { from{opacity:0;transform:translateY(16px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
+.quizx-msg.user { flex-direction:row-reverse; }
+.quizx-msg-avatar { width:28px; height:28px; border-radius:50%; background:var(--qx-gradient); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.quizx-msg-avatar svg { width:14px; height:14px; color:#fff; }
+.quizx-msg-content { display:flex; flex-direction:column; gap:4px; max-width:78%; }
+.quizx-msg.user .quizx-msg-content { align-items:flex-end; }
+.quizx-bubble { padding:12px 16px; border-radius:18px; font-size:0.88rem; line-height:1.65; word-break:break-word; }
+.quizx-msg.user .quizx-bubble { background:var(--qx-gradient); color:#fff; border-bottom-right-radius:4px; box-shadow:0 4px 20px var(--qx-glow); }
+.quizx-msg.bot .quizx-bubble { background:var(--qx-msg-bg); color:var(--qx-text); border:1px solid var(--qx-border); border-bottom-left-radius:4px; }
+.quizx-bubble strong { font-weight:700; color:var(--qx-primary); }
+.quizx-msg.user .quizx-bubble strong { color:#d4f7c2; }
+.quizx-bubble em { color:rgba(232,245,227,0.75); font-style:italic; }
+.quizx-bubble code { background:rgba(111,191,74,0.12); padding:1px 5px; border-radius:4px; font-size:0.85em; }
+.quizx-msg-time { font-size:0.65rem; color:var(--qx-muted); font-weight:500; padding:0 4px; }
+
+.quizx-typing-wrap { display:flex; align-items:flex-end; gap:8px; animation:msgIn 0.3s ease both; }
+.quizx-typing { background:var(--qx-msg-bg); border:1px solid var(--qx-border); border-radius:18px; border-bottom-left-radius:4px; padding:14px 18px; display:flex; align-items:center; gap:5px; }
+.quizx-typing span { display:block; width:7px; height:7px; border-radius:50%; background:var(--qx-primary); animation:quizxBounce 1.4s ease-in-out infinite; }
+.quizx-typing span:nth-child(2){animation-delay:0.18s;} .quizx-typing span:nth-child(3){animation-delay:0.36s;}
+@keyframes quizxBounce { 0%,60%,100%{transform:translateY(0);opacity:0.4;} 30%{transform:translateY(-7px);opacity:1;} }
+
+.quizx-suggestions { display:flex; flex-wrap:wrap; gap:6px; padding:10px 16px 4px; position:relative; z-index:2; }
+.quizx-chip { padding:6px 12px; background:rgba(111,191,74,0.06); border:1px solid rgba(111,191,74,0.2); border-radius:20px; font-size:0.75rem; color:var(--qx-primary); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; transition:all 0.2s ease; white-space:nowrap; font-weight:500; }
+.quizx-chip:hover { background:rgba(111,191,74,0.15); border-color:var(--qx-primary); transform:translateY(-1px); box-shadow:0 4px 12px rgba(111,191,74,0.2); }
+
+.quizx-chat-footer { padding:14px 16px; border-top:1px solid var(--qx-border); background:rgba(13,31,13,0.8); backdrop-filter:blur(10px); position:relative; z-index:2; flex-shrink:0; }
+.quizx-chat-input-row { display:flex; align-items:center; gap:10px; background:rgba(111,191,74,0.05); border:1.5px solid rgba(111,191,74,0.18); border-radius:16px; padding:6px 6px 6px 14px; transition:border-color 0.2s, box-shadow 0.2s; }
+.quizx-chat-input-row:focus-within { border-color:rgba(111,191,74,0.5); box-shadow:0 0 0 3px rgba(111,191,74,0.08); }
+#quizx-chat-input { flex:1; border:none; background:transparent; outline:none; color:var(--qx-text); font-size:0.88rem; font-family:'Plus Jakarta Sans',sans-serif; font-weight:500; padding:6px 0; caret-color:var(--qx-primary); }
+#quizx-chat-input::placeholder { color:var(--qx-muted); }
+#quizx-chat-send { width:40px; height:40px; border-radius:12px; background:var(--qx-gradient); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, opacity 0.2s; box-shadow:0 4px 16px rgba(111,191,74,0.35); }
+#quizx-chat-send:hover:not(:disabled) { transform:scale(1.12) rotate(-5deg); box-shadow:0 6px 24px rgba(111,191,74,0.5); }
+#quizx-chat-send:active:not(:disabled) { transform:scale(0.92); }
+#quizx-chat-send:disabled { opacity:0.4; cursor:not-allowed; }
+#quizx-chat-send svg { width:17px; height:17px; color:#fff; }
+.quizx-footer-hint { font-size:0.67rem; color:var(--qx-muted); text-align:center; margin-top:8px; font-weight:500; letter-spacing:0.02em; }
+
+.quizx-scroll-btn { position:absolute; bottom:95px; right:50%; transform:translateX(50%); background:var(--qx-gradient); border:none; border-radius:20px; padding:6px 14px; color:#fff; font-size:0.72rem; font-weight:600; cursor:pointer; z-index:10; opacity:0; pointer-events:none; transition:opacity 0.2s; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; gap:4px; box-shadow:0 4px 14px rgba(111,191,74,0.4); }
+.quizx-scroll-btn.visible { opacity:1; pointer-events:auto; }
+
+@media (max-width:480px) {
+    .quizx-chat-panel { width:calc(100vw - 20px); right:10px; bottom:90px; height:calc(100vh - 110px); border-radius:20px; }
+    #quizx-chat-fab { bottom:20px; right:20px; }
+}
+</style>
+
+<div class="quizx-chat-container">
+    <div id="quizx-chat-fab" title="Chat with QuizX AI">
+        <div id="quizx-notif-dot"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"></circle>
+        </svg>
+    </div>
+
+    <div id="quizx-chat-panel" class="quizx-chat-panel">
+        <div class="quizx-chat-header">
+            <div class="quizx-header-left">
+                <div class="quizx-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16" stroke-width="3"></line><line x1="12" y1="16" x2="12" y2="16" stroke-width="3"></line><line x1="16" y1="16" x2="16" y2="16" stroke-width="3"></line>
+                    </svg>
+                </div>
+                <div class="quizx-header-info">
+                    <span class="quizx-header-name">QuizX AI</span>
+                    <span class="quizx-header-status" id="quizx-status-text">Online · Ready to help</span>
+                </div>
+            </div>
+            <div class="quizx-header-actions">
+                <button class="quizx-header-btn" id="quizx-clear-btn" title="Clear chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                </button>
+                <button class="quizx-header-btn" id="quizx-chat-close" title="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="quizx-chat-messages" class="quizx-chat-messages"></div>
+
+        <button class="quizx-scroll-btn" id="quizx-scroll-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            Latest
+        </button>
+
+        <div class="quizx-suggestions" id="quizx-suggestions">
+            <button class="quizx-chip">📚 Explain a concept</button>
+            <button class="quizx-chip">📝 Quiz tips</button>
+            <button class="quizx-chip">🎯 Study strategy</button>
+            <button class="quizx-chip">⚡ Quick revision</button>
+        </div>
+
+        <div class="quizx-chat-footer">
+            <div class="quizx-chat-input-row">
+                <input id="quizx-chat-input" type="text" placeholder="Ask anything..." autocomplete="off" maxlength="1000" />
+                <button id="quizx-chat-send" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+            <div class="quizx-footer-hint">Enter to send &nbsp;·&nbsp; Powered by QuizX AI</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const fab       = document.getElementById('quizx-chat-fab');
+    const panel     = document.getElementById('quizx-chat-panel');
+    const closeBtn  = document.getElementById('quizx-chat-close');
+    const clearBtn  = document.getElementById('quizx-clear-btn');
+    const input     = document.getElementById('quizx-chat-input');
+    const send      = document.getElementById('quizx-chat-send');
+    const msgs      = document.getElementById('quizx-chat-messages');
+    const statusTxt = document.getElementById('quizx-status-text');
+    const notifDot  = document.getElementById('quizx-notif-dot');
+    const scrollBtn = document.getElementById('quizx-scroll-btn');
+    const chips     = document.querySelectorAll('.quizx-chip');
+    let isOpen = false;
+
+    function getTime() { return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
+
+    function parseMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function showWelcome() {
+        msgs.innerHTML = '<div class="quizx-date-sep">Today</div>';
+        appendMsg("Hello! I'm **QuizX AI**, your intelligent exam preparation assistant. 🎓\n\nAsk me anything about **concepts**, **quiz strategies**, or **study tips** — I'm here to help!", 'bot');
+    }
+
+    function appendMsg(text, role) {
+        const wrap = document.createElement('div');
+        wrap.className = 'quizx-msg ' + role;
+
+        const av = document.createElement('div');
+        av.className = 'quizx-msg-avatar';
+        av.innerHTML = role === 'bot'
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+        const content = document.createElement('div');
+        content.className = 'quizx-msg-content';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'quizx-bubble';
+        bubble.innerHTML = parseMarkdown(text);
+
+        const timeEl = document.createElement('div');
+        timeEl.className = 'quizx-msg-time';
+        timeEl.textContent = getTime();
+
+        content.appendChild(bubble);
+        content.appendChild(timeEl);
+        wrap.appendChild(av);
+        wrap.appendChild(content);
+        msgs.appendChild(wrap);
+        msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' });
+        return wrap;
+    }
+
+    function showTyping() {
+        const wrap = document.createElement('div');
+        wrap.className = 'quizx-typing-wrap';
+        const av = document.createElement('div');
+        av.className = 'quizx-msg-avatar';
+        av.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path></svg>';
+        const t = document.createElement('div');
+        t.className = 'quizx-typing';
+        t.innerHTML = '<span></span><span></span><span></span>';
+        wrap.appendChild(av); wrap.appendChild(t);
+        msgs.appendChild(wrap);
+        msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' });
+        return wrap;
+    }
+
+    msgs.addEventListener('scroll', () => {
+        const atBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80;
+        scrollBtn.classList.toggle('visible', !atBottom);
+    });
+    scrollBtn.addEventListener('click', () => msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' }));
+
+    function openPanel()  { isOpen=true;  panel.classList.add('open');    fab.classList.add('open');    notifDot.style.opacity='0'; setTimeout(() => input.focus(), 400); }
+    function closePanel() { isOpen=false; panel.classList.remove('open'); fab.classList.remove('open'); }
+
+    fab.addEventListener('click', () => isOpen ? closePanel() : openPanel());
+    closeBtn.addEventListener('click', closePanel);
+    clearBtn.addEventListener('click', () => { msgs.innerHTML=''; showWelcome(); document.getElementById('quizx-suggestions').style.display='flex'; });
+
+    input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
+
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            input.value = chip.textContent.replace(/^\S+\s/, '');
+            send.disabled = false;
+            input.focus();
+        });
+    });
+
+    function setStatus(text, color) { statusTxt.textContent = text; statusTxt.style.color = color || 'var(--qx-primary)'; }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text || send.disabled) return;
+
+        document.getElementById('quizx-suggestions').style.display = 'none';
+        input.value = ''; send.disabled = true;
+        appendMsg(text, 'user');
+        setStatus('Thinking...', 'rgba(232,245,227,0.6)');
+        const typingEl = showTyping();
+
+        try {
+            const res  = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text}) });
+            const data = await res.json();
+            typingEl.remove();
+            if (!res.ok) { appendMsg("Something went wrong. Please try again.", 'bot'); setStatus('Error', '#ff6b6b'); setTimeout(() => setStatus('Online · Ready to help'), 3000); }
+            else { appendMsg(data?.response?.reply || "I couldn't generate a response.", 'bot'); setStatus('Online · Ready to help'); }
+        } catch(err) {
+            typingEl.remove();
+            appendMsg("Connection error. Please check your network.", 'bot');
+            setStatus('Offline', '#ff6b6b');
+            setTimeout(() => setStatus('Online · Ready to help'), 3000);
+        } finally { send.disabled = !input.value.trim(); input.focus(); }
+    }
+
+    send.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (e) => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+
+    showWelcome();
+})();
+</script>

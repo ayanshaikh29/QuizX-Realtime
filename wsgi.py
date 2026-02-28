@@ -2,6 +2,9 @@
 Production WSGI Entry Point
 Used by gunicorn and other WSGI servers
 """
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from app import create_app
 from app.extensions import socketio
