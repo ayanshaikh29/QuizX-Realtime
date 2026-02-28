@@ -2,9 +2,11 @@
 Application Factory
 Creates and configures the Flask application
 """
+
 from flask import Flask
 from app.config import get_config
 from app.extensions import db, socketio, migrate
+from sqlalchemy import text
 import pytz
 
 
@@ -13,51 +15,85 @@ def create_app(config_name=None):
     Application factory pattern
     Creates and configures Flask app
     """
-    app = Flask(__name__, template_folder='../templates', static_folder='../static')
-    
+
+    app = Flask(
+        __name__,
+        template_folder='../templates',
+        static_folder='../static'
+    )
+
+    # ----------------------------
     # Load configuration
+    # ----------------------------
     if config_name:
         from app.config import config
         app.config.from_object(config[config_name])
     else:
         app.config.from_object(get_config())
-    
-    # Initialize extensions
+
+    # ----------------------------
+    # Initialize Extensions
+    # ----------------------------
     db.init_app(app)
     migrate.init_app(app, db)
+
     socketio.init_app(
         app,
-        cors_allowed_origins=app.config['SOCKETIO_CORS_ALLOWED_ORIGINS'],
-        async_mode=app.config['SOCKETIO_ASYNC_MODE']
+        cors_allowed_origins=app.config.get(
+            'SOCKETIO_CORS_ALLOWED_ORIGINS', "*"
+        ),
+        async_mode=app.config.get(
+            'SOCKETIO_ASYNC_MODE', "eventlet"
+        )
     )
-    
-    # Add pytz to Jinja globals (for template compatibility)
+
+    # Add pytz to Jinja globals
     app.jinja_env.globals['pytz'] = pytz
-    
-    # Register blueprints
+
+    # ----------------------------
+    # Register Blueprints
+    # ----------------------------
     from app.routes import auth_bp, admin_bp, student_bp
-    
-    # Auth routes (no prefix)
-    app.register_blueprint(auth_bp)
-    
-    # Admin routes (prefixed with /admin)
-    app.register_blueprint(admin_bp, url_prefix='/admin')
-    
-    # Student routes (FIXED: Add /student prefix)
-    app.register_blueprint(student_bp, url_prefix='/student')
-    
     from app.routes.public import public_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(public_bp)
 
-    
-    # Register Socket.IO events
+    # ----------------------------
+    # Register Socket Events
+    # ----------------------------
     from app.sockets import register_socket_events
     with app.app_context():
         register_socket_events()
-    
-    # Create database tables
+
+    # ----------------------------
+    # 🔥 TEMP DATABASE FIX FOR RENDER
+    # ----------------------------
+    # This ensures missing columns are added automatically
+    # Safe to keep, but can be removed after migration stabilizes
     with app.app_context():
-        
-        print('>>> Database tables created/verified')
-    
+        try:
+            db.session.execute(text("""
+                ALTER TABLE quiz
+                ADD COLUMN IF NOT EXISTS show_leaderboard_each_question BOOLEAN DEFAULT FALSE;
+            """))
+
+            db.session.execute(text("""
+                ALTER TABLE quiz
+                ADD COLUMN IF NOT EXISTS timer_mode VARCHAR(50);
+            """))
+
+            db.session.execute(text("""
+                ALTER TABLE quiz
+                ADD COLUMN IF NOT EXISTS total_quiz_time INTEGER;
+            """))
+
+            db.session.commit()
+            print(">>> Database columns verified/added")
+
+        except Exception as e:
+            print(">>> DB Auto Fix Error:", e)
+
     return app
