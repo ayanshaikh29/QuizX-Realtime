@@ -1,289 +1,613 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>QuizX | The Ultimate Realtime Interaction Platform</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
+
 <body>
 
-<nav id="navbar">
-    <a href="/" class="logo-box">
-    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-</a>
-    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
-    <div class="nav-links" id="navLinks">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How it Works</a>
-        <a href="#testimonials">Testimonials</a>
-    </div>
-    <div class="nav-btns" id="navBtns">
-        <a href="/login" class="btn-login">Log in</a>
-        <a href="/register" class="btn-primary">Sign up free</a>
-    </div>
-</nav>
+    <!-- Particle Canvas Background -->
+    <canvas id="particles"></canvas>
 
-<section class="hero">
-    <div class="hero-content">
-        <div class="hero-text reveal">
-            <h1>Make learning & meetings <br><span>unforgettable.</span></h1>
-            <p>QuizX is the leading audience interaction platform. Host live quizzes, polls, and Q&As that keep your participants on the edge of their seats.</p>
-            <div class="hero-buttons">
-                <a href="/register" class="btn-primary">Create a Quiz</a>
-                <a href="#how-it-works" class="btn-outline">See how it works</a>
-            </div>
+    <!-- Cursor Glow -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <nav id="navbar">
+        <a href="/" class="logo-box">
+            <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+        </a>
+        <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+        <div class="nav-links" id="navLinks">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="#testimonials">Testimonials</a>
         </div>
-        
-        <div class="hero-visual reveal delay-2">
-            <div class="floating-card fc-3">
-                <i class="fas fa-users text-success me-2"></i> 1,240 Participants Joined
-            </div>
-            <div class="floating-card fc-1">
-                <div class="live-badge"><div class="dot"></div> LIVE NOW</div>
-                <h3 style="font-weight: 800; margin-bottom: 10px;">What is the speed of light?</h3>
-                <div style="height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 15px; overflow: hidden;">
-                    <div style="width: 70%; height: 100%; background: var(--primary);"></div>
+        <div class="nav-btns" id="navBtns">
+            <a href="/login" class="btn-login">Log in</a>
+            <a href="/register" class="btn-primary btn-glow">Sign up free</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text reveal">
+                <div class="hero-badge">
+                    <i class="fas fa-sparkles"></i> #1 Realtime Quiz Platform
                 </div>
-                <p style="font-size: 12px; color: var(--text-muted); font-weight: 700;">70% ANSWERED CORRECTLY</p>
-            </div>
-            <div class="floating-card fc-2">
-                <h4 style="font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">Leaderboard</h4>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <span style="font-weight: 700;"><i class="fas fa-trophy text-warning"></i> Sarah J.</span>
-                    <span style="font-weight: 800; color: var(--primary);">4,500 pts</span>
+                <h1>Make learning & meetings <br><span class="gradient-text typewriter">unforgettable.</span></h1>
+                <p>QuizX is the leading audience interaction platform. Host live quizzes, polls, and Q&As that keep your
+                    participants on the edge of their seats.</p>
+                <div class="hero-buttons">
+                    <a href="/register" class="btn-primary btn-glow btn-lg">
+                        <i class="fas fa-rocket"></i> Create a Quiz
+                    </a>
+                    <a href="#how-it-works" class="btn-outline btn-lg">
+                        <i class="fas fa-play-circle"></i> See how it works
+                    </a>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="font-weight: 600; color: var(--text-muted);">2. Mike T.</span>
-                    <span style="font-weight: 700;">4,120 pts</span>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="50000">0</span><span class="stat-suffix">+</span>
+                        <span class="stat-label">Quizzes Created</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="1200000">0</span><span class="stat-suffix">+</span>
+                        <span class="stat-label">Participants</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="98">0</span><span class="stat-suffix">%</span>
+                        <span class="stat-label">Satisfaction</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
 
-<section class="features" id="features">
-    <div class="section-header reveal">
-        <h2 class="section-title">Designed for maximum engagement</h2>
-        <p class="section-subtitle">Ditch the boring slides. Everything you need to turn passive listeners into active participants.</p>
-    </div>
-    
-    <div class="bento-grid">
-        <div class="bento-card wide reveal">
-            <div class="icon-box" style="background: rgba(255,255,255,0.1); color: white;"><i class="fas fa-satellite-dish"></i></div>
-            <h3>Ultra-Fast Realtime Sync</h3>
-            <p>Our websocket technology ensures that the moment a student taps an answer, your dashboard updates. Zero lag, zero refreshing. Just pure, instant interaction.</p>
-        </div>
-        <div class="bento-card reveal delay-1">
-            <div class="icon-box"><i class="fas fa-stopwatch"></i></div>
-            <h3>Time-Attack Mode</h3>
-            <p>Add pressure with customizable timers. Reward faster answers with more points to ignite fierce competition.</p>
-        </div>
-        <div class="bento-card reveal">
-            <div class="icon-box"><i class="fas fa-qrcode"></i></div>
-            <h3>Frictionless Joining</h3>
-            <p>No app downloads required. Participants simply scan a QR code or enter a 6-digit pin to jump straight into the action.</p>
-        </div>
-        <div class="bento-card reveal delay-1">
-            <div class="icon-box"><i class="fas fa-chart-pie"></i></div>
-            <h3>Deep Analytics</h3>
-            <p>Identify knowledge gaps instantly. Export detailed post-game reports to understand exactly where your audience struggled.</p>
-        </div>
-        <div class="bento-card reveal delay-2">
-            <div class="icon-box"><i class="fas fa-shield-halved"></i></div>
-            <h3>Secure Workspaces</h3>
-            <p>Dedicated admin portals and student hubs. Keep your data safe with enterprise-grade role-based authentication.</p>
-        </div>
-    </div>
-</section>
-
-<section class="steps" id="how-it-works">
-    <div class="section-header reveal">
-        <h2 class="section-title">From zero to live in 60 seconds</h2>
-    </div>
-    
-    <div class="step-container">
-        <div class="step-row reveal">
-            <div class="step-number">1</div>
-            <div class="step-content">
-                <h3>Create your quiz</h3>
-                <p>Use our intuitive builder to add questions, set time limits, and mark correct answers. No coding or complex menus.</p>
-            </div>
-        </div>
-        <div class="step-row reveal">
-            <div class="step-number">2</div>
-            <div class="step-content">
-                <h3>Share the code on screen</h3>
-                <p>Hit 'Go Live'. Your audience enters the 6-digit join code on their phones or laptops. Watch the lobby fill up in realtime.</p>
-            </div>
-        </div>
-        <div class="step-row reveal">
-            <div class="step-number">3</div>
-            <div class="step-content">
-                <h3>Play and analyze</h3>
-                <p>Advance through questions at your own pace. Reveal the leaderboard after each round to keep the energy high.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="testimonials" id="testimonials">
-    <div class="section-header reveal">
-        <h2 class="section-title">Trusted by educators and teams</h2>
-    </div>
-    
-    <div class="testimonial-grid">
-        <div class="test-card reveal">
-            <i class="fas fa-quote-left"></i>
-            <p>"QuizX has completely transformed my classroom. The students beg me to run a session at the end of every week!"</p>
-            <div class="test-author">
-                <div class="test-avatar">SJ</div>
-                <div class="test-info">
-                    <h4>Sarah Johnson</h4>
-                    <span>High School Science Teacher</span>
+            <div class="hero-visual reveal delay-2">
+                <div class="floating-card fc-3 tilt-card">
+                    <i class="fas fa-users text-success me-2"></i> 1,240 Participants Joined
+                </div>
+                <div class="floating-card fc-1 tilt-card">
+                    <div class="live-badge">
+                        <div class="dot"></div> LIVE NOW
+                    </div>
+                    <h3 style="font-weight: 800; margin-bottom: 10px;">What is the speed of light?</h3>
+                    <div
+                        style="height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 15px; overflow: hidden;">
+                        <div class="progress-bar-animated"
+                            style="width: 70%; height: 100%; background: var(--primary);">
+                        </div>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); font-weight: 700;">70% ANSWERED CORRECTLY</p>
+                </div>
+                <div class="floating-card fc-2 tilt-card">
+                    <h4
+                        style="font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">
+                        Leaderboard</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 700;"><i class="fas fa-trophy text-warning"></i> Sarah J.</span>
+                        <span style="font-weight: 800; color: var(--primary);">4,500 pts</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 600; color: var(--text-muted);">2. Mike T.</span>
+                        <span style="font-weight: 700;">4,120 pts</span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="test-card reveal delay-1">
-            <i class="fas fa-quote-left"></i>
-            <p>"We use this for our weekly all-hands meetings. It breaks the ice and makes corporate updates genuinely fun."</p>
-            <div class="test-author">
-                <div class="test-avatar" style="background: #3b82f6;">MC</div>
-                <div class="test-info">
-                    <h4>Mike Chen</h4>
-                    <span>VP of Engineering, TechCorp</span>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-header reveal">
+            <h2 class="section-title">Designed for <span class="gradient-text">maximum engagement</span></h2>
+            <p class="section-subtitle">Ditch the boring slides. Everything you need to turn passive listeners into
+                active participants.</p>
+        </div>
+
+        <div class="bento-grid">
+            <div class="bento-card wide reveal tilt-card">
+                <div class="card-glow"></div>
+                <div class="icon-box" style="background: rgba(255,255,255,0.1); color: white;"><i
+                        class="fas fa-satellite-dish"></i></div>
+                <h3>Ultra-Fast Realtime Sync</h3>
+                <p>Our websocket technology ensures that the moment a student taps an answer, your dashboard updates.
+                    Zero lag, zero refreshing. Just pure, instant interaction.</p>
+            </div>
+            <div class="bento-card reveal delay-1 tilt-card">
+                <div class="card-glow"></div>
+                <div class="icon-box"><i class="fas fa-stopwatch"></i></div>
+                <h3>Time-Attack Mode</h3>
+                <p>Add pressure with customizable timers. Reward faster answers with more points to ignite fierce
+                    competition.</p>
+            </div>
+            <div class="bento-card reveal tilt-card">
+                <div class="card-glow"></div>
+                <div class="icon-box"><i class="fas fa-qrcode"></i></div>
+                <h3>Frictionless Joining</h3>
+                <p>No app downloads required. Participants simply scan a QR code or enter a 6-digit pin to jump straight
+                    into the action.</p>
+            </div>
+            <div class="bento-card reveal delay-1 tilt-card">
+                <div class="card-glow"></div>
+                <div class="icon-box"><i class="fas fa-chart-pie"></i></div>
+                <h3>Deep Analytics</h3>
+                <p>Identify knowledge gaps instantly. Export detailed post-game reports to understand exactly where your
+                    audience struggled.</p>
+            </div>
+            <div class="bento-card reveal delay-2 tilt-card">
+                <div class="card-glow"></div>
+                <div class="icon-box"><i class="fas fa-shield-halved"></i></div>
+                <h3>Secure Workspaces</h3>
+                <p>Dedicated admin portals and student hubs. Keep your data safe with enterprise-grade role-based
+                    authentication.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="steps" id="how-it-works">
+        <div class="section-header reveal">
+            <h2 class="section-title">From zero to live in <span class="gradient-text">60 seconds</span></h2>
+        </div>
+
+        <div class="step-container">
+            <div class="step-row reveal">
+                <div class="step-number pulse-ring">1</div>
+                <div class="step-content tilt-card">
+                    <h3>Create your quiz</h3>
+                    <p>Use our intuitive builder to add questions, set time limits, and mark correct answers. No coding
+                        or complex menus.</p>
+                </div>
+            </div>
+            <div class="step-row reveal">
+                <div class="step-number pulse-ring">2</div>
+                <div class="step-content tilt-card">
+                    <h3>Share the code on screen</h3>
+                    <p>Hit 'Go Live'. Your audience enters the 6-digit join code on their phones or laptops. Watch the
+                        lobby fill up in realtime.</p>
+                </div>
+            </div>
+            <div class="step-row reveal">
+                <div class="step-number pulse-ring">3</div>
+                <div class="step-content tilt-card">
+                    <h3>Play and analyze</h3>
+                    <p>Advance through questions at your own pace. Reveal the leaderboard after each round to keep the
+                        energy high.</p>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="cta reveal">
-    <h2>Ready to engage your audience?</h2>
-    <p>Join thousands of hosts worldwide. Start creating interactive experiences today.</p>
-    <a href="/register" class="btn-primary">Sign up for free</a>
-</section>
+    <section class="testimonials" id="testimonials">
+        <div class="section-header reveal">
+            <h2 class="section-title">Trusted by <span class="gradient-text">educators and teams</span></h2>
+        </div>
 
-<footer class="footer-pro">
-    <div class="footer-grid">
-        <div class="footer-brand">
-            <a href="/" class="logo-box footer-logo">
-                <i class="fas fa-bolt"></i>
-                <span>QuizX</span>
-            </a>
-            <p>The ultimate realtime audience interaction platform for classrooms, corporate meetings, and live events.</p>
-            <div class="social-links">
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                <a href="#"><i class="fab fa-github"></i></a>
-                <a href="#"><i class="fab fa-discord"></i></a>
+        <div class="testimonial-grid">
+            <div class="test-card reveal tilt-card">
+                <div class="card-glow"></div>
+                <i class="fas fa-quote-left"></i>
+                <p>"QuizX has completely transformed my classroom. The students beg me to run a session at the end of
+                    every week!"</p>
+                <div class="test-author">
+                    <div class="test-avatar">SJ</div>
+                    <div class="test-info">
+                        <h4>Sarah Johnson</h4>
+                        <span>High School Science Teacher</span>
+                    </div>
+                </div>
+            </div>
+            <div class="test-card reveal delay-1 tilt-card">
+                <div class="card-glow"></div>
+                <i class="fas fa-quote-left"></i>
+                <p>"We use this for our weekly all-hands meetings. It breaks the ice and makes corporate updates
+                    genuinely fun."</p>
+                <div class="test-author">
+                    <div class="test-avatar" style="background: #3b82f6;">MC</div>
+                    <div class="test-info">
+                        <h4>Mike Chen</h4>
+                        <span>VP of Engineering, TechCorp</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta reveal">
+        <div class="cta-particles"></div>
+        <h2>Ready to engage your audience?</h2>
+        <p>Join thousands of hosts worldwide. Start creating interactive experiences today.</p>
+        <a href="/register" class="btn-primary btn-glow btn-lg">Sign up for free</a>
+    </section>
+
+    <footer class="footer-pro">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo-box footer-logo">
+                    <i class="fas fa-bolt"></i>
+                    <span>QuizX</span>
+                </a>
+                <p>The ultimate realtime audience interaction platform for classrooms, corporate meetings, and live
+                    events.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-discord"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#">Integrations</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Changelog</a></li>
+                    <li><a href="#">API Documentation</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Community Forum</a></li>
+                    <li><a href="#">Quiz Templates</a></li>
+                    <li><a href="#">Video Tutorials</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers <span class="badge-hiring">Hiring</span></a></li>
+                    <li><a href="#">Contact Support</a></li>
+                    <li><a href="#">Partners</a></li>
+                </ul>
             </div>
         </div>
 
-        <div class="footer-col">
-            <h4>Product</h4>
-            <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#">Integrations</a></li>
-                <li><a href="#">Pricing</a></li>
-                <li><a href="#">Changelog</a></li>
-                <li><a href="#">API Documentation</a></li>
-            </ul>
+        <div class="footer-bottom">
+            <p>&copy; 2026 QuizX Inc. Built for modern engagement.</p>
+            <div class="footer-legal">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+                <a href="#">Security</a>
+            </div>
         </div>
+    </footer>
 
-        <div class="footer-col">
-            <h4>Resources</h4>
-            <ul>
-                <li><a href="#">Help Center</a></li>
-                <li><a href="#">Blog</a></li>
-                <li><a href="#">Community Forum</a></li>
-                <li><a href="#">Quiz Templates</a></li>
-                <li><a href="#">Video Tutorials</a></li>
-            </ul>
-        </div>
+    <script>
+        // ============================================
+        // 1. PARTICLE BACKGROUND SYSTEM
+        // ============================================
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mousePos = { x: 0, y: 0 };
 
-        <div class="footer-col">
-            <h4>Company</h4>
-            <ul>
-                <li><a href="#">About Us</a></li>
-                <li><a href="#">Careers <span class="badge-hiring">Hiring</span></a></li>
-                <li><a href="#">Contact Support</a></li>
-                <li><a href="#">Partners</a></li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="footer-bottom">
-        <p>© 2026 QuizX Inc. Built for modern engagement.</p>
-        <div class="footer-legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Cookie Policy</a>
-            <a href="#">Security</a>
-        </div>
-    </div>
-</footer>
-
-<script>
-    // 1. Sticky Navbar Effect
-    window.addEventListener('scroll', () => {
-        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
-    });
-
-    // 2. Mobile Menu Toggle
-    document.getElementById('menuToggle').addEventListener('click', () => {
-        const links = document.getElementById('navLinks');
-        const btns = document.getElementById('navBtns');
-        
-        if(links.style.display === 'flex') {
-            links.style.display = 'none';
-            btns.style.display = 'none';
-        } else {
-            links.style.display = 'flex';
-            links.style.flexDirection = 'column';
-            links.style.position = 'absolute';
-            links.style.top = '100%';
-            links.style.left = '0';
-            links.style.width = '100%';
-            links.style.background = 'rgba(255,255,255,0.95)';
-            links.style.padding = '20px';
-            links.style.borderBottom = '1px solid #e2e8f0';
-            
-            btns.style.display = 'flex';
-            btns.style.position = 'absolute';
-            btns.style.top = '220px';
-            btns.style.left = '0';
-            btns.style.width = '100%';
-            btns.style.padding = '0 20px 20px';
-            btns.style.background = 'rgba(255,255,255,0.95)';
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-    });
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-    // 3. Next-Level Scroll Reveal Animation (Intersection Observer)
-    const revealElements = document.querySelectorAll('.reveal');
-    
-    const revealOptions = {
-        threshold: 0.15,
-        rootMargin: "0px 0px -50px 0px"
-    };
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.8;
+                this.speedY = (Math.random() - 0.5) * 0.8;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
 
-    const revealOnScroll = new IntersectionObserver(function(entries, observer) {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('active');
-            observer.unobserve(entry.target); // Only animate once
+                // Mouse attraction
+                const dx = mousePos.x - this.x;
+                const dy = mousePos.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 150) {
+                    this.x += dx * 0.01;
+                    this.y += dy * 0.01;
+                    this.opacity = Math.min(this.opacity + 0.02, 0.8);
+                }
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(111, 191, 74, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        // Create particles
+        for (let i = 0; i < 80; i++) {
+            particles.push(new Particle());
+        }
+
+        function connectParticles() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a + 1; b < particles.length; b++) {
+                    const dx = particles[a].x - particles[b].x;
+                    const dy = particles[a].y - particles[b].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(111, 191, 74, ${0.1 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            connectParticles();
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        document.addEventListener('mousemove', (e) => {
+            mousePos.x = e.clientX;
+            mousePos.y = e.clientY;
+
+            // Cursor glow follow
+            const glow = document.getElementById('cursorGlow');
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
         });
-    }, revealOptions);
 
-    revealElements.forEach(el => {
-        revealOnScroll.observe(el);
-    });
-</script>
+        // ============================================
+        // 2. STICKY NAVBAR
+        // ============================================
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+        });
+
+        // ============================================
+        // 3. MOBILE MENU TOGGLE
+        // ============================================
+        document.getElementById('menuToggle').addEventListener('click', () => {
+            const links = document.getElementById('navLinks');
+            const btns = document.getElementById('navBtns');
+
+            if (links.style.display === 'flex') {
+                links.style.display = 'none';
+                btns.style.display = 'none';
+            } else {
+                links.style.display = 'flex';
+                links.style.flexDirection = 'column';
+                links.style.position = 'absolute';
+                links.style.top = '100%';
+                links.style.left = '0';
+                links.style.width = '100%';
+                links.style.background = 'rgba(255,255,255,0.95)';
+                links.style.padding = '20px';
+                links.style.borderBottom = '1px solid #e2e8f0';
+                links.style.backdropFilter = 'blur(20px)';
+
+                btns.style.display = 'flex';
+                btns.style.position = 'absolute';
+                btns.style.top = '220px';
+                btns.style.left = '0';
+                btns.style.width = '100%';
+                btns.style.padding = '0 20px 20px';
+                btns.style.background = 'rgba(255,255,255,0.95)';
+            }
+        });
+
+        // ============================================
+        // 4. SCROLL REVEAL (Intersection Observer)
+        // ============================================
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const revealOnScroll = new IntersectionObserver(function (entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            });
+        }, revealOptions);
+
+        revealElements.forEach(el => {
+            revealOnScroll.observe(el);
+        });
+
+        // ============================================
+        // 5. TILT CARD EFFECT (Mouse Hover 3D)
+        // ============================================
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 15;
+                const rotateY = (centerX - x) / 15;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+
+                // Move the glow
+                const glow = card.querySelector('.card-glow');
+                if (glow) {
+                    glow.style.opacity = '1';
+                    glow.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(111,191,74,0.15), transparent 60%)`;
+                }
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+                card.style.transition = 'transform 0.6s ease';
+                const glow = card.querySelector('.card-glow');
+                if (glow) glow.style.opacity = '0';
+            });
+
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
+        });
+
+        // ============================================
+        // 6. ANIMATED COUNTER (Stats)
+        // ============================================
+        function animateCounters() {
+            document.querySelectorAll('.stat-number').forEach(counter => {
+                const target = +counter.getAttribute('data-target');
+                const duration = 2000;
+                const start = performance.now();
+
+                function updateCounter(now) {
+                    const elapsed = now - start;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out cubic
+                    const ease = 1 - Math.pow(1 - progress, 3);
+                    const current = Math.floor(ease * target);
+
+                    if (target >= 1000000) {
+                        counter.textContent = (current / 1000000).toFixed(1) + 'M';
+                    } else if (target >= 1000) {
+                        counter.textContent = (current / 1000).toFixed(0) + 'K';
+                    } else {
+                        counter.textContent = current;
+                    }
+
+                    if (progress < 1) requestAnimationFrame(updateCounter);
+                }
+                requestAnimationFrame(updateCounter);
+            });
+        }
+
+        // Trigger counters when stats section is visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const statsSection = document.querySelector('.hero-stats');
+        if (statsSection) statsObserver.observe(statsSection);
+
+        // ============================================
+        // 7. SMOOTH SCROLL for anchor links
+        // ============================================
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // ============================================
+        // 8. PARALLAX on Scroll
+        // ============================================
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            if (hero) {
+                hero.style.backgroundPositionY = scrolled * 0.3 + 'px';
+            }
+
+            // Parallax floating cards
+            document.querySelectorAll('.floating-card').forEach((card, i) => {
+                const speed = 0.03 + (i * 0.02);
+                card.style.transform = `translateY(${Math.sin(Date.now() / 1000 + i) * 15}px)`;
+            });
+        });
+
+        // ============================================
+        // 9. TYPEWRITER EFFECT
+        // ============================================
+        const typewriterEl = document.querySelector('.typewriter');
+        if (typewriterEl) {
+            const words = ['unforgettable.', 'interactive.', 'addictive.', 'exciting.'];
+            let wordIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+
+            function typeEffect() {
+                const currentWord = words[wordIndex];
+
+                if (isDeleting) {
+                    typewriterEl.textContent = currentWord.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    typewriterEl.textContent = currentWord.substring(0, charIndex + 1);
+                    charIndex++;
+                }
+
+                let speed = isDeleting ? 50 : 100;
+
+                if (!isDeleting && charIndex === currentWord.length) {
+                    speed = 2000;
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    wordIndex = (wordIndex + 1) % words.length;
+                    speed = 300;
+                }
+
+                setTimeout(typeEffect, speed);
+            }
+
+            // Start after a small delay
+            setTimeout(typeEffect, 1500);
+        }
+
+        // ============================================
+        // 10. PROGRESS BAR ANIMATION
+        // ============================================
+        const progressBars = document.querySelectorAll('.progress-bar-animated');
+        const progressObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'progressGrow 1.5s ease-out forwards';
+                    progressObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        progressBars.forEach(bar => progressObserver.observe(bar));
+
+    </script>
 
 </body>
+
 </html>

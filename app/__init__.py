@@ -4,7 +4,7 @@ Creates and configures the Flask application
 """
 from flask import Flask
 from app.config import get_config
-from app.extensions import db, socketio
+from app.extensions import db, socketio, migrate
 import pytz
 
 
@@ -24,6 +24,7 @@ def create_app(config_name=None):
     
     # Initialize extensions
     db.init_app(app)
+    migrate.init_app(app, db)
     socketio.init_app(
         app,
         cors_allowed_origins=app.config['SOCKETIO_CORS_ALLOWED_ORIGINS'],
@@ -56,7 +57,7 @@ def create_app(config_name=None):
     
     # Create database tables
     with app.app_context():
-        db.create_all()
+        
         print('>>> Database tables created/verified')
     
     return app
