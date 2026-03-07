@@ -14,16 +14,19 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/student_quiz.css') }}">
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
 <body style="background: #f8fafc;">
 
+    <div class="sidebar-overlay"></div>
     <div class="dashboard-wrapper">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/" class="logo-box">
-    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-</a>
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
@@ -42,9 +45,14 @@
 
         <main class="main-content">
             <header class="content-header">
-                <div class="header-title">
-                    <h4 class="fw-bold mb-0">Live Quizzes</h4>
-                    <p class="text-muted tiny mb-0">Browse through available live sessions</p>
+                <div class="d-flex align-items-center">
+                    <button class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h4 class="fw-bold mb-0">Live Quizzes</h4>
+                        <p class="text-muted tiny mb-0">Browse through available live sessions</p>
+                    </div>
                 </div>
                 <div class="header-user d-flex align-items-center gap-3">
                     <div class="text-end d-none d-sm-block">
@@ -57,6 +65,53 @@
             </header>
 
             <div class="container-fluid p-4">
+
+                <!-- 1. JOIN BY CODE / SCAN QR SECTION (NEW) -->
+                <div class="join-section-wrapper animate-stagger delay-1 mb-5">
+                    <div class="quiz-card-advanced mx-auto text-center" style="max-width: 600px;">
+                        <h4 class="fw-bold mb-4">🚀 Join a Live Quiz</h4>
+
+                        <div class="join-form mb-4">
+                            <div class="input-group input-group-lg join-input-group mx-auto" style="max-width: 400px;">
+                                <input type="text" id="manualCode" class="form-control text-center fw-bold"
+                                    placeholder="Enter 6-Digit Code" maxlength="6"
+                                    style="border-radius: 20px 0 0 20px; border-right: none;">
+                                <button class="btn btn-join-main px-4" type="button" onclick="manualJoin()"
+                                    style="border-radius: 0 20px 20px 0; padding: 0 25px; margin: 0;">
+                                    JOIN
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="divider"><span>OR</span></div>
+
+                        <div class="mt-4">
+                            <button onclick="toggleScanner()" class="btn btn-scan-qr">
+                                <i class="fas fa-camera me-2"></i> Scan QR Code to Join
+                            </button>
+                        </div>
+
+                        <!-- Scanner Placeholder -->
+                        <div id="scanner-wrapper" class="mt-4 d-none">
+                            <div class="scanner-container border rounded-4 overflow-hidden position-relative"
+                                style="background: #000;">
+                                <div id="reader" style="width: 100%;"></div>
+                                <button onclick="toggleScanner()"
+                                    class="btn btn-sm btn-danger position-absolute top-0 right-0 m-2"
+                                    style="z-index: 10;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <p class="text-muted small mt-2">Point your camera at the host's QR code</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-divider mb-4 animate-stagger delay-2">
+                    <h5 class="fw-bold text-muted px-2">Available Quizzes</h5>
+                    <div class="flex-grow-1 border-bottom" style="height: 1px; opacity: 0.1;"></div>
+                </div>
+
                 {% if quizzes %}
                 <div class="row g-4">
                     {% for quiz in quizzes %}
@@ -127,7 +182,69 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-{% include 'components/chat_widget.html' %}
+    <script src="{{ url_for('static', filename='js/responsive.js') }}"></script>
+
+    <script>
+        let html5QrCode = null;
+
+        function manualJoin() {
+            const code = document.getElementById('manualCode').value.trim().toUpperCase();
+            if (code.length < 5) {
+                alert("Please enter a valid join code.");
+                return;
+            }
+            // Use existing join logic
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ url_for('student.join_by_code') }}";
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'code';
+            input.value = code;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function toggleScanner() {
+            const wrapper = document.getElementById('scanner-wrapper');
+            if (wrapper.classList.contains('d-none')) {
+                wrapper.classList.remove('d-none');
+                startScanner();
+            } else {
+                wrapper.classList.add('d-none');
+                stopScanner();
+            }
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                console.log("QR Scanned:", decodedText);
+                // Redirect to the scanned URL
+                if (decodedText.includes('/join/')) {
+                    stopScanner();
+                    window.location.href = decodedText;
+                } else {
+                    alert("Invalid QR Code for QuizX. Please scan a valid join link.");
+                }
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    console.log("Scanner stopped.");
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                });
+            }
+        }
+    </script>
+
+    {% include 'components/chat_widget.html' %}
 </body>
 
 </html>

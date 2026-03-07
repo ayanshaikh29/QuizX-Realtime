@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | Edit Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_question.css') }}">
+    <style>
+        .quiz-settings-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #6fbf4a;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(111, 191, 74, 0.1);
+        }
+
+        .block-header {
+            position: relative;
+        }
+
+        .delete-btn-absolute {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ef4444;
+            background: #fee2e2;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            z-index: 10;
+        }
+
+        .delete-btn-absolute:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="studio-container">
+        <header class="studio-header">
+            <div class="header-left">
+                <a href="/admin/quizzes" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <span class="badge">{{ '⏱️ Timer-Based Mode' if quiz.has_timer else '📝 Normal Mode' }}</span>
+                    <h4>Edit: {{ quiz.title }}</h4>
+                </div>
+            </div>
+            <div class="header-right">
+                <button type="submit" form="quizForm" class="btn-save">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <form method="POST" id="quizForm" onsubmit="syncAllEditors()">
+
+                <div class="quiz-settings-card animate-slide-up">
+                    <div class="config-header">
+                        <div class="config-icon-wrapper" style="background: #e0f2fe; color: #0ea5e9;">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div>
+                            <h3 class="config-title">Quiz Settings</h3>
+                            <p class="config-subtitle">Update the basic information of your quiz</p>
+                        </div>
+                    </div>
+
+                    <div class="config-body mt-4">
+                        <div class="settings-grid">
+                            <div class="input-field">
+                                <label class="options-label">Quiz Name</label>
+                                <input type="text" name="quiz_title" class="setting-input" value="{{ quiz.title }}"
+                                    required>
+                            </div>
+                            <div class="input-field">
+                                <label class="options-label">Description (Optional)</label>
+                                <input type="text" name="quiz_description" class="setting-input"
+                                    placeholder="What is this quiz about?" value="{{ quiz.description or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-card animate-slide-up">
+                    <div class="config-header">
+                        <div class="config-icon-wrapper">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <div>
+                            <h3 class="config-title">Quiz Configuration</h3>
+                            <p class="config-subtitle">Customize the behaviour and scoring of this quiz</p>
+                        </div>
+                    </div>
+
+                    <div class="config-body">
+                        <div class="config-grid">
+
+                            <div class="setting-panel">
+                                <div class="setting-icon icon-green">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="setting-content">
+                                    <div class="setting-title">Live Leaderboard</div>
+                                    <span class="setting-desc">Show rankings between questions or jump straight to the
+                                        next one</span>
+
+                                    <div class="toggle-wrapper">
+                                        <label class="custom-switch">
+                                            <input type="checkbox" id="show_leaderboard"
+                                                name="show_leaderboard_each_question" value="true" {{ 'checked' if
+                                                quiz.show_leaderboard_each_question }}>
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                        <label for="show_leaderboard" class="toggle-label" id="leaderboard_label">
+                                            {{ 'After each question' if quiz.show_leaderboard_each_question else 'End of
+                                            quiz only' }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if quiz.has_timer %}
+                            <div class="setting-panel">
+                                <div class="setting-icon icon-orange">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="setting-content">
+                                    <div class="setting-title">Timer Mode</div>
+                                    <span class="setting-desc">Choose how the countdown runs for your students</span>
+
+                                    <div class="segmented-control">
+                                        <label
+                                            class="segment-btn {{ 'active-timer-btn' if quiz.timer_mode == 'per_question' }}"
+                                            id="btn_per_q">
+                                            <input type="radio" name="timer_mode" id="timer_per_q" value="per_question"
+                                                {{ 'checked' if quiz.timer_mode=='per_question' }}
+                                                onchange="toggleTimerMode()" style="display:none;">
+                                            <i class="fas fa-question-circle"></i> Per Question
+                                        </label>
+                                        <label
+                                            class="segment-btn {{ 'active-timer-btn' if quiz.timer_mode == 'overall' }}"
+                                            id="btn_overall">
+                                            <input type="radio" name="timer_mode" id="timer_overall" value="overall"
+                                                {{ 'checked' if quiz.timer_mode=='overall' }}
+                                                onchange="toggleTimerMode()" style="display:none;">
+                                            <i class="fas fa-hourglass-half"></i> Overall Quiz
+                                        </label>
+                                    </div>
+
+                                    <div id="overall_timer_config"
+                                        style="{{ 'display:block;' if quiz.timer_mode == 'overall' else 'display:none;' }}">
+                                        <div class="duration-input-wrapper">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <input type="number" name="total_quiz_time" id="total_quiz_time" min="1"
+                                                placeholder="Total Duration" value="{{ quiz.total_quiz_time or 15 }}">
+                                            <span>minutes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="questions-container">
+                    {% for q in questions %}
+                    <div class="question-block animate-slide-up" data-q-index="{{ loop.index0 }}">
+                        <button type="button" class="delete-btn-absolute" onclick="removeQuestion(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="block-header">
+                            <span class="q-number">Question {{ loop.index }}</span>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+
+                                <div class="q-type-group">
+                                    <i class="fas fa-list-ul"></i>
+                                    <select name="type_{{ loop.index0 }}"
+                                        onchange="changeQuestionType(this, {{ loop.index0 }})">
+                                        <option value="mcq" {{ 'selected' if q.question_type=='mcq' }}>Single Choice
+                                            (MCQ)</option>
+                                        <option value="checkbox" {{ 'selected' if q.question_type=='checkbox' }}>
+                                            Multiple Choice (Checkbox)</option>
+                                        <option value="short_answer" {{ 'selected' if q.question_type=='short_answer'
+                                            }}>Short Answer</option>
+                                        <option value="true_false" {{ 'selected' if q.question_type=='true_false' }}>
+                                            True / False</option>
+                                    </select>
+                                </div>
+
+                                <div class="points-input-group">
+                                    <i class="fas fa-star text-warning" style="color: #f59e0b;"></i>
+                                    <select name="points_{{ loop.index0 }}">
+                                        <option value="1" {{ 'selected' if q.points==1 }}>1 Point</option>
+                                        <option value="2" {{ 'selected' if q.points==2 }}>2 Points</option>
+                                        <option value="5" {{ 'selected' if q.points==5 }}>5 Points</option>
+                                    </select>
+                                </div>
+
+                                {% if quiz.has_timer %}
+                                <div class="timer-input-group"
+                                    style="{{ 'opacity:0.4; pointer-events:none;' if quiz.timer_mode == 'overall' else '' }}">
+                                    <i class="fas fa-stopwatch"></i>
+                                    <input type="number" name="time_{{ loop.index0 }}" min="5"
+                                        value="{{ q.time_limit or 30 }}" required>
+                                    <span>sec</span>
+                                </div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+
+                        <div class="block-body">
+                            <div class="editor-wrapper">
+                                <div class="toolbar">
+                                    <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
+                                    <button type="button" onclick="format('italic')"><i
+                                            class="fas fa-italic"></i></button>
+                                    <button type="button" onclick="format('underline')"><i
+                                            class="fas fa-underline"></i></button>
+                                </div>
+                                <div class="editor" contenteditable="true" oninput="syncQuestion(this)"
+                                    data-placeholder="Type your question prompt here...">{{ q.question|safe }}</div>
+                                <input type="hidden" name="question[]" value="{{ q.question }}">
+                            </div>
+
+                            <!-- MCQ/Checkbox Options -->
+                            <div
+                                class="options-container-wrapper {{ 'hidden' if q.question_type == 'short_answer' or q.question_type == 'true_false' }} {{ 'checkbox-row' if q.question_type == 'checkbox' }}">
+                                <label class="options-label">Answer Options</label>
+                                <div class="options-grid">
+                                    {% for i in range(1, 5) %}
+                                    {% set opt_val = (q.option1 if i==1 else q.option2 if i==2 else q.option3 if i==3
+                                    else q.option4) %}
+                                    <div class="option-row" data-option-index="{{ i }}">
+                                        <div class="radio-wrapper">
+                                            {% if q.question_type == 'checkbox' %}
+                                            <input type="checkbox" name="checkbox_answer_{{ loop.index0 }}[]"
+                                                value="{{ i }}" id="q{{ loop.index0 }}_opt{{ i }}" {{ 'checked' if
+                                                q.correct_answers and opt_val in q.correct_answers.split(',') }}
+                                                {{ 'disabled' if q.question_type=='short_answer' or
+                                                q.question_type=='true_false' }}>
+                                            {% else %}
+                                            <input type="radio" name="answer_{{ loop.index0 }}" value="{{ i }}"
+                                                id="q{{ loop.index0 }}_opt{{ i }}" {{ 'checked' if q.answer==opt_val }}
+                                                {{ 'required' if q.question_type=='mcq' }} {{ 'disabled' if
+                                                q.question_type !='mcq' }}>
+                                            {% endif %}
+                                            <label for="q{{ loop.index0 }}_opt{{ i }}" class="check-mark"><i
+                                                    class="fas fa-check" style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <input type="text" name="option{{ i }}_{{ loop.index0 }}"
+                                            placeholder="Option {{ i }}..." value="{{ opt_val or '' }}" {{ 'required' if
+                                            q.question_type=='mcq' or q.question_type=='checkbox' }} {{ 'disabled' if
+                                            q.question_type=='short_answer' or q.question_type=='true_false' }}>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Short Answer Field -->
+                            <div class="short-answer-wrapper {{ 'hidden' if q.question_type != 'short_answer' }}">
+                                <label class="options-label">Correct Answer</label>
+                                <input type="text" name="short_answer_{{ loop.index0 }}" class="short-answer-input"
+                                    placeholder="Type the correct answer (case-insensitive)..."
+                                    value="{{ q.answer if q.question_type == 'short_answer' else '' }}" {{ 'required' if
+                                    q.question_type=='short_answer' }} {{ 'disabled' if q.question_type !='short_answer'
+                                    }}>
+                            </div>
+
+                            <!-- True/False Options -->
+                            <div class="tf-wrapper {{ 'hidden' if q.question_type != 'true_false' }}">
+                                <label class="options-label">Correct Answer</label>
+                                <div class="options-grid" style="grid-template-columns: 1fr 1fr;">
+                                    <div class="option-row">
+                                        <div class="radio-wrapper">
+                                            <input type="radio" name="tf_answer_{{ loop.index0 }}" value="True"
+                                                id="q{{ loop.index0 }}_tf_true" {{ 'checked' if
+                                                q.question_type=='true_false' and q.answer=='True' }} {{ 'required' if
+                                                q.question_type=='true_false' }} {{ 'disabled' if q.question_type
+                                                !='true_false' }}>
+                                            <label for="q{{ loop.index0 }}_tf_true" class="check-mark"><i
+                                                    class="fas fa-check" style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <span style="font-weight: 700; margin-left: 10px;">TRUE</span>
+                                    </div>
+                                    <div class="option-row">
+                                        <div class="radio-wrapper">
+                                            <input type="radio" name="tf_answer_{{ loop.index0 }}" value="False"
+                                                id="q{{ loop.index0 }}_tf_false" {{ 'checked' if
+                                                q.question_type=='true_false' and q.answer=='False' }} {{ 'required' if
+                                                q.question_type=='true_false' }} {{ 'disabled' if q.question_type
+                                                !='true_false' }}>
+                                            <label for="q{{ loop.index0 }}_tf_false" class="check-mark"><i
+                                                    class="fas fa-check" style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <span style="font-weight: 700; margin-left: 10px;">FALSE</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="addQuestion({{ 'true' if quiz.has_timer else 'false' }})"
+                        class="btn-add">
+                        <i class="fas fa-plus"></i> Add Question
+                    </button>
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-cloud-upload-alt"></i> Save All Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let qIndex = {{ questions| length }};
+        function format(cmd) { document.execCommand(cmd, false, null); }
+
+        function syncQuestion(div) {
+            const hidden = div.nextElementSibling;
+            if (hidden && hidden.type === 'hidden') hidden.value = div.innerHTML;
+        }
+
+        function syncAllEditors() {
+            document.querySelectorAll('.editor').forEach(div => {
+                const hidden = div.nextElementSibling;
+                if (hidden && hidden.type === 'hidden') hidden.value = div.innerHTML;
+            });
+        }
+
+        function toggleTimerMode() {
+            const isOverall = document.getElementById('timer_overall').checked;
+            const overallConfig = document.getElementById('overall_timer_config');
+            const questionTimers = document.querySelectorAll('.timer-input-group');
+            const btnPerQ = document.getElementById('btn_per_q');
+            const btnOverall = document.getElementById('btn_overall');
+            if (isOverall) {
+                overallConfig.style.display = 'block';
+                document.getElementById('total_quiz_time').required = true;
+                questionTimers.forEach(el => { el.style.opacity = '0.4'; el.style.pointerEvents = 'none'; });
+                if (btnPerQ) btnPerQ.classList.remove('active-timer-btn');
+                if (btnOverall) btnOverall.classList.add('active-timer-btn');
+            } else {
+                overallConfig.style.display = 'none';
+                document.getElementById('total_quiz_time').required = false;
+                questionTimers.forEach(el => { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; });
+                if (btnPerQ) btnPerQ.classList.add('active-timer-btn');
+                if (btnOverall) btnOverall.classList.remove('active-timer-btn');
+            }
+        }
+
+        function changeQuestionType(select, idx) {
+            const type = select.value;
+            const block = select.closest('.question-block');
+            const optionsWrapper = block.querySelector('.options-container-wrapper');
+            const shortAnswerWrapper = block.querySelector('.short-answer-wrapper');
+            const tfWrapper = block.querySelector('.tf-wrapper');
+
+            [optionsWrapper, shortAnswerWrapper, tfWrapper].forEach(wrapper => {
+                wrapper.classList.add('hidden');
+                optionsWrapper.classList.remove('checkbox-row');
+                wrapper.querySelectorAll('input').forEach(inp => {
+                    inp.disabled = true;
+                    inp.required = false;
+                    if (inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
+                });
+            });
+
+            if (type === 'mcq' || type === 'checkbox') {
+                optionsWrapper.classList.remove('hidden');
+                if (type === 'checkbox') optionsWrapper.classList.add('checkbox-row');
+                optionsWrapper.querySelectorAll('.radio-wrapper input').forEach(r => {
+                    r.disabled = false;
+                    r.type = (type === 'mcq') ? 'radio' : 'checkbox';
+                    r.name = (type === 'mcq') ? `answer_${idx}` : `checkbox_answer_${idx}[]`;
+                    r.required = (type === 'mcq');
+                });
+                optionsWrapper.querySelectorAll('input[type="text"]').forEach(i => {
+                    i.disabled = false;
+                    i.required = true;
+                });
+            } else if (type === 'short_answer') {
+                const saInp = shortAnswerWrapper.querySelector('input');
+                saInp.disabled = false;
+                saInp.required = true;
+                shortAnswerWrapper.classList.remove('hidden');
+            } else if (type === 'true_false') {
+                tfWrapper.classList.remove('hidden');
+                tfWrapper.querySelectorAll('input').forEach(r => {
+                    r.disabled = false;
+                    r.name = `tf_answer_${idx}`;
+                    r.required = true;
+                });
+            }
+        }
+
+        document.getElementById('show_leaderboard')?.addEventListener('change', function () {
+            const label = document.getElementById('leaderboard_label');
+            if (label) label.textContent = this.checked ? 'After each question' : 'End of quiz only';
+        });
+
+        function removeQuestion(btn) {
+            if (confirm('Delete this question?')) {
+                btn.closest('.question-block').remove();
+                reindexQuestions();
+            }
+        }
+
+        function reindexQuestions() {
+            const blocks = document.querySelectorAll('.question-block');
+            qIndex = blocks.length;
+            blocks.forEach((block, idx) => {
+                block.querySelector('.q-number').innerText = `Question ${idx + 1}`;
+
+                // Update names
+                const typeSelect = block.querySelector('.q-type-group select');
+                typeSelect.name = `type_${idx}`;
+                typeSelect.setAttribute('onchange', `changeQuestionType(this, ${idx})`);
+
+                const points = block.querySelector('.points-input-group select');
+                if (points) points.name = `points_${idx}`;
+
+                const timer = block.querySelector('.timer-input-group input');
+                if (timer) timer.name = `time_${idx}`;
+
+                const type = typeSelect.value;
+                if (type === 'mcq' || type === 'checkbox') {
+                    block.querySelectorAll('.radio-wrapper input').forEach(r => {
+                        r.name = (type === 'mcq') ? `answer_${idx}` : `checkbox_answer_${idx}[]`;
+                    });
+                    block.querySelectorAll('.options-grid input[type="text"]').forEach((inp, i) => {
+                        inp.name = `option${i + 1}_${idx}`;
+                    });
+                } else if (type === 'short_answer') {
+                    block.querySelector('.short-answer-wrapper input').name = `short_answer_${idx}`;
+                } else if (type === 'true_false') {
+                    block.querySelectorAll('.tf-wrapper input').forEach(r => {
+                        r.name = `tf_answer_${idx}`;
+                    });
+                }
+            });
+        }
+
+        function addQuestion(hasTimer) {
+            const container = document.getElementById('questions-container');
+            const currentCount = document.querySelectorAll('.question-block').length;
+
+            // We'll create a new block from scratch to avoid complex pre-population issues
+            const html = `
+                <div class="question-block animate-slide-up">
+                    <button type="button" class="delete-btn-absolute" onclick="removeQuestion(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="block-header">
+                        <span class="q-number">Question ${currentCount + 1}</span>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div class="q-type-group">
+                                <i class="fas fa-list-ul"></i>
+                                <select name="type_${currentCount}" onchange="changeQuestionType(this, ${currentCount})">
+                                    <option value="mcq">Single Choice (MCQ)</option>
+                                    <option value="checkbox">Multiple Choice (Checkbox)</option>
+                                    <option value="short_answer">Short Answer</option>
+                                    <option value="true_false">True / False</option>
+                                </select>
+                            </div>
+                            <div class="points-input-group">
+                                <i class="fas fa-star text-warning" style="color: #f59e0b;"></i>
+                                <select name="points_${currentCount}">
+                                    <option value="1">1 Point</option>
+                                    <option value="2">2 Points</option>
+                                    <option value="5">5 Points</option>
+                                </select>
+                            </div>
+                            ${hasTimer ? `
+                            <div class="timer-input-group">
+                                <i class="fas fa-stopwatch"></i>
+                                <input type="number" name="time_${currentCount}" min="5" value="30" required>
+                                <span>sec</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                    <div class="block-body">
+                        <div class="editor-wrapper">
+                            <div class="toolbar">
+                                <button type="button" onclick="format('bold')"><i class="fas fa-bold"></i></button>
+                                <button type="button" onclick="format('italic')"><i class="fas fa-italic"></i></button>
+                                <button type="button" onclick="format('underline')"><i class="fas fa-underline"></i></button>
+                            </div>
+                            <div class="editor" contenteditable="true" oninput="syncQuestion(this)" data-placeholder="Type your question prompt here..."></div>
+                            <input type="hidden" name="question[]">
+                        </div>
+                        <div class="options-container-wrapper">
+                            <label class="options-label">Answer Options</label>
+                            <div class="options-grid">
+                                ${[1, 2, 3, 4].map(i => `
+                                <div class="option-row" data-option-index="${i}">
+                                    <div class="radio-wrapper">
+                                        <input type="radio" name="answer_${currentCount}" value="${i}" id="q${currentCount}_opt${i}" required>
+                                        <label for="q${currentCount}_opt${i}" class="check-mark"><i class="fas fa-check" style="font-size: 12px;"></i></label>
+                                    </div>
+                                    <input type="text" name="option${i}_${currentCount}" placeholder="Option ${i}..." required>
+                                </div>`).join('')}
+                            </div>
+                        </div>
+                        <div class="short-answer-wrapper hidden">
+                            <label class="options-label">Correct Answer</label>
+                            <input type="text" name="short_answer_${currentCount}" class="short-answer-input" placeholder="Type the correct answer (case-insensitive)..." disabled>
+                        </div>
+                        <div class="tf-wrapper hidden">
+                            <label class="options-label">Correct Answer</label>
+                            <div class="options-grid" style="grid-template-columns: 1fr 1fr;">
+                                <div class="option-row">
+                                    <div class="radio-wrapper">
+                                        <input type="radio" name="tf_answer_${currentCount}" value="True" id="q${currentCount}_tf_true" disabled>
+                                        <label for="q${currentCount}_tf_true" class="check-mark"><i class="fas fa-check" style="font-size: 12px;"></i></label>
+                                    </div>
+                                    <span style="font-weight: 700; margin-left: 10px;">TRUE</span>
+                                </div>
+                                <div class="option-row">
+                                    <div class="radio-wrapper">
+                                        <input type="radio" name="tf_answer_${currentCount}" value="False" id="q${currentCount}_tf_false" disabled>
+                                        <label for="q${currentCount}_tf_false" class="check-mark"><i class="fas fa-check" style="font-size: 12px;"></i></label>
+                                    </div>
+                                    <span style="font-weight: 700; margin-left: 10px;">FALSE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+
+            // Sync timer group if needed
+            const isOverall = document.getElementById('timer_overall')?.checked;
+            if (isOverall) {
+                const timerGroup = container.lastElementChild.querySelector('.timer-input-group');
+                if (timerGroup) {
+                    timerGroup.style.opacity = '0.4';
+                    timerGroup.style.pointerEvents = 'none';
+                }
+            }
+
+            container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    </script>
+    {% include 'components/chat_widget.html' %}
+</body>
+
+</html>

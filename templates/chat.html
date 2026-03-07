@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX AI Chat</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+</head>
+
+<body>
+    <div class="chat-layout">
+
+        <!-- ============================================================
+             SIDEBAR
+             ============================================================ -->
+        <aside class="chat-sidebar" id="chat-sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="QuizX">
+                    <span>QuizX AI</span>
+                </a>
+            </div>
+
+            <button class="new-chat-btn" id="new-chat-btn">
+                <i class="fas fa-plus"></i>
+                New Chat
+            </button>
+
+            <div class="sidebar-section-title">Recent</div>
+
+            <div class="chat-history-list" id="chat-history-list">
+                <!-- History items rendered by JS -->
+            </div>
+
+            <div class="sidebar-footer">
+                {% if session.get('username') %}
+                <a href="{{ url_for('auth.profile') }}" class="sidebar-user">
+                    <div class="sidebar-user-avatar">
+                        {{ session.get('username', 'U')[0].upper() }}
+                    </div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">{{ session.get('username', 'User') }}</div>
+                        <div class="sidebar-user-role">{{ session.get('role', 'student').title() }}</div>
+                    </div>
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="sidebar-user">
+                    <div class="sidebar-user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">Sign In</div>
+                        <div class="sidebar-user-role">Guest</div>
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- ============================================================
+             MAIN CHAT AREA
+             ============================================================ -->
+        <main class="chat-main">
+            <!-- Header -->
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="header-btn sidebar-toggle" id="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="chat-header-title" id="chat-title">QuizX AI</span>
+                </div>
+                <div class="chat-header-actions">
+                    <a href="/" class="header-btn" title="Back to Home">
+                        <i class="fas fa-home"></i>
+                        <span style="font-size: 0.8rem;">Home</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-logo">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h1 class="welcome-title">QuizX AI</h1>
+                    <p class="welcome-subtitle">Your premium intelligent assistant for exam preparation and conceptual
+                        mastery.</p>
+
+                    <div class="welcome-suggestions">
+                        <button class="suggestion-card"
+                            data-prompt="Explain the concept of quantum computing in simple terms">
+                            <span class="suggestion-card-icon"><i class="fas fa-atom"
+                                    style="color: #6366f1;"></i></span>
+                            <div class="suggestion-card-title">Conceptual Clarity</div>
+                            <div class="suggestion-card-desc">Deep dives into complex topics</div>
+                        </button>
+                        <button class="suggestion-card" data-prompt="Give me a 7-day study plan for a biology exam">
+                            <span class="suggestion-card-icon"><i class="fas fa-calendar-alt"
+                                    style="color: #10a37f;"></i></span>
+                            <div class="suggestion-card-title">Study Planning</div>
+                            <div class="suggestion-card-desc">Personalized schedules & tips</div>
+                        </button>
+                        <button class="suggestion-card" data-prompt="Create 5 practice MCQs on Python Data Structures">
+                            <span class="suggestion-card-icon"><i class="fas fa-pen-nib"
+                                    style="color: #f59e0b;"></i></span>
+                            <div class="suggestion-card-title">Practice Mode</div>
+                            <div class="suggestion-card-desc">AI-generated quiz practice</div>
+                        </button>
+                        <button class="suggestion-card"
+                            data-prompt="What are the most common mistakes in organic chemistry exams?">
+                            <span class="suggestion-card-icon"><i class="fas fa-lightbulb"
+                                    style="color: #ec4899;"></i></span>
+                            <div class="suggestion-card-title">Exam Hacks</div>
+                            <div class="suggestion-card-desc">Avoid pitfalls & boost scores</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="messages-container" id="messages-container" style="display: none;">
+                    <!-- Messages rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Scroll to Bottom Button -->
+            <button class="scroll-to-bottom" id="scroll-to-bottom">
+                <i class="fas fa-chevron-down"></i>
+                Scroll to bottom
+            </button>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <div class="input-container">
+                    <div class="input-box">
+                        <!-- File Preview Area -->
+                        <div class="file-preview-area" id="file-preview-area"></div>
+
+                        <!-- Input Row -->
+                        <div class="input-row">
+                            <textarea class="chat-textarea" id="chat-textarea" placeholder="Message QuizX AI..."
+                                rows="1" maxlength="4000"></textarea>
+
+                            <div class="input-actions">
+                                <button class="input-action-btn" id="attach-file-btn" title="Attach file">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button class="input-action-btn" id="attach-image-btn" title="Upload image">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <button class="send-btn" id="send-btn" disabled title="Send message">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-hint">
+                        Press Enter to send · Shift+Enter for new line · Powered by QuizX AI
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="file-upload-input" accept=".txt,.pdf,.doc,.docx,.csv" multiple>
+    <input type="file" id="image-upload-input" accept="image/*" multiple>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+
+</html>

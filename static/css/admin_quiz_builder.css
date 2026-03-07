@@ -1,0 +1,66 @@
+/* Admin Quiz Builder Styles */
+
+#quizx-admin-modal {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+
+    to {
+        opacity: 1;
+        backdrop-filter: blur(12px);
+    }
+}
+
+.draggable-q {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.draggable-q:hover {
+    border-color: rgba(34, 197, 94, 0.4) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    transform: translateY(-2px);
+}
+
+.draggable-q.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.edit-q-text:focus,
+.edit-opt-text:focus {
+    color: #22c55e;
+    transition: color 0.2s;
+}
+
+#questions-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#questions-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#questions-list::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+}
+
+#questions-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+}
+
+#save-draft:hover,
+#publish-quiz:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+}
+
+#publish-quiz:active {
+    transform: scale(0.95);
+}

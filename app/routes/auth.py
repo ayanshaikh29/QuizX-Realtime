@@ -42,16 +42,16 @@ def register():
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('auth.login'))
 
-        return render_template('register.html')
+        return render_template('login.html', mode='register')
 
-    return render_template('register.html')
+    return render_template('login.html', mode='register')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
     User login
-    FIXED: Supports Google-Form style redirect using session['next_url']
+    Supports Google-Form style redirect using session['next_url']
     """
     if request.method == 'POST':
         username = request.form.get('username')
@@ -74,7 +74,6 @@ def login():
 
             flash('Login successful!', 'success')
 
-            # 🔥 GOOGLE FORM STYLE FIX
             # If user came from join link, redirect back there
             next_url = session.pop('next_url', None)
             if next_url:
@@ -87,9 +86,9 @@ def login():
                 else url_for('student.dashboard')
             )
 
-        return render_template('login.html')
+        return render_template('login.html', mode='login')
 
-    return render_template('login.html')
+    return render_template('login.html', mode='login')
 
 
 @auth_bp.route('/logout')

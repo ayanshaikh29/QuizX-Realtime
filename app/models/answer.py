@@ -18,6 +18,7 @@ class PartialAnswer(db.Model):
     quiz_id = db.Column(db.Integer, nullable=False, index=True)
     question_id = db.Column(db.Integer, nullable=False, index=True)
     student = db.Column(db.String(100), nullable=False, index=True)
+    selected_answer = db.Column(db.String(255))
     is_correct = db.Column(db.Boolean, nullable=False)
     time_taken = db.Column(db.Integer, nullable=False, default=0)
     points = db.Column(db.Integer, default=0)

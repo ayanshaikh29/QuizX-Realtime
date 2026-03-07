@@ -38,7 +38,8 @@
 
     <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;" id="quizNav">
         <nav class="nav-floater d-flex justify-content-between align-items-center w-100">
-            <a href="/"><img src="{{ url_for('static', filename='logo.jpg') }}" alt="QuizX" style="height:38px; object-fit:contain;"></a>
+            <a href="/"><img src="{{ url_for('static', filename='logo.jpg') }}" alt="QuizX"
+                    style="height:38px; object-fit:contain;"></a>
             <div class="d-flex align-items-center gap-3">
                 <div class="text-muted fw-bold d-none d-md-block">
                     <i class="fas fa-user-circle me-1"></i> {{ session.username }}
@@ -52,14 +53,14 @@
 
     <div class="quiz-container animate__animated animate__fadeInUp" id="attemptPage">
         <div class="question-card mt-4">
+            <!-- Points Badge - Top Right Corner -->
+            <div class="question-points">
+                <i class="fas fa-star me-1"></i>{{ current_question.points }} pts
+            </div>
+
             <div class="d-flex justify-content-center align-items-center gap-2 mt-2 mb-4 flex-wrap">
                 <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">
                     <i class="fas fa-user-clock me-1"></i> ADMIN CONTROLLED
-                </span>
-                <span class="badge px-3 py-2 rounded-pill fw-bold"
-                    style="background: linear-gradient(135deg,#f59e0b,#f97316); color:#fff; font-size:0.85rem;">
-                    <i class="fas fa-star me-1"></i> {{ current_question.points }} Point{{ 's' if
-                    current_question.points != 1 else '' }}
                 </span>
             </div>
 
@@ -67,8 +68,9 @@
 
             <form id="quizForm">
                 <div class="options-grid mt-4">
+                    {% if current_question.question_type == 'mcq' %}
                     {% for opt in [current_question.option1, current_question.option2, current_question.option3,
-                    current_question.option4] %}
+                    current_question.option4] if opt %}
                     <label class="option-label animate__animated animate__zoomIn"
                         style="animation-delay: {{ loop.index0 * 0.1 }}s">
                         <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
@@ -78,6 +80,37 @@
                         </div>
                     </label>
                     {% endfor %}
+                    {% elif current_question.question_type == 'checkbox' %}
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3,
+                    current_question.option4] if opt %}
+                    <label class="option-label checkbox-option animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="checkbox" name="answer[]" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" id="opt-container-{{ loop.index0 }}" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% elif current_question.question_type == 'true_false' %}
+                    {% for opt in ['True', 'False'] %}
+                    <label class="option-label animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" id="opt-container-{{ loop.index0 }}" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["T", "F"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt | upper }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% elif current_question.question_type == 'short_answer' %}
+                    <div class="w-100 animate__animated animate__fadeInUp" style="grid-column: 1 / -1;">
+                        <input type="text" name="answer" id="shortAnswerInput"
+                            class="form-control form-control-lg rounded-4 border-2 p-3 text-center fw-bold"
+                            placeholder="Type your answer here..." autocomplete="off"
+                            style="border-color: #e2e8f0; font-size: 1.25rem;">
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="text-center mt-5">
@@ -161,8 +194,21 @@
         });
 
         document.getElementById("submitBtn").onclick = () => {
-            const selected = document.querySelector("input[name='answer']:checked");
-            if (!selected) {
+            let selectedVal = null;
+            const qType = "{{ current_question.question_type }}";
+
+            if (qType === 'mcq' || qType === 'true_false') {
+                const selected = document.querySelector("input[name='answer']:checked");
+                if (selected) selectedVal = selected.value;
+            } else if (qType === 'checkbox') {
+                const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
+                if (selected.length > 0) selectedVal = selected.join(',');
+            } else if (qType === 'short_answer') {
+                const input = document.getElementById("shortAnswerInput");
+                if (input && input.value.trim()) selectedVal = input.value.trim();
+            }
+
+            if (!selectedVal) {
                 const btn = document.getElementById("submitBtn");
                 btn.classList.add("animate__animated", "animate__shakeX");
                 btn.style.background = "#ef4444";
@@ -172,7 +218,7 @@
                 }, 500);
                 return;
             }
-            handleSubmission(selected.value);
+            handleSubmission(selectedVal);
         };
 
         function handleSubmission(selectedVal) {
@@ -181,7 +227,16 @@
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Checking...`;
-            document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+
+            const qType = "{{ current_question.question_type }}";
+            if (qType === 'short_answer') {
+                document.getElementById("shortAnswerInput").disabled = true;
+            } else if (qType === 'checkbox') {
+                document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = true);
+            } else {
+                document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+            }
+
             const timeTaken = Math.round((Date.now() - startTime) / 1000);
 
             fetch(`/student/quiz/${quizId}`, {
@@ -209,7 +264,13 @@
                     submitted = false;
                     btn.disabled = false;
                     btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
-                    document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                    if (qType === 'short_answer') {
+                        document.getElementById("shortAnswerInput").disabled = false;
+                    } else if (qType === 'checkbox') {
+                        document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
+                    } else {
+                        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                    }
                 });
         }
 
@@ -219,20 +280,39 @@
             const title = document.getElementById("feedbackTitle");
             const text = document.getElementById("feedbackText");
             const waitingNote = document.getElementById("waitingNote");
+            const qType = "{{ current_question.question_type }}";
 
             overlay.classList.remove("d-none", "animate__zoomIn", "animate__fadeOut", "correct", "incorrect");
             overlay.classList.add("animate__zoomIn");
 
-            document.querySelectorAll(".option-label").forEach(label => {
-                const radio = label.querySelector("input");
-                const content = label.querySelector(".option-content");
-                content.classList.remove("correct", "incorrect");
-                if (radio.value === data.correct_answer) {
-                    content.classList.add("correct");
-                } else if (radio.value === selectedVal && !data.is_correct) {
-                    content.classList.add("incorrect");
+            if (qType === 'mcq' || qType === 'checkbox' || qType === 'true_false') {
+                const correctList = data.correct_answer.split(',');
+                const selectedList = selectedVal.split(',');
+
+                document.querySelectorAll(".option-label").forEach(label => {
+                    const inp = label.querySelector("input");
+                    const content = label.querySelector(".option-content");
+                    content.classList.remove("correct", "incorrect");
+
+                    if (correctList.includes(inp.value)) {
+                        content.classList.add("correct");
+                    } else if (selectedList.includes(inp.value) && !correctList.includes(inp.value)) {
+                        content.classList.add("incorrect");
+                    }
+                });
+            } else if (qType === 'short_answer') {
+                const input = document.getElementById("shortAnswerInput");
+                input.classList.remove("is-valid", "is-invalid");
+                if (data.is_correct) {
+                    input.classList.add("is-valid");
+                    input.style.borderColor = "#10b981";
+                    input.style.backgroundColor = "#f0fdf4";
+                } else {
+                    input.classList.add("is-invalid");
+                    input.style.borderColor = "#ef4444";
+                    input.style.backgroundColor = "#fef2f2";
                 }
-            });
+            }
 
             if (data.is_correct) {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -300,33 +380,60 @@
         }
 
         document.addEventListener('keydown', function (event) {
-            if (submitted) return;
-            if (event.key >= '1' && event.key <= '4') {
-                const index = parseInt(event.key) - 1;
-                const radio = document.querySelectorAll('input[name="answer"]')[index];
-                if (radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change'));
-                }
-            }
-            if (event.key === 'Enter') {
-                document.getElementById("submitBtn").click();
-            }
-            if (event.key === ' ' && !event.target.matches('input, textarea')) {
-                document.querySelectorAll('input[name="answer"]').forEach(input => {
-                    input.checked = false;
-                });
-                event.preventDefault();
-            }
-        });
 
-        document.querySelectorAll('input[name="answer"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                document.querySelectorAll('.option-label').forEach(label => {
-                    label.classList.remove('selected');
-                });
+            if (submitted) return;
+
+            const qType = "{{ current_question.question_type }}";
+
+            if (event.key >= '1' && event.key <= '4') {
+
+                const index = parseInt(event.key) - 1;
+                let option;
+                if (qType === 'checkbox') {
+                    option = document.querySelectorAll('input[name="answer[]"]')[index];
+                } else {
+                    option = document.querySelectorAll('input[name="answer"]')[index];
+                }
+
+            if (!option) return;
+
+            if (qType === "checkbox") {
+                option.checked = !option.checked;
+            } else {
+                option.checked = true;
+            }
+
+            option.dispatchEvent(new Event('change'));
+        }
+
+        if (event.key === 'Enter') {
+            document.getElementById("submitBtn").click();
+        }
+    });
+
+        // Add event listeners for all input types
+        document.querySelectorAll('input[name="answer"]').forEach(input => {
+            input.addEventListener('change', function () {
+                const qType = "{{ current_question.question_type }}";
+                if (qType !== 'checkbox') {
+                    document.querySelectorAll('.option-label').forEach(label => label.classList.remove('selected'));
+                }
+
                 if (this.checked) {
                     this.parentElement.classList.add('selected');
+                } else {
+                    this.parentElement.classList.remove('selected');
+                }
+            });
+        });
+
+        // Separate event listener for checkbox inputs
+        document.querySelectorAll('input[name="answer[]"]').forEach(input => {
+            input.addEventListener('change', function () {
+                if (this.checked) {
+                    this.parentElement.classList.add('selected');
+                } else {
+                    this.parentElement.classList.remove('selected');
                 }
             });
         });

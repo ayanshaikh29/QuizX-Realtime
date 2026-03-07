@@ -53,14 +53,16 @@ def create_app(config_name=None):
     # ----------------------------
     # Register Blueprints
     # ----------------------------
-    from app.routes import auth_bp, admin_bp, student_bp, chatbot_bp
+    from app.routes import auth_bp, admin_bp, student_bp, chatbot_bp, admin_api_bp, admin_groups_bp
     from app.routes.public import public_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(admin_groups_bp, url_prefix='/admin')
     app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(public_bp)
     app.register_blueprint(chatbot_bp, url_prefix='/api')
+    app.register_blueprint(admin_api_bp)
 
     # ----------------------------
     # Register Socket Events
@@ -90,11 +92,45 @@ def create_app(config_name=None):
                 ALTER TABLE quiz
                 ADD COLUMN IF NOT EXISTS total_quiz_time INTEGER;
             """))
+            
+            db.session.execute(text("""
+                ALTER TABLE partial_answer
+                ADD COLUMN IF NOT EXISTS selected_answer VARCHAR(255);
+            """))
+
+            # Create group table if not exists (must be before adding FK)
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS "group" (
+                    id SERIAL PRIMARY KEY,
+                    group_name VARCHAR(100) NOT NULL,
+                    description VARCHAR(500) DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+
+            # Create group_student table if not exists
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS group_student (
+                    id SERIAL PRIMARY KEY,
+                    group_id INTEGER NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    UNIQUE(group_id, student_id),
+                    FOREIGN KEY (group_id) REFERENCES "group"(id),
+                    FOREIGN KEY (student_id) REFERENCES "user"(id)
+                );
+            """))
+
+            # Add group_id column to quiz (after group table exists)
+            db.session.execute(text("""
+                ALTER TABLE quiz
+                ADD COLUMN IF NOT EXISTS group_id INTEGER;
+            """))
 
             db.session.commit()
             print(">>> Database columns verified/added")
 
         except Exception as e:
+            db.session.rollback()
             print(">>> DB Auto Fix Error:", e)
 
     return app

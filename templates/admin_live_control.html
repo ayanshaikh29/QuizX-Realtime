@@ -57,13 +57,41 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Fullscreen QR Modal -->
+    <div class="qr-modal-overlay d-none" id="qrModal" onclick="closeQRModal()">
+        <div class="qr-modal-content animate__animated animate__zoomIn" onclick="event.stopPropagation()">
+            <button class="qr-modal-close" onclick="closeQRModal()">&times;</button>
+            <div class="qr-modal-header text-center mb-4">
+                <h2 class="fw-bold mb-1">Scan to Join Quiz</h2>
+                <p class="text-muted">{{ quiz.title }}</p>
+            </div>
+            <div class="qr-modal-body text-center">
+                <div class="qr-main-wrapper shadow-lg mb-4">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={{ request.host_url }}join/{{ quiz.join_code }}"
+                        alt="Join QR Code" class="img-fluid qr-big-img">
+                </div>
+                <div class="join-info-box p-3 rounded-4 shadow-sm border mb-4">
+                    <span class="d-block text-muted small mb-2">JOIN LINK</span>
+                    <h3 class="join-url-text mb-3">{{ request.host_url }}join/{{ quiz.join_code }}</h3>
+                    <button class="btn btn-primary btn-lg rounded-pill px-4" onclick="copyJoinLink(event)">
+                        <i class="fas fa-copy me-2"></i>Copy Invitation Link
+                    </button>
+                </div>
+                <div class="join-code-banner">
+                    <span class="label">OR USE CODE:</span>
+                    <span class="value">{{ quiz.join_code }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="dashboard-wrapper d-flex">
 
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/" class="logo-box">
-    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-</a>
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
             </div>
 
             <nav class="sidebar-nav">
@@ -168,6 +196,36 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {% if quiz.is_active %}
+                            <div class="stat-card qr-card glass-effect mt-4 interactive-qr" data-aos="fade-up"
+                                data-aos-delay="300" onclick="openQRModal()">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="card-icon"><i class="fas fa-qrcode"></i></div>
+                                        <h3>Scan to Join</h3>
+                                    </div>
+                                    <div class="expand-hint"><i class="fas fa-expand-alt"></i></div>
+                                </div>
+                                <div class="qr-display text-center p-3">
+                                    <div class="qr-wrapper mb-3 shadow-sm"
+                                        style="background: white; padding: 8px; border-radius: 12px; display: inline-block; cursor: zoom-in;">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.host_url }}join/{{ quiz.join_code }}"
+                                            alt="Join QR Code" class="img-fluid" style="border-radius: 4px;">
+                                    </div>
+                                    <div
+                                        class="join-link-box p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between">
+                                        <code class="text-primary small text-truncate me-2">{{ quiz.join_code }}</code>
+                                        <button class="btn btn-sm btn-outline-primary py-1 border-0"
+                                            onclick="copyJoinLink(event)" title="Copy Link">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-muted tiny mt-2 mb-0"><i class="fas fa-search-plus me-1"></i>Click to
+                                        expand for projector</p>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <div class="control-column">
@@ -208,12 +266,18 @@
                                         <h2 class="start-title">Ready to Launch?</h2>
                                         <p class="start-subtitle">{{ total_questions }} questions • Players are waiting
                                         </p>
-                                        <a href="{{ url_for('admin.start_quiz', quiz_id=quiz.id) }}"
-                                            class="btn-start-session" onclick="startConfetti()">
-                                            <span class="btn-bg"></span>
-                                            <span class="btn-content"><i class="fas fa-play"></i><span>Start Live
-                                                    Session</span></span>
-                                        </a>
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ url_for('admin.start_quiz', quiz_id=quiz.id) }}"
+                                                class="btn-start-session" onclick="startConfetti()">
+                                                <span class="btn-bg"></span>
+                                                <span class="btn-content"><i class="fas fa-play"></i><span>Start Live
+                                                        Session</span></span>
+                                            </a>
+                                            <a href="{{ url_for('admin.waiting_room', quiz_id=quiz.id) }}"
+                                                class="btn btn-outline-primary py-3 rounded-4 fw-bold border-2">
+                                                <i class="fas fa-users me-2"></i>View Waiting Room
+                                            </a>
+                                        </div>
                                     </div>
                                     {% else %}
                                     {% if current_question %}
@@ -361,6 +425,53 @@
             });
         }
 
+        function copyJoinLink(e) {
+            if (e) e.stopPropagation();
+            const joinUrl = "{{ request.host_url }}join/{{ quiz.join_code }}";
+            const btn = (e && e.currentTarget) ? e.currentTarget : event.currentTarget;
+
+            navigator.clipboard.writeText(joinUrl).then(() => {
+                if (btn) {
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.classList.remove('btn-success');
+                    }, 2000);
+                }
+                showToast("Invitation link copied!", "success");
+            });
+        }
+
+        function openQRModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('d-none');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeQRModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => modal.classList.add('d-none'), 300);
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `custom-toast ${type} animate__animated animate__fadeInRight`;
+            toast.style.display = 'flex';
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
         function startConfetti() {
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         }
@@ -373,7 +484,7 @@
             document.getElementById('loadingOverlay').classList.remove('active');
         });
     </script>
-{% include 'components/chat_widget.html' %}
+    {% include 'components/chat_widget.html' %}
 </body>
 
 </html>

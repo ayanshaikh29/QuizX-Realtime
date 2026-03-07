@@ -10,6 +10,7 @@ from app.utils import require_admin, now_utc, utc_to_ist, generate_join_code
 from app.services import ScoringService, LeaderboardService
 from sqlalchemy import func
 import time
+import re
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -92,6 +93,114 @@ def quizzes():
     return render_template('admin_quiz.html', quizzes=all_quizzes)
 
 
+@admin_bp.route('/edit-quiz/<int:quiz_id>', methods=['GET', 'POST'])
+@require_admin
+def edit_quiz(quiz_id):
+    """
+    Full quiz editing feature
+    - Edit title and description
+    - Edit questions/options/answers/types
+    - Add/Delete questions
+    - Update quiz configuration (leaderboard, timer)
+    """
+    quiz = Quiz.query.get_or_404(quiz_id)
+    
+    # Do not allow editing if quiz is active
+    if quiz.is_active:
+        flash('Cannot edit a quiz while it is live. Stop the quiz first.', 'danger')
+        return redirect(url_for('admin.quizzes'))
+
+    if request.method == 'POST':
+        # 1. Update Quiz Basic Info & Config
+        quiz.title = request.form.get('quiz_title', quiz.title).strip()
+        quiz.description = request.form.get('quiz_description', '').strip()
+        
+        show_leaderboard_str = request.form.get('show_leaderboard_each_question', 'false')
+        quiz.show_leaderboard_each_question = (show_leaderboard_str.lower() == 'true')
+        
+        if quiz.has_timer:
+            quiz.timer_mode = request.form.get('timer_mode', 'per_question')
+            if quiz.timer_mode == 'overall':
+                try:
+                    quiz.total_quiz_time = int(request.form.get('total_quiz_time', 15))
+                except ValueError:
+                    quiz.total_quiz_time = 15
+            else:
+                quiz.total_quiz_time = None
+        
+        # 2. Sync Questions
+        # Delete existing questions and re-add
+        Question.query.filter_by(quiz_id=quiz_id).delete()
+        
+        # Process Questions
+        questions_data = request.form.getlist('question[]')
+        added_count = 0
+        
+        for i, qtext in enumerate(questions_data):
+            # Strip tags for check
+            clean_text = re.sub(r'<[^>]+>', '', qtext or '').strip()
+            if not clean_text: continue
+            
+            q_type = request.form.get(f'type_{i}', 'mcq')
+            correct_answer = None
+            correct_answers_json = None
+            
+            if q_type == 'mcq':
+                ans_index = request.form.get(f'answer_{i}')
+                if ans_index:
+                    correct_answer = request.form.get(f'option{ans_index}_{i}')
+            elif q_type == 'checkbox':
+                selected_indices = request.form.getlist(f'checkbox_answer_{i}[]')
+                answers_list = [request.form.get(f'option{idx}_{i}') for idx in selected_indices if request.form.get(f'option{idx}_{i}')]
+                if answers_list:
+                    correct_answers_json = ",".join(answers_list)
+                    correct_answer = answers_list[0]
+            elif q_type == 'short_answer':
+                correct_answer = request.form.get(f'short_answer_{i}')
+            elif q_type == 'true_false':
+                correct_answer = request.form.get(f'tf_answer_{i}')
+            
+            if not correct_answer and not correct_answers_json:
+                continue
+
+            time_limit = 0
+            if quiz.has_timer:
+                try:
+                    time_limit = int(request.form.get(f'time_{i}', 30))
+                except ValueError:
+                    time_limit = 30
+            
+            points = 1
+            try:
+                points = int(request.form.get(f'points_{i}', 1))
+            except ValueError:
+                points = 1
+            
+            new_q = Question(
+                quiz_id=quiz_id,
+                order=i + 1,
+                question=qtext,
+                question_type=q_type,
+                option1=request.form.get(f'option1_{i}', '') if q_type in ['mcq', 'checkbox', 'true_false'] else None,
+                option2=request.form.get(f'option2_{i}', '') if q_type in ['mcq', 'checkbox', 'true_false'] else None,
+                option3=request.form.get(f'option3_{i}', '') if q_type in ['mcq', 'checkbox'] else None,
+                option4=request.form.get(f'option4_{i}', '') if q_type in ['mcq', 'checkbox'] else None,
+                answer=correct_answer,
+                correct_answers=correct_answers_json,
+                time_limit=time_limit,
+                points=points
+            )
+            db.session.add(new_q)
+            added_count += 1
+            
+        db.session.commit()
+        flash(f'Quiz "{quiz.title}" updated successfully!', 'success')
+        return redirect(url_for('admin.quizzes'))
+
+    questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
+    return render_template('admin_edit_quiz.html', quiz=quiz, questions=questions)
+
+
 @admin_bp.route('/add-question/<int:quiz_id>', methods=['GET', 'POST'])
 @require_admin
 def add_question(quiz_id):
@@ -122,16 +231,39 @@ def add_question(quiz_id):
         added = False
         
         for i, qtext in enumerate(questions_data):
-            if not qtext.strip():
+            # Strip HTML tags for the empty check (contenteditable can produce <br> etc.)
+            clean_text = re.sub(r'<[^>]+>', '', qtext or '').strip()
+            if not clean_text:
                 continue
             
-            ans_index = request.form.get(f'answer_{i}')
-            if not ans_index:
-                continue
+            q_type = request.form.get(f'type_{i}', 'mcq')
+            correct_answer = None
+            correct_answers_json = None
             
-            option_key = f'option{ans_index}_{i}'
-            correct_answer = request.form.get(option_key)
-            if not correct_answer:
+            # Extract answer based on type
+            if q_type == 'mcq':
+                ans_index = request.form.get(f'answer_{i}')
+                if ans_index:
+                    option_key = f'option{ans_index}_{i}'
+                    correct_answer = request.form.get(option_key)
+            elif q_type == 'checkbox':
+                selected_indices = request.form.getlist(f'checkbox_answer_{i}[]')
+                if selected_indices:
+                    answers_list = []
+                    for idx in selected_indices:
+                        opt_val = request.form.get(f'option{idx}_{i}')
+                        if opt_val:
+                            answers_list.append(opt_val)
+                    if answers_list:
+                        correct_answers_json = ",".join(answers_list)
+                        # For checkbox, we store the first one in 'answer' for legacy compatibility or just use None
+                        correct_answer = answers_list[0] if answers_list else None
+            elif q_type == 'short_answer':
+                correct_answer = request.form.get(f'short_answer_{i}')
+            elif q_type == 'true_false':
+                correct_answer = request.form.get(f'tf_answer_{i}')
+            
+            if not correct_answer and not correct_answers_json:
                 continue
             
             if quiz.has_timer:
@@ -153,11 +285,13 @@ def add_question(quiz_id):
                 quiz_id=quiz_id,
                 order=i + 1,
                 question=qtext,
-                option1=request.form.get(f'option1_{i}', ''),
-                option2=request.form.get(f'option2_{i}', ''),
-                option3=request.form.get(f'option3_{i}', ''),
-                option4=request.form.get(f'option4_{i}', ''),
+                question_type=q_type,
+                option1=request.form.get(f'option1_{i}', '') if q_type in ['mcq', 'checkbox', 'true_false'] else None,
+                option2=request.form.get(f'option2_{i}', '') if q_type in ['mcq', 'checkbox', 'true_false'] else None,
+                option3=request.form.get(f'option3_{i}', '') if q_type in ['mcq', 'checkbox'] else None,
+                option4=request.form.get(f'option4_{i}', '') if q_type in ['mcq', 'checkbox'] else None,
                 answer=correct_answer,
+                correct_answers=correct_answers_json,
                 time_limit=time_limit,
                 points=points,
             )
@@ -346,7 +480,6 @@ def reset_quiz(quiz_id):
     # Reset quiz state
     quiz.is_active = False
     quiz.is_paused = False
-    quiz.current_question_index = 0
     quiz.paused_at = None
     quiz.paused_seconds = 0
     
@@ -386,6 +519,14 @@ def live_control(quiz_id):
         current_index=current_index,
         current_question=current_question
     )
+
+
+@admin_bp.route('/waiting-room/<int:quiz_id>')
+@require_admin
+def waiting_room(quiz_id):
+    """Admin waiting room to monitor live participants"""
+    quiz = Quiz.query.get_or_404(quiz_id)
+    return render_template('admin_waiting_room.html', quiz=quiz)
 
 
 @admin_bp.route('/live-leaderboard/<int:quiz_id>')
@@ -525,23 +666,6 @@ def analytics(quiz_id):
         questions_data=questions_data
     )
 
-from flask import Blueprint, render_template
-
-admin = Blueprint('admin', __name__, url_prefix='/admin')
-
-@admin.route('/analytics')
-def analytics():
-    return render_template(
-        'admin_analytics.html',
-        quiz={"title": "Sample Quiz"},
-        total_participants=120,
-        accuracy_rate=78,
-        avg_time=14,
-        completion_rate=92,
-        question_data=[],
-        top_students=[]
-    )
-
 @admin_bp.route('/delete-quiz/<int:quiz_id>')
 @require_admin
 def delete_quiz(quiz_id):
@@ -662,28 +786,23 @@ def handle_admin_finish_quiz(data):
 
 @socketio.on('admin_reset_quiz')
 def handle_admin_reset_quiz(data):
-    """
-    Admin resets quiz via Socket.IO - clears all data
-    """
+
     quiz_id = data.get('quiz_id')
-    
+
     if not quiz_id:
         return {'error': 'No quiz_id provided'}
-    
-    # Clear all data
+
     cleared = clear_quiz_session_data(quiz_id)
-    
+
     quiz = Quiz.query.get(quiz_id)
+
     if quiz:
         quiz.is_active = False
         quiz.is_paused = False
-        quiz.current_question_index = 0
         db.session.commit()
-    
-    # Clear quiz_state
+
     quiz_state.pop(quiz_id, None)
-    
-    # Notify admin
+
     socketio.emit(
         'quiz_reset_complete',
         {
@@ -692,13 +811,12 @@ def handle_admin_reset_quiz(data):
         },
         room=f"admin_{quiz_id}"
     )
-    
+
     return {
         'success': True,
         'cleared': cleared['partial_answers_cleared'],
         'quiz_id': quiz_id
     }
-
 
 @socketio.on('admin_clear_quiz_data')
 def handle_admin_clear_quiz_data(data):

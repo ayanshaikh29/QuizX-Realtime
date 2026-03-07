@@ -13,7 +13,8 @@ def migrate_database():
             ("ALTER TABLE quiz ADD COLUMN show_leaderboard_each_question BOOLEAN DEFAULT TRUE", "quiz.show_leaderboard_each_question"),
             ("ALTER TABLE quiz ADD COLUMN timer_mode VARCHAR(20) DEFAULT 'per_question'", "quiz.timer_mode"),
             ("ALTER TABLE quiz ADD COLUMN total_quiz_time INTEGER", "quiz.total_quiz_time"),
-            ("ALTER TABLE question ADD COLUMN points INTEGER DEFAULT 1", "question.points")
+            ("ALTER TABLE question ADD COLUMN points INTEGER DEFAULT 1", "question.points"),
+            ("ALTER TABLE question ADD COLUMN explanation TEXT", "question.explanation")
         ]
         
         for query_str, col_name in queries:

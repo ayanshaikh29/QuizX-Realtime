@@ -19,10 +19,8 @@
 <div class="dashboard-wrapper">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-graduation-cap"></i>
-                <span>QuizX Student</span>
-            </div>
+            <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+</a>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>

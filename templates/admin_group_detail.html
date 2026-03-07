@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizX | {{ group.group_name }}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_groups.css') }}">
+</head>
+
+<body>
+    <div class="sidebar-overlay"></div>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
+                    Dashboard</a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link"><i class="fas fa-book"></i> Quizzes</a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link active"><i
+                        class="fas fa-layer-group"></i> Groups</a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i>
+                    Profile</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i>
+                    Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="d-flex align-items-center">
+                    <button class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h4 class="fw-bold mb-0">
+                            <a href="{{ url_for('admin_groups.groups') }}"
+                                class="text-decoration-none text-muted">Groups</a>
+                            <i class="fas fa-chevron-right mx-2 small text-muted"></i>
+                            <span style="color: #5ba33a;">{{ group.group_name }}</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class="header-user">
+                    <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff"
+                        class="avatar" alt="Avatar">
+                </div>
+            </header>
+
+            <div class="container-fluid p-4">
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show animate-slide-up"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <!-- Group Header -->
+                <div class="group-detail-hero animate-slide-up">
+                    <div class="hero-content">
+                        <h2 class="fw-bold mb-1">{{ group.group_name }}</h2>
+                        <p class="mb-0 opacity-75">{{ group.description or 'No description provided.' }}</p>
+                    </div>
+                    <div class="hero-meta">
+                        <span class="badge-stat"><i class="fas fa-user-graduate me-1"></i>{{ members|length }}
+                            Students</span>
+                        <span class="badge-stat"><i class="fas fa-book-open me-1"></i>{{ assigned_quizzes|length }}
+                            Quizzes</span>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-2">
+                    <!-- Students Section -->
+                    <div class="col-lg-6 animate-slide-up" style="animation-delay: 0.1s;">
+                        <div class="detail-card">
+                            <div class="detail-card-header">
+                                <h5 class="fw-bold mb-0"><i class="fas fa-users me-2"
+                                        style="color:#6fbf4a;"></i>Students</h5>
+                            </div>
+
+                            <!-- Add Student Form -->
+                            {% if available_students %}
+                            <form method="POST"
+                                action="{{ url_for('admin_groups.add_student_to_group', group_id=group.id) }}"
+                                class="d-flex gap-2 mb-4">
+                                <select name="student_id" class="form-select custom-input" required>
+                                    <option value="">Select student...</option>
+                                    {% for s in available_students %}
+                                    <option value="{{ s.id }}">{{ s.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-success-custom" style="white-space: nowrap;">
+                                    <i class="fas fa-plus me-1"></i>Add
+                                </button>
+                            </form>
+                            {% else %}
+                            <p class="text-muted small mb-4"><i class="fas fa-check-circle me-1"></i>All students are
+                                in this group.</p>
+                            {% endif %}
+
+                            <!-- Student List -->
+                            {% if members %}
+                            <div class="member-list">
+                                {% for student in members %}
+                                <div class="member-item">
+                                    <div class="member-info">
+                                        <img src="https://ui-avatars.com/api/?name={{ student.username }}&background=6fbf4a&color=fff&size=36"
+                                            class="member-avatar" alt="">
+                                        <span class="member-name">{{ student.username }}</span>
+                                    </div>
+                                    <a href="{{ url_for('admin_groups.remove_student_from_group', group_id=group.id, student_id=student.id) }}"
+                                        class="btn-remove" onclick="return confirm('Remove this student?')">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-user-plus fa-2x text-muted mb-2"></i>
+                                <p class="text-muted small mb-0">No students yet. Add some above!</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quizzes Section -->
+                    <div class="col-lg-6 animate-slide-up" style="animation-delay: 0.2s;">
+                        <div class="detail-card">
+                            <div class="detail-card-header">
+                                <h5 class="fw-bold mb-0"><i class="fas fa-book-open me-2"
+                                        style="color:#3b82f6;"></i>Assigned Quizzes</h5>
+                            </div>
+
+                            <!-- Assign Quiz Form -->
+                            {% if unassigned_quizzes %}
+                            <form method="POST"
+                                action="{{ url_for('admin_groups.assign_quiz_to_group', group_id=group.id) }}"
+                                class="d-flex gap-2 mb-4">
+                                <select name="quiz_id" class="form-select custom-input" required>
+                                    <option value="">Select quiz...</option>
+                                    {% for q in unassigned_quizzes %}
+                                    <option value="{{ q.id }}">{{ q.title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-success-custom" style="white-space: nowrap;">
+                                    <i class="fas fa-link me-1"></i>Assign
+                                </button>
+                            </form>
+                            {% else %}
+                            <p class="text-muted small mb-4"><i class="fas fa-check-circle me-1"></i>All quizzes are
+                                assigned.</p>
+                            {% endif %}
+
+                            <!-- Quiz List -->
+                            {% if assigned_quizzes %}
+                            <div class="quiz-assign-list">
+                                {% for quiz in assigned_quizzes %}
+                                <div class="quiz-assign-item">
+                                    <div class="quiz-assign-info">
+                                        <div class="quiz-assign-icon">
+                                            <i class="fas fa-file-alt"></i>
+                                        </div>
+                                        <div>
+                                            <span class="quiz-assign-name">{{ quiz.title }}</span>
+                                            <span class="quiz-assign-status">
+                                                {% if quiz.is_active %}🟢 Live{% elif quiz.is_published %}📋
+                                                Published{% else %}📝 Draft{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <a href="{{ url_for('admin_groups.unassign_quiz_from_group', group_id=group.id, quiz_id=quiz.id) }}"
+                                        class="btn-remove" onclick="return confirm('Unassign this quiz?')">
+                                        <i class="fas fa-unlink"></i>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-link fa-2x text-muted mb-2"></i>
+                                <p class="text-muted small mb-0">No quizzes assigned. Link one above!</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/responsive.js') }}"></script>
+    {% include 'components/chat_widget.html' %}
+</body>
+
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>QuizX | Quiz Summary</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_analytics.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_history.css') }}">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f8fafc;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .question-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+
+        .option-item {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-weight: 700;
+        }
+
+        .correct {
+            background: #e8f7e4;
+            border-color: #6fbf4a;
+        }
+
+        .wrong-selected {
+            background: #fde8e8;
+            border-color: #ef4444;
+        }
+
+        .chart-container-sm {
+            height: 260px;
+        }
+
+        .btn-pdf {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 100px;
+        }
+
+        .btn-pdf:hover {
+            background: #1e293b;
+        }
+
+        .pdf-mode * {
+            animation: none !important;
+            transition: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper d-flex">
+
+        <aside class="sidebar">
+
+            <div class="sidebar-header">
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" class="logo-img">
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <a href="{{ url_for('student.dashboard') }}" class="nav-link">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+
+                <a href="{{ url_for('student.quizzes') }}" class="nav-link">
+                    <i class="fas fa-play-circle"></i> Live Quizzes
+                </a>
+
+                <a href="{{ url_for('student.history') }}" class="nav-link active">
+                    <i class="fas fa-history"></i> My History
+                </a>
+
+                <a href="{{ url_for('auth.profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+
+        </aside>
+
+
+        <main class="main-content" id="report-content">
+
+            <header class="content-header d-flex justify-content-between align-items-center p-4">
+
+                <div>
+                    <a href="{{ url_for('student.history') }}" class="text-muted text-decoration-none">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+
+                    <h4 class="fw-bold">Quiz Attempt Summary</h4>
+                </div>
+
+                <button onclick="downloadPDF()" id="pdf-btn" class="btn btn-pdf">
+                    <i class="fas fa-file-pdf me-2"></i> Download Report
+                </button>
+
+            </header>
+
+            <div class="container-fluid p-4">
+
+                {% set score_perc = (result.score / result.total * 100) | round(0) | int %}
+
+                <div class="row g-4 mb-4">
+
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card">
+                            <h3>{{ result.total }}</h3>
+                            <p>Total Questions</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card">
+                            <h3>{{ result.score }}</h3>
+                            <p>Correct</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card">
+                            <h3>{{ total_time_str }}</h3>
+                            <p>Time</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card">
+                            <h3>{{ score_perc }}%</h3>
+                            <p>Score</p>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="row">
+
+                    <div class="col-lg-8">
+
+                        <h5 class="fw-bold mb-4">Question Review</h5>
+
+                        {% for q in questions %}
+
+                        {% set ans_data = answers_map.get(q.id) %}
+                        {% set selected = ans_data.selected_answer if ans_data else None %}
+
+                        <div class="question-card">
+
+                            <h6 class="text-muted">Question {{ loop.index }}</h6>
+                            <h5 class="fw-bold mb-3">{{ q.question }}</h5>
+
+                            {% if q.question_type == 'checkbox' %}
+                            {% set correct_list = (q.correct_answers or "").split(',') %}
+                            {% set selected_list = (selected or "").split(',') %}
+                            {% endif %}
+
+                            <div
+                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option1 in correct_list %}correct{% elif q.option1 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option1 == q.answer %}correct{% elif selected == q.option1 %}wrong-selected{% endif %}{% endif %}">
+                                <span class="option-letter">A</span>
+                                <span>{{ q.option1 }}</span>
+                            </div>
+
+                            <div
+                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option2 in correct_list %}correct{% elif q.option2 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option2 == q.answer %}correct{% elif selected == q.option2 %}wrong-selected{% endif %}{% endif %}">
+                                <span class="option-letter">B</span>
+                                <span>{{ q.option2 }}</span>
+                            </div>
+
+                            <div
+                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option3 in correct_list %}correct{% elif q.option3 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option3 == q.answer %}correct{% elif selected == q.option3 %}wrong-selected{% endif %}{% endif %}">
+                                <span class="option-letter">C</span>
+                                <span>{{ q.option3 }}</span>
+                            </div>
+
+                            <div
+                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option4 in correct_list %}correct{% elif q.option4 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option4 == q.answer %}correct{% elif selected == q.option4 %}wrong-selected{% endif %}{% endif %}">
+                                <span class="option-letter">D</span>
+                                <span>{{ q.option4 }}</span>
+                            </div>
+
+                        </div>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div class="col-lg-4">
+
+                        <div class="stat-card">
+
+                            <h5 class="text-center mb-3">Accuracy</h5>
+
+                            <div class="chart-container-sm">
+                                <canvas id="accuracyChart"></canvas>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <h3>{{ score_perc }}%</h3>
+                                <p>Overall Accuracy</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const ctx = document.getElementById("accuracyChart");
+
+            if (!ctx) return;
+
+            const correct = {{ result.score }
+        };
+        const incorrect = {{ result.total - result.score }};
+
+        new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: ["Correct", "Incorrect"],
+                datasets: [{
+                    data: [correct, incorrect],
+                    backgroundColor: ["#6fbf4a", "#ef4444"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "70%"
+            }
+        });
+
+});
+
+
+        function downloadPDF() {
+
+            const btn = document.getElementById("pdf-btn");
+            const sidebar = document.querySelector(".sidebar");
+            const element = document.getElementById("report-content");
+
+            btn.disabled = true;
+            btn.innerHTML = "Generating...";
+
+            document.body.classList.add("pdf-mode");
+
+            const originalSidebar = sidebar.style.display;
+            sidebar.style.display = "none";
+
+            setTimeout(() => {
+
+                html2pdf().set({
+
+                    margin: 10,
+
+                    filename: "Quiz_Report_{{ quiz.title | replace(' ','_') }}.pdf",
+
+                    image: { type: "jpeg", quality: 1 },
+
+                    html2canvas: {
+                        scale: 3,
+                        useCORS: true,
+                        backgroundColor: "#ffffff"
+                    },
+
+                    jsPDF: {
+                        unit: "mm",
+                        format: "a4",
+                        orientation: "portrait"
+                    }
+
+                }).from(element).save().then(() => {
+
+                    btn.disabled = false;
+                    btn.innerHTML = "Download Report";
+
+                    sidebar.style.display = originalSidebar;
+
+                    document.body.classList.remove("pdf-mode");
+
+                });
+
+            }, 1200);
+
+        }
+
+    </script>
+
+    {% include 'components/chat_widget.html' %}
+
+</body>
+
+</html>

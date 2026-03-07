@@ -8,15 +8,28 @@
 
 /* Floating Animation for Live Badges */
 @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 /* Shimmer Effect for Buttons */
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 /* 1. NEXT-LEVEL CARD DESIGN */
@@ -137,13 +150,24 @@
 }
 
 @keyframes slideIn {
-    to { opacity: 1; transform: translateY(0); }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Delay for each card */
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.3s; }
+.delay-1 {
+    animation-delay: 0.1s;
+}
+
+.delay-2 {
+    animation-delay: 0.2s;
+}
+
+.delay-3 {
+    animation-delay: 0.3s;
+}
 
 /* 5. TYPOGRAPHY */
 .quiz-title-advanced {
@@ -170,6 +194,7 @@
     align-items: center;
     gap: 6px;
 }
+
 .logo-box {
     display: flex;
     align-items: center;
@@ -177,7 +202,8 @@
 }
 
 .logo-img {
-    width: 150px;   /* size adjust kar sakta hai */
+    width: 150px;
+    /* size adjust kar sakta hai */
     height: 70px;
     margin-right: 8px;
 }
@@ -185,7 +211,140 @@
 .logo-box span {
     font-size: 20px;
     font-weight: 600;
-    color: white;  /* apne theme ke hisaab se */
+    color: white;
+    /* apne theme ke hisaab se */
 }
 
-.meta-item i { color: var(--primary); }
+.meta-item i {
+    color: var(--primary);
+}
+
+/* 6. JOIN SECTION & SCAN QR */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.divider:not(:empty)::before {
+    margin-right: 1.5em;
+}
+
+.divider:not(:empty)::after {
+    margin-left: 1.5em;
+}
+
+.btn-scan-qr {
+    background: #1e293b;
+    color: white;
+    border-radius: 20px;
+    padding: 14px 28px;
+    font-weight: 700;
+    transition: 0.3s;
+    border: none;
+    box-shadow: 0 10px 25px rgba(30, 41, 59, 0.2);
+}
+
+.btn-scan-qr:hover {
+    background: #0f172a;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(30, 41, 59, 0.3);
+    color: white;
+}
+
+.scanner-container {
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    border: 3px solid var(--primary) !important;
+}
+
+#reader {
+    background: black;
+}
+
+#reader__scan_region {
+    background: black;
+}
+
+.section-divider {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.join-input-group {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+}
+
+.join-input-group .form-control {
+    border: 2px solid #e2e8f0;
+    padding: 15px;
+}
+
+.join-input-group .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: none;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 992px) {
+    .quiz-card-advanced {
+        padding: 25px;
+    }
+
+    .quiz-title-advanced {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .join-section-wrapper .quiz-card-advanced {
+        padding: 25px 20px;
+    }
+
+    .join-input-group {
+        max-width: 100% !important;
+    }
+
+    .join-input-group .form-control {
+        font-size: 1rem;
+    }
+
+    .btn-scan-qr {
+        width: 100%;
+        padding: 12px 20px;
+    }
+
+    .meta-info {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-header {
+        padding: 12px 15px;
+    }
+
+    .quiz-title-advanced {
+        font-size: 1.1rem;
+    }
+
+    .btn-join-main {
+        padding: 12px;
+        font-size: 12px;
+    }
+}

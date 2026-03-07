@@ -166,10 +166,17 @@
                             <h3 class="q-text">{{ q.question }}</h3>
 
                             <div class="options-list">
-                                {% for opt in [q.option1, q.option2, q.option3, q.option4] %}
+                                {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
+                                {% if q.question_type == 'checkbox' %}
+                                {% set correct_list = (q.correct_answers or "").split(',') %}
+                                {% set selected_list = (student_data.answer or "").split(',') if student_data else [] %}
+                                {% set is_this_correct = (opt in correct_list) %}
+                                {% set student_picked_this = (opt in selected_list) %}
+                                {% else %}
                                 {% set is_this_correct = (opt == q.answer) %}
                                 {% set student_picked_this = (student_data and student_data.answer == loop.index|string)
                                 %}
+                                {% endif %}
 
                                 <div
                                     class="opt-row {{ 'opt-correct' if is_this_correct }}{{ ' opt-wrong' if student_picked_this and not is_this_correct }}">
@@ -201,7 +208,13 @@
                                     <i class="fas fa-lightbulb text-success"></i>
                                     <span class="text-success fw-bold small text-uppercase">Correct Answer</span>
                                 </div>
-                                <p class="mb-0 fw-bold">{{ q.answer }}</p>
+                                <p class="mb-0 fw-bold">
+                                    {% if q.question_type == 'checkbox' %}
+                                    {{ q.correct_answers }}
+                                    {% else %}
+                                    {{ q.answer }}
+                                    {% endif %}
+                                </p>
                             </div>
                             {% endif %}
                         </div>

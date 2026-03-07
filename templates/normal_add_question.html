@@ -34,7 +34,7 @@
         </header>
 
         <div class="content-wrapper">
-            <form method="POST" id="quizForm">
+            <form method="POST" id="quizForm" onsubmit="syncAllEditors()">
 
                 <div class="config-card">
                     <div class="config-header">
@@ -78,6 +78,15 @@
                         <div class="block-header">
                             <span class="q-number">Question 1</span>
                             <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="q-type-group">
+                                    <i class="fas fa-list-ul"></i>
+                                    <select name="type_0" onchange="changeQuestionType(this, 0)">
+                                        <option value="mcq">Single Choice (MCQ)</option>
+                                        <option value="checkbox">Multiple Choice (Checkbox)</option>
+                                        <option value="short_answer">Short Answer</option>
+                                        <option value="true_false">True / False</option>
+                                    </select>
+                                </div>
                                 <div class="points-input-group">
                                     <i class="fas fa-star text-warning" style="color: #f59e0b;"></i>
                                     <select name="points_0">
@@ -103,18 +112,53 @@
                                 <input type="hidden" name="question[]">
                             </div>
 
-                            <label class="options-label">Answer Options</label>
-                            <div class="options-grid">
-                                {% for i in range(1, 5) %}
-                                <div class="option-row">
-                                    <div class="radio-wrapper">
-                                        <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}" required>
-                                        <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check"
-                                                style="font-size: 12px;"></i></label>
+                            <!-- MCQ/Checkbox Options -->
+                            <div class="options-container-wrapper">
+                                <label class="options-label">Answer Options</label>
+                                <div class="options-grid">
+                                    {% for i in range(1, 5) %}
+                                    <div class="option-row" data-option-index="{{ i }}">
+                                        <div class="radio-wrapper">
+                                            <input type="radio" name="answer_0" value="{{ i }}" id="q0_opt{{ i }}"
+                                                required>
+                                            <label for="q0_opt{{ i }}" class="check-mark"><i class="fas fa-check"
+                                                    style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..."
+                                            required>
                                     </div>
-                                    <input type="text" name="option{{ i }}_0" placeholder="Option {{ i }}..." required>
+                                    {% endfor %}
                                 </div>
-                                {% endfor %}
+                            </div>
+
+                            <!-- Short Answer Field -->
+                            <div class="short-answer-wrapper hidden">
+                                <label class="options-label">Correct Answer</label>
+                                <input type="text" name="short_answer_0" class="short-answer-input"
+                                    placeholder="Type the correct answer (case-insensitive)...">
+                            </div>
+
+                            <!-- True/False Options -->
+                            <div class="tf-wrapper hidden">
+                                <label class="options-label">Correct Answer</label>
+                                <div class="options-grid" style="grid-template-columns: 1fr 1fr;">
+                                    <div class="option-row">
+                                        <div class="radio-wrapper">
+                                            <input type="radio" name="tf_answer_0" value="True" id="q0_tf_true">
+                                            <label for="q0_tf_true" class="check-mark"><i class="fas fa-check"
+                                                    style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <span style="font-weight: 700; margin-left: 10px;">TRUE</span>
+                                    </div>
+                                    <div class="option-row">
+                                        <div class="radio-wrapper">
+                                            <input type="radio" name="tf_answer_0" value="False" id="q0_tf_false">
+                                            <label for="q0_tf_false" class="check-mark"><i class="fas fa-check"
+                                                    style="font-size: 12px;"></i></label>
+                                        </div>
+                                        <span style="font-weight: 700; margin-left: 10px;">FALSE</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -135,38 +179,124 @@
     <script>
         let qIndex = 1;
         function format(cmd) { document.execCommand(cmd, false, null); }
-        function syncQuestion(div) { div.nextElementSibling.value = div.innerHTML; }
 
-        // Update leaderboard toggle label dynamically
-        document.getElementById("show_leaderboard")?.addEventListener("change", function () {
-            const label = document.getElementById("leaderboard_label");
-            if (label) label.textContent = this.checked ? "After each question" : "End of quiz only";
+        // FIX: always syncs the paired hidden input on every keystroke
+        function syncQuestion(div) {
+            const hidden = div.nextElementSibling;
+            if (hidden && hidden.type === 'hidden') hidden.value = div.innerHTML;
+        }
+
+        // FIX: force-sync all editors on submit (guards against stale data)
+        function syncAllEditors() {
+            document.querySelectorAll('.editor').forEach(div => {
+                const hidden = div.nextElementSibling;
+                if (hidden && hidden.type === 'hidden') hidden.value = div.innerHTML;
+            });
+        }
+
+        // FIX: changeQuestionType now disables inputs in hidden sections so they are
+        // excluded from browser validation AND not submitted to the server.
+        // This was the primary save bug — hidden-but-required option inputs blocked
+        // submission silently or submitted unexpected field names.
+        function changeQuestionType(select, idx) {
+            const type = select.value;
+            const block = select.closest('.question-block');
+            const optionsWrapper = block.querySelector('.options-container-wrapper');
+            const shortAnswerWrapper = block.querySelector('.short-answer-wrapper');
+            const tfWrapper = block.querySelector('.tf-wrapper');
+
+            // Hide ALL + disable ALL inputs inside each section
+            [optionsWrapper, shortAnswerWrapper, tfWrapper].forEach(wrapper => {
+                wrapper.classList.add('hidden');
+                optionsWrapper.classList.remove('checkbox-row'); // Remove square styling by default
+                wrapper.querySelectorAll('input').forEach(inp => {
+                    inp.disabled = true;
+                    inp.required = false;
+                    if (inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
+                });
+            });
+
+            // Show + enable the correct section only
+            if (type === 'mcq' || type === 'checkbox') {
+                optionsWrapper.classList.remove('hidden');
+                if (type === 'checkbox') optionsWrapper.classList.add('checkbox-row'); // Add square styling
+                optionsWrapper.querySelectorAll('.radio-wrapper input').forEach(r => {
+                    r.disabled = false;
+                    r.type = (type === 'mcq') ? 'radio' : 'checkbox';
+                    r.name = (type === 'mcq') ? `answer_${idx}` : `checkbox_answer_${idx}[]`;
+                    r.required = (type === 'mcq');
+                });
+                optionsWrapper.querySelectorAll('input[type="text"]').forEach(i => {
+                    i.disabled = false;
+                    i.required = true;
+                });
+            } else if (type === 'short_answer') {
+                const saInp = shortAnswerWrapper.querySelector('input');
+                saInp.disabled = false;
+                saInp.required = true;
+                shortAnswerWrapper.classList.remove('hidden');
+            } else if (type === 'true_false') {
+                tfWrapper.classList.remove('hidden');
+                tfWrapper.querySelectorAll('input').forEach(r => {
+                    r.disabled = false;
+                    r.name = `tf_answer_${idx}`;
+                    r.required = true;
+                });
+            }
+        }
+
+        document.getElementById('show_leaderboard')?.addEventListener('change', function () {
+            const label = document.getElementById('leaderboard_label');
+            if (label) label.textContent = this.checked ? 'After each question' : 'End of quiz only';
         });
 
+        // FIX: addQuestion now explicitly sets disabled/required state on ALL cloned inputs
+        // so clones are always in a clean MCQ state regardless of what the source block was.
         function addQuestion(hasTimer) {
-            const container = document.getElementById("questions-container");
-            const clone = container.querySelector(".question-block").cloneNode(true);
-            clone.querySelector(".q-number").innerText = `Question ${qIndex + 1}`;
-            clone.querySelector(".editor").innerHTML = "";
-            clone.querySelector("input[type='hidden']").value = "";
+            const container = document.getElementById('questions-container');
+            const firstBlock = container.querySelector('.question-block');
+            const clone = firstBlock.cloneNode(true);
 
-            // Reset points dropdown
-            const pointSelect = clone.querySelector("select");
-            if (pointSelect) {
-                pointSelect.name = `points_${qIndex}`;
-                pointSelect.value = "1"; // Default to 1 point
-            }
+            clone.querySelector('.q-number').innerText = `Question ${qIndex + 1}`;
+            clone.querySelector('.editor').innerHTML = '';
+            clone.querySelector("input[type='hidden']").value = '';
 
-            clone.querySelectorAll("input").forEach(input => {
-                if (input.type === "radio") {
-                    input.name = `answer_${qIndex}`;
-                    input.checked = false;
-                    input.id = `q${qIndex}_opt${input.value}`;
-                    input.nextElementSibling.setAttribute('for', input.id);
-                } else if (input.type === "text") {
-                    input.name = input.name.replace(/_\d+$/, `_${qIndex}`);
-                    input.value = "";
-                }
+            // Type select
+            const typeSelect = clone.querySelector('.q-type-group select');
+            typeSelect.name = `type_${qIndex}`;
+            typeSelect.value = 'mcq';
+            typeSelect.setAttribute('onchange', `changeQuestionType(this, ${qIndex})`);
+
+            // Points
+            const pointSelect = clone.querySelector('.points-input-group select');
+            if (pointSelect) { pointSelect.name = `points_${qIndex}`; pointSelect.value = '1'; }
+
+            // MCQ options — VISIBLE + ENABLED
+            const optionsWrapper = clone.querySelector('.options-container-wrapper');
+            optionsWrapper.classList.remove('hidden');
+            optionsWrapper.classList.remove('checkbox-row'); // Ensure default is MCQ (radio)
+            clone.querySelectorAll('.options-container-wrapper .radio-wrapper input').forEach((r, i) => {
+                r.type = 'radio'; r.name = `answer_${qIndex}`; r.id = `q${qIndex}_opt${i + 1}`;
+                r.checked = false; r.required = true; r.disabled = false;
+                r.nextElementSibling.setAttribute('for', r.id);
+            });
+            clone.querySelectorAll('.options-container-wrapper input[type="text"]').forEach((inp, i) => {
+                inp.name = `option${i + 1}_${qIndex}`; inp.value = ''; inp.required = true; inp.disabled = false;
+            });
+
+            // Short answer — HIDDEN + DISABLED
+            const shortAnswerWrapper = clone.querySelector('.short-answer-wrapper');
+            shortAnswerWrapper.classList.add('hidden');
+            const saInp = shortAnswerWrapper.querySelector('input');
+            saInp.name = `short_answer_${qIndex}`; saInp.value = ''; saInp.required = false; saInp.disabled = true;
+
+            // True/False — HIDDEN + DISABLED
+            const tfWrapper = clone.querySelector('.tf-wrapper');
+            tfWrapper.classList.add('hidden');
+            clone.querySelectorAll('.tf-wrapper input').forEach((r, i) => {
+                r.name = `tf_answer_${qIndex}`; r.checked = false; r.required = false; r.disabled = true;
+                r.id = `q${qIndex}_tf_${i === 0 ? 'true' : 'false'}`;
+                r.nextElementSibling.setAttribute('for', r.id);
             });
 
             container.appendChild(clone);
@@ -174,7 +304,7 @@
             clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
-{% include 'components/chat_widget.html' %}
+    {% include 'components/chat_widget.html' %}
 
 </body>
 

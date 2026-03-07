@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Waiting Room | QuizX</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+
+    <style>
+        :root {
+            --primary: #6fbf4a;
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            background: #f8fafc;
+        }
+
+        .waiting-room-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .participant-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s ease backwards;
+        }
+
+        .participant-card:hover {
+            transform: translateX(10px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(111, 191, 74, 0.1);
+        }
+
+        .u-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin-right: 1.2rem;
+        }
+
+        .join-badge {
+            background: #f0fdf4;
+            color: #15803d;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .count-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 100px;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .qr-section {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            border: 1px solid #f1f5f9;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 0 rgba(111, 191, 74, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(111, 191, 74, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(111, 191, 74, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(111, 191, 74, 0);
+            }
+        }
+
+        #user-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        #user-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #user-list::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-wrapper d-flex">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
+                    Dashboard</a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link active"><i class="fas fa-book"></i> Quizzes</a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i>
+                    Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title d-flex align-items-center gap-3">
+                    <h4 class="fw-bold mb-0">Waiting Room Monitor</h4>
+                    <span class="join-badge"><i class="fas fa-lock-open me-1"></i> Lobby Open</span>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('admin.live_control', quiz_id=quiz.id) }}"
+                        class="btn btn-outline-dark rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Control Center
+                    </a>
+                </div>
+            </header>
+
+            <div class="container-fluid p-4">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="waiting-room-card">
+                            <div class="d-flex justify-content-between align-items-center mb-5">
+                                <div>
+                                    <h2 class="fw-800 mb-1">{{ quiz.title }}</h2>
+                                    <p class="text-muted mb-0"><span class="pulse-dot"></span> Waiting for students to
+                                        join...</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="count-badge"><span id="participant-count">0</span> Joined</span>
+                                </div>
+                            </div>
+
+                            <div id="user-list">
+                                <div class="empty-placeholder">
+                                    <i class="fas fa-users fa-3x mb-3"></i>
+                                    <h4>No participants yet</h4>
+                                    <p>Share the join code or QR to get started!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="qr-section shadow-sm text-center">
+                            <h5 class="fw-bold mb-4">Invite Participants</h5>
+                            <div class="p-3 bg-light rounded-4 mb-4">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ request.host_url }}join/{{ quiz.join_code }}"
+                                    alt="Join QR" class="img-fluid rounded-3">
+                            </div>
+                            <div class="mb-4">
+                                <span class="text-muted small d-block mb-1">JOIN CODE</span>
+                                <h1 class="fw-800 text-primary">{{ quiz.join_code }}</h1>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary py-3 rounded-4 fw-bold" onclick="copyJoinLink()">
+                                    <i class="fas fa-link me-2"></i>Copy Join Link
+                                </button>
+                                <a href="{{ url_for('admin.start_quiz', quiz_id=quiz.id) }}"
+                                    class="btn btn-success py-3 rounded-4 fw-bold">
+                                    <i class="fas fa-play me-2"></i>Start Quiz Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const quizId = "{{ quiz.id }}";
+
+        socket.on('connect', () => {
+            console.log('Connected to socket');
+            socket.emit('join_waiting_room', { quiz_id: quizId, is_admin: true });
+        });
+
+        socket.on('update_participants', (data) => {
+            if (data.quiz_id && data.quiz_id != quizId) return;
+
+            const list = document.getElementById('user-list');
+            const countEl = document.getElementById('participant-count');
+
+            countEl.innerText = data.count;
+
+            if (data.users.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-placeholder">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h4>No participants yet</h4>
+                        <p>Share the join code or QR to get started!</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            data.users.forEach((username, index) => {
+                const card = document.createElement('div');
+                card.className = 'participant-card animate__animated animate__fadeInUp';
+                card.style.animationDelay = `${index * 0.05}s`;
+                card.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="u-avatar">${username.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <h6 class="fw-bold mb-0">${username}</h6>
+                            <span class="text-muted small">Ready to play</span>
+                        </div>
+                    </div>
+                    <span class="join-badge"><i class="fas fa-check me-1"></i>Joined</span>
+                `;
+                list.appendChild(card);
+            });
+        });
+
+        function copyJoinLink() {
+            const joinUrl = "{{ request.host_url }}join/{{ quiz.join_code }}";
+            navigator.clipboard.writeText(joinUrl).then(() => {
+                alert("Join link copied to clipboard!");
+            });
+        }
+    </script>
+</body>
+
+</html>

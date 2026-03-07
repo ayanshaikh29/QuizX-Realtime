@@ -19,7 +19,11 @@
 <body>
     <div id="waitingOverlay">
         <div class="waiting-spinner"></div>
-        <div class="waiting-text">Waiting for admin to display final score...</div>
+        <div class="waiting-text">Waiting for admin to start the quiz...</div>
+        <div class="admin-waiting">
+            <i class="fas fa-user-shield me-2"></i>
+            <strong>Admin Controlled:</strong> The quiz host will start the quiz
+        </div>
     </div>
     <!-- This is a single-line comment -->
     <div class="container d-flex justify-content-center sticky-top" style="z-index: 100;" id="quizNav">
@@ -44,22 +48,36 @@
                 <div id="progressBar" class="timer-progress"></div>
             </div>
 
+            <!-- Points Badge - Top Right Corner -->
+            <div class="question-points">
+                <i class="fas fa-star me-1"></i>{{ current_question.points }} pts
+            </div>
+
             <div class="text-center mt-3 d-flex justify-content-center align-items-center gap-2 flex-wrap">
                 <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
                     <i class="fas fa-bolt me-1"></i> LIVE QUIZ
                 </span>
-                <span class="badge px-3 py-2 rounded-pill fw-bold"
-                    style="background: linear-gradient(135deg,#f59e0b,#f97316); color:#fff; font-size:0.85rem;">
-                    <i class="fas fa-star me-1"></i> {{ current_question.points }} Point{{ 's' if
-                    current_question.points != 1 else '' }}
-                </span>
             </div>
+            
             <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
 
             <form id="quizForm">
                 <div class="options-grid mt-4">
+                    {% if current_question.question_type == 'checkbox' %}
                     {% for opt in [current_question.option1, current_question.option2, current_question.option3,
-                    current_question.option4] %}
+                    current_question.option4] if opt %}
+                    <label class="option-label checkbox-option animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="checkbox" name="answer[]" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% else %}
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3,
+                    current_question.option4] if opt %}
                     <label class="option-label animate__animated animate__zoomIn"
                         style="animation-delay: {{ loop.index0 * 0.1 }}s">
                         <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
@@ -69,6 +87,7 @@
                         </div>
                     </label>
                     {% endfor %}
+                    {% endif %}
                 </div>
 
                 <div class="text-center mt-5">
@@ -125,6 +144,8 @@
         socket.on("load_next_question", (data) => {
             if (parseInt(data.quiz_id) !== quizId) return;
             clearInterval(timerTick);
+            resetTimer();
+            // Redirect to next question - timer will start when page loads and admin has started quiz
             window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
         });
 
@@ -138,6 +159,22 @@
                 window.location.href = `/student/final-leaderboard/${quizId}`;
             }
         });
+
+        // Listen for quiz_started event from admin
+        socket.on("quiz_started", (data) => {
+            if (parseInt(data.quiz_id) === quizId) {
+                console.log('Quiz started by admin!');
+                document.getElementById("waitingOverlay").classList.remove("active");
+                questionStartTime = Date.now();
+                startTimer();
+            }
+        });
+
+        function resetTimer() {
+            clearInterval(timerTick);
+            timeLeft = timeLimit;
+            questionStartTime = Date.now();
+        }
 
         function startTimer() {
             if (timeLeft <= 0) {
@@ -174,8 +211,16 @@
                     timerProgress.classList.replace("bg-primary", "bg-danger");
 
                     if (!submitted) {
-                        const selectedRadio = document.querySelector('input[name="answer"]:checked');
-                        handleSubmission(selectedRadio ? selectedRadio.value : "No Answer");
+                        const qType = "{{ current_question.question_type }}";
+                        let val = "No Answer";
+                        if (qType === 'checkbox') {
+                            const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
+                            if (selected.length > 0) val = selected.join(',');
+                        } else {
+                            const selectedRadio = document.querySelector('input[name="answer"]:checked');
+                            if (selectedRadio) val = selectedRadio.value;
+                        }
+                        handleSubmission(val);
                     }
                 } else {
                     timerEl.innerText = formatTime(timeLeft);
@@ -197,15 +242,35 @@
             }, 1000);
         }
 
-        startTimer();
+        // Check if quiz is already active - if so, start timer immediately
+        const quizIsActive = {{ 'true' if quiz.is_active else 'false' }};
+        if (quizIsActive) {
+            console.log('Quiz is already active, starting timer...');
+            document.getElementById("waitingOverlay").classList.remove("active");
+            questionStartTime = Date.now();
+            startTimer();
+        } else {
+            // Show waiting overlay - timer starts only when admin starts quiz
+            document.getElementById("waitingOverlay").classList.add("active");
+        }
 
         document.getElementById("submitBtn").onclick = () => {
-            const sel = document.querySelector("input[name='answer']:checked");
-            if (!sel && !submitted) {
+            const qType = "{{ current_question.question_type }}";
+            let val = null;
+
+            if (qType === 'checkbox') {
+                const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
+                if (selected.length > 0) val = selected.join(',');
+            } else {
+                const sel = document.querySelector("input[name='answer']:checked");
+                if (sel) val = sel.value;
+            }
+
+            if (!val && !submitted) {
                 alert("Please select an answer!");
                 return;
             }
-            handleSubmission(sel ? sel.value : "No Answer");
+            handleSubmission(val || "No Answer");
         };
 
         function handleSubmission(val = "No Answer") {
@@ -216,8 +281,7 @@
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
-            document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
-
+            document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = true);
             const actualTimeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
             const finalTime = Math.min(actualTimeTaken, timerMode === "overall" ? totalQuizTime : timeLimit);
 
@@ -274,10 +338,14 @@
         }
 
         function showAnswerFeedback(selectedAnswer, isCorrect) {
+            const qType = "{{ current_question.question_type }}";
+            const correctList = correctAnswer.split(',');
+            const selectedList = selectedAnswer.split(',');
+
             document.querySelectorAll(".option-content").forEach(opt => {
                 const t = opt.getAttribute("data-option");
-                if (t === correctAnswer) opt.classList.add("correct");
-                if (t === selectedAnswer && !isCorrect) opt.classList.add("incorrect");
+                if (correctList.includes(t)) opt.classList.add("correct");
+                if (selectedList.includes(t) && !correctList.includes(t)) opt.classList.add("incorrect");
             });
 
             const banner = document.createElement("div");
@@ -294,22 +362,57 @@
         }
 
         document.addEventListener('keydown', function (event) {
-            if (submitted) return;
-            if (event.key >= '1' && event.key <= '4') {
-                const index = parseInt(event.key) - 1;
-                const radio = document.querySelectorAll('input[name="answer"]')[index];
-                if (radio) {
-                    radio.checked = true;
-                    radio.dispatchEvent(new Event('change'));
-                }
+
+        if (submitted) return;
+
+        const qType = "{{ current_question.question_type }}";
+
+        if (event.key >= '1' && event.key <= '4') {
+
+            const index = parseInt(event.key) - 1;
+            let option;
+            if (qType === 'checkbox') {
+                option = document.querySelectorAll('input[name="answer[]"]')[index];
+            } else {
+                option = document.querySelectorAll('input[name="answer"]')[index];
             }
-            if (event.key === 'Enter') document.getElementById("submitBtn").click();
+
+            if (!option) return;
+
+            if (qType === "checkbox") {
+            // toggle checkbox
+                option.checked = !option.checked;
+            } else {
+            // radio behavior
+                option.checked = true;
+            }
+
+            option.dispatchEvent(new Event('change'));
+        }
+
+        if (event.key === "Enter") {
+            document.getElementById("submitBtn").click();
+        }
+
+    });
+
+        // Add event listeners for radio inputs
+        document.querySelectorAll('input[name="answer"]').forEach(input => {
+            input.addEventListener('change', function () {
+                const qType = "{{ current_question.question_type }}";
+                if (qType !== 'checkbox') {
+                    document.querySelectorAll('.option-label').forEach(label => label.classList.remove('selected'));
+                }
+                if (this.checked) this.parentElement.classList.add('selected');
+                else this.parentElement.classList.remove('selected');
+            });
         });
 
-        document.querySelectorAll('input[name="answer"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                document.querySelectorAll('.option-label').forEach(label => label.classList.remove('selected'));
+        // Add event listeners for checkbox inputs
+        document.querySelectorAll('input[name="answer[]"]').forEach(input => {
+            input.addEventListener('change', function () {
                 if (this.checked) this.parentElement.classList.add('selected');
+                else this.parentElement.classList.remove('selected');
             });
         });
     </script>

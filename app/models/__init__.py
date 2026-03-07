@@ -8,5 +8,6 @@ from app.models.question import Question
 from app.models.answer import PartialAnswer
 from app.models.result import Result
 from app.models.ai_quiz import AIQuiz, AIQuestion
+from app.models.group import Group, GroupStudent
 
-__all__ = ['User', 'Quiz', 'Question', 'PartialAnswer', 'Result']
+__all__ = ['User', 'Quiz', 'Question', 'PartialAnswer', 'Result', 'Group', 'GroupStudent']

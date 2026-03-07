@@ -15,6 +15,7 @@ class Quiz(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
     has_timer = db.Column(db.Boolean, default=False)
     published_at = db.Column(db.DateTime)
     publish_count = db.Column(db.Integer, default=0)
@@ -26,6 +27,9 @@ class Quiz(db.Model):
     is_paused = db.Column(db.Boolean, default=False)
     paused_at = db.Column(db.DateTime)
     paused_seconds = db.Column(db.Integer, default=0)
+    
+    # Group Assignment
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
     
     # Advanced Configuration
     show_leaderboard_each_question = db.Column(db.Boolean, default=True)

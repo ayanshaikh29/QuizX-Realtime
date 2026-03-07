@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta charset="UTF-8">
@@ -7,140 +8,175 @@
     <title>QuizX | Admin Portal</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
 </head>
+
 <body>
 
-<div class="dashboard-wrapper d-flex">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <a href="/" class="logo-box">
-                <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-            </a>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
-                <i class="fas fa-book"></i> Quizzes
-            </a>
-            <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
-                <i class="fas fa-chart-line"></i> Analytics
-            </a>
-            <a href="{{ url_for('auth.profile') }}" class="nav-link">
-                <i class="fas fa-user-circle"></i> Profile
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="{{ url_for('auth.logout') }}" class="logout-link">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
-    </aside>
-
-    <main class="main-content">
-        <header class="content-header">
-            <div class="header-title">
-                <h4 class="fw-bold mb-0">Admin Workspace</h4>
+    <div class="sidebar-overlay"></div>
+    <div class="dashboard-wrapper d-flex">
+        <!-- ══════ SIDEBAR ══════ -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
             </div>
 
-            <div class="header-user d-flex align-items-center gap-3">
-                <div class="text-end d-none d-sm-block">
-                    <p class="fw-bold mb-0 small">{{ session.username }}</p>
-                    <p class="text-primary mb-0 tiny">Online</p>
-                </div>
-                <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff" class="avatar" alt="Avatar">
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">
+                    <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
+                    <i class="fas fa-book"></i> <span>Quizzes</span>
+                </a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link">
+                    <i class="fas fa-layer-group"></i> <span>Groups</span>
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> <span>Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </a>
             </div>
-        </header>
+        </aside>
 
-        <div class="container-fluid p-4">
-
-            <div class="welcome-hero animate-slide-up">
-                <div class="hero-content">
-                    <h1>Welcome back, {{ session.username }}! 👋</h1>
-                    <p class="mb-0 opacity-75">Control and monitor your quiz ecosystem from one place.</p>
+        <!-- ══════ MAIN CONTENT ══════ -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <header class="content-header">
+                <div class="d-flex align-items-center">
+                    <button class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h4 class="fw-extrabold mb-0">Admin Workspace</h4>
+                    </div>
                 </div>
-                <div class="d-none d-lg-block">
-                    <i class="fas fa-bolt fa-3x text-warning"></i>
-                </div>
-            </div>
 
-            <div class="row g-4 mb-4">
-                <div class="col-md-3 animate-slide-up" style="animation-delay: 0.1s;">
-                    <div class="stat-card">
-                        <div class="stat-icon icon-blue"><i class="fas fa-question-circle"></i></div>
-                        <div class="stat-details">
-                            <h3>{{ total_quizzes }}</h3>
-                            <p>Total Quizzes</p>
+                <div class="header-user d-flex align-items-center gap-3">
+                    <div class="text-end d-none d-sm-block">
+                        <p class="fw-extrabold mb-0" style="font-size: 0.95rem;">{{ session.username }}</p>
+                        <p class="mb-0 tiny online-dot">Online</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff&bold=true"
+                        class="avatar" alt="Avatar">
+                </div>
+            </header>
+
+            <div class="dashboard-container">
+                <!-- HERO SECTION -->
+                <div class="hero-wrapper animate-slide-up">
+                    <div class="hero-content">
+                        <h1>Welcome back, {{ session.username }}! 👋</h1>
+                        <p>Control and monitor your entire quiz ecosystem from one beautiful, high-performance
+                            workspace.</p>
+                    </div>
+                    <div class="hero-icon d-none d-lg-flex">
+                        <i class="fas fa-bolt text-white"></i>
+                    </div>
+                </div>
+
+                <!-- STATS CARDS GRID -->
+                <div class="row g-4 mb-5">
+                    <div class="col-xl-3 col-md-6 animate-slide-up" style="animation-delay: 0.1s;">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>{{ total_quizzes }}</h3>
+                                <p>Total Quizzes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 animate-slide-up" style="animation-delay: 0.2s;">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green">
+                                <i class="fas fa-broadcast-tower"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>{{ active_quizzes }}</h3>
+                                <p>Live Sessions</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 animate-slide-up" style="animation-delay: 0.3s;">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-purple">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>{{ total_students }}</h3>
+                                <p>Total Students</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 animate-slide-up" style="animation-delay: 0.4s;">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-orange">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>{{ total_responses }}</h3>
+                                <p>Submissions</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 animate-slide-up" style="animation-delay: 0.2s;">
-                    <div class="stat-card">
-                        <div class="stat-icon icon-green"><i class="fas fa-play-circle"></i></div>
-                        <div class="stat-details">
-                            <h3>{{ active_quizzes }}</h3>
-                            <p>Live Sessions</p>
+
+                <!-- ACTION CARDS GRID -->
+                <div class="row g-4">
+                    <div class="col-lg-6 animate-slide-up" style="animation-delay: 0.5s;">
+                        <div class="admin-card-pro">
+                            <div class="stat-icon icon-blue">
+                                <i class="fas fa-folder-plus"></i>
+                            </div>
+                            <h4>Quiz Management</h4>
+                            <p>Build responsive quizzes, add complex multimedia questions, configure timers, and manage
+                                your entire content library seamlessly.</p>
+                            <a href="{{ url_for('admin.quizzes') }}" class="btn-primary-custom">
+                                Open Manager <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 animate-slide-up" style="animation-delay: 0.6s;">
+                        <div class="admin-card-pro">
+                            <div class="stat-icon icon-green">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4>Realtime Control</h4>
+                            <p>Monitor live student engagement, pause exam sessions remotely, view live leaderboards,
+                                and get instant performance analytics.</p>
+                            <a href="{{ url_for('admin.quizzes') }}" class="btn-dark-custom">
+                                Go Live Center <i class="fas fa-bolt ms-2"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 animate-slide-up" style="animation-delay: 0.3s;">
-                    <div class="stat-card">
-                        <div class="stat-icon icon-purple"><i class="fas fa-users"></i></div>
-                        <div class="stat-details">
-                            <h3>{{ total_students }}</h3>
-                            <p>Total Students</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 animate-slide-up" style="animation-delay: 0.4s;">
-                    <div class="stat-card">
-                        <div class="stat-icon icon-orange"><i class="fas fa-clipboard-check"></i></div>
-                        <div class="stat-details">
-                            <h3>{{ total_responses }}</h3>
-                            <p>Submissions</p>
-                        </div>
-                    </div>
-                </div>
+
             </div>
+        </main>
+    </div>
 
-            <div class="row g-4 mt-2">
-                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.5s;">
-                    <div class="admin-card-pro">
-                        <div class="stat-icon icon-blue mb-3"><i class="fas fa-folder-plus"></i></div>
-                        <h4 class="fw-extrabold">Quiz Management</h4>
-                        <p class="text-muted small mb-4">Create new quizzes, add complex questions, and manage your library with ease.</p>
-                        <a href="{{ url_for('admin.quizzes') }}" class="btn btn-primary-custom">
-                            Open Manager <i class="fas fa-arrow-right ms-2"></i>
-                        </a>
-                    </div>
-                </div>
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/responsive.js') }}"></script>
 
-                <div class="col-md-6 animate-slide-up" style="animation-delay: 0.6s;">
-                    <div class="admin-card-pro">
-                        <div class="stat-icon icon-green mb-3"><i class="fas fa-broadcast-tower"></i></div>
-                        <h4 class="fw-extrabold">Realtime Control</h4>
-                        <p class="text-muted small mb-4">Monitor live student progress, pause sessions, and view live leaderboards.</p>
-                        <a href="{{ url_for('admin.quizzes') }}" class="btn btn-dark-custom">
-                            Go Live Center <i class="fas fa-bolt ms-2"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-{# ── QuizX AI Chat Widget ── #}
-{% include 'components/chat_widget.html' %}
+    <!-- QuizX AI Chat Widget -->
+    {% include 'components/chat_widget.html' %}
 
 </body>
+
 </html>

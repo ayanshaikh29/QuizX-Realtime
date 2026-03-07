@@ -18,19 +18,20 @@
 
 <body>
     <!-- This is a single-line comment -->
+    <div class="sidebar-overlay"></div>
     <div class="dashboard-wrapper">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/" class="logo-box">
-    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-</a>
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
                     Dashboard</a>
                 <a href="{{ url_for('admin.quizzes') }}" class="nav-link active"><i class="fas fa-book"></i> Quizzes</a>
-                <a href="{{ url_for('admin.quizzes') }}" class="nav-link"><i class="fas fa-chart-line"></i>
-                    Analytics</a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link"><i class="fas fa-layer-group"></i>
+                    Groups</a>
                 <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
@@ -41,9 +42,14 @@
 
         <main class="main-content">
             <header class="content-header">
-                <div class="header-title">
-                    <h4 class="fw-bold mb-0">Quiz Management</h4>
-                    <small class="text-muted">Create and control your live assessments</small>
+                <div class="d-flex align-items-center">
+                    <button class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h4 class="fw-bold mb-0">Quiz Management</h4>
+                        <small class="text-muted">Create and control your live assessments</small>
+                    </div>
                 </div>
                 <div class="header-user">
                     <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff"
@@ -118,10 +124,10 @@
 
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h5 class="quiz-name mb-0">{{ q.title }}</h5>
-                                        <button class="btn btn-sm text-primary p-0 ms-2"
-                                            onclick="renameQuiz('{{ q.id }}', '{{ q.title }}')">
+                                        <a href="{{ url_for('admin.edit_quiz', quiz_id=q.id) }}"
+                                            class="btn btn-sm text-primary p-0 ms-2">
                                             <i class="fas fa-pen-to-square"></i>
-                                        </button>
+                                        </a>
                                     </div>
 
                                     <div class="quiz-info">
@@ -156,35 +162,48 @@
                                         <a href="{{ url_for('admin.analytics', quiz_id=q.id) }}"
                                             class="btn action-btn text-dark w-100 mb-2"
                                             style="background-color: #f8f9fa; border: 1px solid #ddd;">
-                                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                                            <i class="fas fa-chart-bar me-2"></i>Analytics
                                         </a>
                                         {% endif %}
 
                                         {% if q.is_active %}
-                                        <a href="{{ url_for('admin.live_control', quiz_id=q.id) }}"
-                                            class="btn action-btn btn-danger text-white w-100 mb-2">
-                                            <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
-                                        </a>
-                                        <a href="{{ url_for('admin.stop_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
-                                        {% endif %}
-
-                                        {% if not q.is_locked and not q.is_active and not q.is_published %}
-                                        <a href="{{ url_for('admin.add_question', quiz_id=q.id) }}"
-                                            class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
-                                        {% endif %}
-
-                                        {% if q.is_locked and not q.is_published and not q.is_active %}
-                                        <a href="{{ url_for('admin.publish_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn start"><i class="fas fa-play"></i> Publish</a>
-                                        {% endif %}
-
-                                        {% if q.is_published and not q.is_active %}
-                                        <a href="{{ url_for('admin.start_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn text-white w-100" style="background-color: #fd7e14;"
-                                            onclick="return confirm('Are you sure you want to start this quiz for all students?')">
-                                            <i class="fas fa-play me-2"></i>Start Quiz
-                                        </a>
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ url_for('admin.live_control', quiz_id=q.id) }}"
+                                                class="btn action-btn btn-danger text-white w-100">
+                                                <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
+                                            </a>
+                                            <a href="{{ url_for('admin.stop_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn stop w-100"><i class="fas fa-stop me-2"></i> Stop
+                                                Quiz</a>
+                                        </div>
+                                        {% else %}
+                                        <div class="d-flex flex-column gap-2">
+                                            {% if q.is_published %}
+                                            <a href="{{ url_for('admin.waiting_room', quiz_id=q.id) }}"
+                                                class="btn action-btn text-white w-100"
+                                                style="background-color: #6366f1;">
+                                                <i class="fas fa-users me-2"></i>Live Control
+                                            </a>
+                                            <a href="{{ url_for('admin.start_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn text-white w-100"
+                                                style="background-color: #fd7e14;"
+                                                onclick="return confirm('Start this quiz now? Students will be able to join.')">
+                                                <i class="fas fa-play me-2"></i>Start Quiz
+                                            </a>
+                                            {% elif q.is_locked %}
+                                            <a href="{{ url_for('admin.publish_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn start w-100"><i class="fas fa-upload me-2"></i>
+                                                Publish Quiz</a>
+                                            {% else %}
+                                            <a href="{{ url_for('admin.add_question', quiz_id=q.id) }}"
+                                                class="btn action-btn edit w-100"><i class="fas fa-edit me-2"></i> Add
+                                                Questions</a>
+                                            {% endif %}
+                                            <a href="{{ url_for('admin.edit_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn edit w-100">
+                                                <i class="fas fa-cog me-2"></i>Edit Quiz
+                                            </a>
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -219,10 +238,10 @@
 
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h5 class="quiz-name mb-0">{{ q.title }}</h5>
-                                        <button class="btn btn-sm text-primary p-0 ms-2"
-                                            onclick="renameQuiz('{{ q.id }}', '{{ q.title }}')">
+                                        <a href="{{ url_for('admin.edit_quiz', quiz_id=q.id) }}"
+                                            class="btn btn-sm text-primary p-0 ms-2">
                                             <i class="fas fa-pen-to-square"></i>
-                                        </button>
+                                        </a>
                                     </div>
 
                                     <div class="quiz-info">
@@ -255,35 +274,42 @@
                                         <a href="{{ url_for('admin.analytics', quiz_id=q.id) }}"
                                             class="btn action-btn text-dark w-100 mb-2"
                                             style="background-color: #f8f9fa; border: 1px solid #ddd;">
-                                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                                            <i class="fas fa-chart-bar me-2"></i>Analytics
                                         </a>
                                         {% endif %}
 
                                         {% if q.is_active %}
-                                        <a href="{{ url_for('admin.live_control', quiz_id=q.id) }}"
-                                            class="btn action-btn btn-danger text-white w-100 mb-2">
-                                            <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
-                                        </a>
-                                        <a href="{{ url_for('admin.stop_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn stop"><i class="fas fa-stop"></i> Stop</a>
-                                        {% endif %}
-
-                                        {% if not q.is_locked and not q.is_active and not q.is_published %}
-                                        <a href="{{ url_for('admin.add_question', quiz_id=q.id) }}"
-                                            class="btn action-btn edit"><i class="fas fa-edit"></i> Edit</a>
-                                        {% endif %}
-
-                                        {% if q.is_locked and not q.is_published and not q.is_active %}
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ url_for('admin.live_control', quiz_id=q.id) }}"
+                                                class="btn action-btn btn-danger text-white w-100">
+                                                <i class="fas fa-broadcast-tower me-2"></i>🔴 LIVE CONTROL
+                                            </a>
+                                            <a href="{{ url_for('admin.stop_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn stop w-100"><i class="fas fa-stop me-2"></i> Stop
+                                                Quiz</a>
+                                        </div>
+                                        {% elif q.is_published %}
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ url_for('admin.waiting_room', quiz_id=q.id) }}"
+                                                class="btn action-btn text-white w-100"
+                                                style="background-color: #6366f1;">
+                                                <i class="fas fa-users me-2"></i>Live Control
+                                            </a>
+                                            <a href="{{ url_for('admin.start_quiz', quiz_id=q.id) }}"
+                                                class="btn action-btn text-white w-100"
+                                                style="background-color: #fd7e14;"
+                                                onclick="return confirm('Start this timed quiz now?')">
+                                                <i class="fas fa-play me-2"></i>Start Quiz
+                                            </a>
+                                        </div>
+                                        {% elif q.is_locked %}
                                         <a href="{{ url_for('admin.publish_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn start"><i class="fas fa-play"></i> Publish</a>
-                                        {% endif %}
-
-                                        {% if q.is_published and not q.is_active %}
-                                        <a href="{{ url_for('admin.start_quiz', quiz_id=q.id) }}"
-                                            class="btn action-btn text-white w-100" style="background-color: #fd7e14;"
-                                            onclick="return confirm('Are you sure you want to start this quiz for all students?')">
-                                            <i class="fas fa-play me-2"></i>Start Quiz
-                                        </a>
+                                            class="btn action-btn start w-100"><i class="fas fa-upload me-2"></i>
+                                            Publish Quiz</a>
+                                        {% else %}
+                                        <a href="{{ url_for('admin.add_question', quiz_id=q.id) }}"
+                                            class="btn action-btn edit w-100"><i class="fas fa-edit me-2"></i> Add
+                                            Questions</a>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -326,6 +352,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/responsive.js') }}"></script>
     <script>
         function renameQuiz(id, title) {
             document.getElementById('rename_quiz_id').value = id;
@@ -342,7 +369,7 @@
             });
         }
     </script>
-{% include 'components/chat_widget.html' %}
+    {% include 'components/chat_widget.html' %}
 
 </body>
 

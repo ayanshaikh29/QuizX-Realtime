@@ -39,8 +39,24 @@ def quizzes():
     ensure_guest_student()
     
     # SHOW ALL PUBLISHED QUIZZES
-    from app.models import Question
+    from app.models import Question, GroupStudent
     all_quizzes = Quiz.query.filter_by(is_published=True).order_by(Quiz.published_at.desc()).all()
+    
+    # GROUP FILTER: If a quiz has a group_id, only show it to students in that group
+    user_id = session.get('user_id')
+    if user_id and user_id != -1:
+        # Logged-in student: get their group IDs
+        my_group_ids = [gs.group_id for gs in GroupStudent.query.filter_by(student_id=user_id).all()]
+        filtered = []
+        for q in all_quizzes:
+            if q.group_id is None:
+                filtered.append(q)  # No group restriction
+            elif q.group_id in my_group_ids:
+                filtered.append(q)  # Student is in the group
+        all_quizzes = filtered
+    else:
+        # Guest: only show quizzes with no group restriction
+        all_quizzes = [q for q in all_quizzes if q.group_id is None]
     
     print(f"Found {len(all_quizzes)} published quizzes:")
     for q in all_quizzes:
@@ -213,13 +229,25 @@ def attempt_quiz(quiz_id):
         current_question = Question.query.get_or_404(question_id)
         print(f"Correct answer: '{current_question.answer}'")
         
-        # Check if answer is correct
+        # Check if answer is correct based on question type
         if not selected_answer or selected_answer == 'No Answer':
             is_correct = False
             print('No answer selected - marking as incorrect')
-        else:
+        elif current_question.question_type == 'mcq' or current_question.question_type == 'true_false':
             is_correct = (selected_answer.strip() == current_question.answer.strip())
-            print(f"Comparison: '{selected_answer.strip()}' == '{current_question.answer.strip()}' = {is_correct}")
+            print(f"Comparison ({current_question.question_type}): '{selected_answer.strip()}' == '{current_question.answer.strip()}' = {is_correct}")
+        elif current_question.question_type == 'checkbox':
+            # Checkbox answers are comma-separated strings
+            selected_list = sorted([s.strip() for s in selected_answer.split(',') if s.strip()])
+            correct_list = sorted([s.strip() for s in (current_question.correct_answers or '').split(',') if s.strip()])
+            is_correct = (selected_list == correct_list)
+            print(f"Comparison (checkbox): {selected_list} == {correct_list} = {is_correct}")
+        elif current_question.question_type == 'short_answer':
+            is_correct = (selected_answer.strip().lower() == current_question.answer.strip().lower())
+            print(f"Comparison (short_answer): '{selected_answer.strip().lower()}' == '{current_question.answer.strip().lower()}' = {is_correct}")
+        else:
+            # Fallback
+            is_correct = (selected_answer.strip() == current_question.answer.strip())
         
         # Prevent duplicates
         PartialAnswer.query.filter_by(
@@ -237,6 +265,7 @@ def attempt_quiz(quiz_id):
                 quiz_id=quiz_id,
                 question_id=question_id,
                 student=student_name,
+                selected_answer=selected_answer,
                 is_correct=is_correct,
                 time_taken=time_taken,
                 points=points,
@@ -245,7 +274,7 @@ def attempt_quiz(quiz_id):
             db.session.add(partial)
             db.session.commit()
             
-            print(f'✓ Saved answer: correct={is_correct}, time={time_taken}s, points={points}')
+            print(f'✓ Saved answer: selected="{selected_answer}", correct={is_correct}, time={time_taken}s, points={points}')
             
             # Update leaderboard - CRITICAL: Only for current quiz
             PointService.update_question_rank_bonuses(quiz_id, question_id)
@@ -386,8 +415,11 @@ def attempt_quiz(quiz_id):
         'option2': current_q.option2,
         'option3': current_q.option3,
         'option4': current_q.option4,
+        'answer': current_q.answer,
         'correct_answer': current_q.answer,
         'time_limit': current_q.time_limit,
+        'points': current_q.points or 10,
+        'question_type': current_q.question_type or 'mcq',
     }
     
     template_name = 'attempt_quiz.html' if quiz.has_timer else 'normal_attempt_quiz.html'
@@ -659,3 +691,55 @@ def api_question_leaderboard(quiz_id, question_id):
         'participants': len(leaderboard_data),
         'leaderboard': leaderboard_data,
     })
+
+
+@student_bp.route('/quiz_summary/<int:quiz_id>')
+@require_student
+def quiz_summary(quiz_id):
+    """
+    Detailed summary of a completed quiz attempt for a student.
+    """
+    username = session.get('username')
+    quiz = Quiz.query.get(quiz_id)
+
+    if not quiz:
+        flash("This quiz has been deleted by the admin.", "warning")
+        return redirect(url_for('student.history'))
+
+    # Get the final result for this student and quiz
+    result_obj = Result.query.filter_by(
+        quiz_id=quiz_id, student=username
+    ).first()
+
+    if not result_obj:
+        flash("Result not found. Make sure you have completed this quiz.", "warning")
+        return redirect(url_for('student.history'))
+
+    # Fetch all questions for this quiz
+    questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
+
+    # Fetch the student's partial answers
+    student_answers_list = PartialAnswer.query.filter_by(
+        quiz_id=quiz_id, student=username
+    ).all()
+
+    # Calculate some additional metrics for the template
+    total_time_str = f"{int(result_obj.time_taken // 60):02d}:{int(result_obj.time_taken % 60):02d}"
+    
+    # We map answers by question ID for easy template access
+    answers_map = {}
+    for ans in student_answers_list:
+        answers_map[ans.question_id] = {
+            'selected_answer': ans.selected_answer,
+            'is_correct': ans.is_correct,
+            'time_taken': ans.time_taken,
+        }
+
+    return render_template(
+        'student_quiz_summary.html',
+        quiz=quiz,
+        result=result_obj,
+        questions=questions,
+        answers_map=answers_map,
+        total_time_str=total_time_str
+    )

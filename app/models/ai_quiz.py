@@ -36,6 +36,7 @@ class AIQuestion(db.Model):
     option_c       = db.Column(db.String(512), nullable=False)
     option_d       = db.Column(db.String(512), nullable=False)
     correct_answer = db.Column(db.String(1), nullable=False) # A, B, C, or D
+    explanation    = db.Column(db.Text, nullable=True) # Added for Gemini-style details
     order_index    = db.Column(db.Integer, nullable=False, default=0)
 
     def to_dict(self):
@@ -43,5 +44,6 @@ class AIQuestion(db.Model):
             "order": self.order_index + 1,
             "question": self.question_text,
             "options": [self.option_a, self.option_b, self.option_c, self.option_d],
-            "correct_answer": self.correct_answer
+            "correct_answer": self.correct_answer,
+            "explanation": self.explanation
         }

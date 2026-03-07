@@ -33,7 +33,11 @@
     letter-spacing: 1px;
     margin-bottom: 40px;
 }
-
+.logo-img {
+    width: 150px;   /* size adjust kar sakta hai */
+    height: 70px;
+    margin-right: 8px;
+}
 .pulse-dot {
     width: 8px;
     height: 8px;

@@ -7,6 +7,8 @@ Production-safe logging + clean OpenRouter handling.
 from __future__ import annotations
 
 import os
+import json
+import re
 from typing import Any, Dict, Optional
 
 import requests
@@ -88,11 +90,14 @@ class AIService:
                 cls.OPENROUTER_BASE_URL,
                 headers=headers,
                 json=payload,
-                timeout=40,
+                timeout=60,
             )
+        except requests.Timeout:
+            raise RuntimeError("AI is taking too long to respond. Please try again.")
+
         except requests.RequestException as e:
             raise RuntimeError(f"Network error: {e}")
-
+            
         # -------- CLEAN LOGGING (NO BLANK CMD) --------
         try:
             json_preview = response.json()
@@ -136,6 +141,125 @@ class AIService:
             raise RuntimeError("Empty response from AI.")
 
         return content.strip()
+
+    # ---------------------------------------------------
+    # Admin Quiz Generation
+    # ---------------------------------------------------
+
+    @classmethod
+    def generate_quiz(
+        cls,
+        prompt: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Specialized method for Admin Quiz Generation.
+        Forces the AI to return structured JSON for MCQs.
+        """
+        metadata = metadata or {}
+        model_name = cls._get_model_name()
+
+        system_prompt = (
+            "You are QuizX AI, a premium educational assistant. Your goal is to generate high-quality MCQs in a style inspired by Google Gemini: "
+            "clear, concise, and with professional explanations.\n\n"
+            "STRICT JSON OUTPUT FORMAT:\n"
+            "{\n"
+            "  \"type\": \"admin_quiz\",\n"
+            "  \"quiz_id\": \"string (format: QZ-YYYYMMDD-XXXX)\",\n"
+            "  \"title\": \"string (e.g., Python MCQ Set)\",\n"
+            "  \"topic\": \"string\",\n"
+            "  \"difficulty\": \"string\",\n"
+            "  \"summary\": \"A VERY DETAILED Gemini-style formatted text for the chat bubble. Use the following structure EXACTLY:\n\n"
+            "### [Title]\n"
+            "(Designed for exam-style practice - clear, concise, and with brief explanations)\n"
+            "---\n\n"
+            "### 1️⃣ [Question Title]\n"
+            "Question: [Text]\n\n"
+            "A. [Opt]\nB. [Opt]\nC. [Opt]\nD. [Opt]\n\n"
+            "Correct Answer: [Letter] – [Text]\n\n"
+            "Explanation:\n- [Bullet points explaining why]\n\n"
+            "---\n"
+            "(Repeat for all questions)\n\n"
+            "### Answer Key Summary\n"
+            "| # | Correct Option |\n"
+            "|---|----------------|\n"
+            "| 1 | [Letter] |\n"
+            "...\",\n"
+            "  \"questions\": [\n"
+            "    {\n"
+            "      \"order\": number,\n"
+            "      \"question\": \"string\",\n"
+            "      \"options\": [\"Option A\", \"Option B\", \"Option C\", \"Option D\"],\n"
+            "      \"correct_answer\": \"A|B|C|D\",\n"
+            "      \"explanation\": \"Brief explanation (used by the builder modal).\"\n"
+            "    }\n"
+            "  ]\n"
+            "}\n\n"
+            "Behavioral Guidelines:\n"
+            "- The 'summary' field MUST be the full formatted text that the user will read in the chat bubble. It should look premium and structured.\n"
+            "- Ensure the correct_answer is accurate.\n"
+            "- Return ONLY the JSON object. No pre-text or post-text."
+        )
+
+        try:
+            # We use _call_model but with the specialized system prompt logic override
+            # To keep it clean, we'll call requests directly or refactor _call_model.
+            # Let's refactor _call_model to accept an optional system_prompt.
+            reply_text = cls._call_model_internal(prompt, system_prompt)
+            
+            # Clean up potential markdown code blocks
+            json_match = re.search(r'\{.*\}', reply_text, re.DOTALL)
+            if json_match:
+                reply_text = json_match.group(0)
+            
+            quiz_data = json.loads(reply_text)
+            return {
+                "success": True,
+                "data": quiz_data,
+                "model": model_name
+            }
+
+        except Exception as exc:
+            current_app.logger.error("Admin AI Generation failed: %s", exc)
+            return {
+                "success": False,
+                "error": str(exc),
+                "model": model_name
+            }
+
+    @classmethod
+    def _call_model_internal(cls, user_message: str, system_prompt: str) -> str:
+        """Internal helper for custom system prompts"""
+        api_key = cls._get_api_key()
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY is missing.")
+
+        payload = {
+            "model": cls._get_model_name(),
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            "temperature": 0.4, # Lower temperature for structural stability
+        }
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        response = requests.post(
+            cls.OPENROUTER_BASE_URL,
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+        
+        if not response.ok:
+            raise RuntimeError(f"AI API Error: {response.status_code}")
+            
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
 
     # ---------------------------------------------------
     # Public Chat Method

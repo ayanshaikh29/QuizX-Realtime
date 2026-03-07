@@ -18,12 +18,13 @@
 
 <body style="background: #f8fafc;">
 
+    <div class="sidebar-overlay"></div>
     <div class="dashboard-wrapper">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/" class="logo-box">
-    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
-</a>
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
+                </a>
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
@@ -42,9 +43,14 @@
 
         <main class="main-content">
             <header class="content-header">
-                <div>
-                    <h4 class="fw-bold mb-0">Performance Analytics</h4>
-                    <p class="text-muted small mb-0">Deep dive into your past achievements</p>
+                <div class="d-flex align-items-center">
+                    <button class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h4 class="fw-bold mb-0">Performance Analytics</h4>
+                        <p class="text-muted small mb-0">Deep dive into your past achievements</p>
+                    </div>
                 </div>
             </header>
 
@@ -54,81 +60,41 @@
                     {% for h in history %}
                     {% set percentage = (h.score / h.total * 100) if h.total else 0 %}
                     <div class="col-xl-4 col-md-6 delay-{{ loop.index if loop.index < 4 else 1 }}">
-                        <div class="history-card" data-bs-toggle="modal" data-bs-target="#detailModal{{ h.id }}">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div class="score-circle">
-                                    {{ percentage | round(0) }}%
-                                </div>
-                                {% if percentage >= 40 %}
-                                <span class="status-pill-advanced pill-pass">PASSED</span>
-                                {% else %}
-                                <span class="status-pill-advanced pill-fail">RE-TAKE</span>
-                                {% endif %}
-                            </div>
-
-                            <h5 class="fw-extrabold mb-1">Quiz #{{ h.quiz_id }}</h5>
-                            <p class="text-muted tiny fw-bold">
-                                <i class="far fa-calendar-alt me-1"></i>
-                                {% if h.submitted_at %}
-                                {{ h.submitted_at.strftime('%d %B %Y') }}
-                                {% else %}
-                                Not Available
-                                {% endif %}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                                <div>
-                                    <p class="text-muted tiny mb-0">Points Earned</p>
-                                    <h6 class="fw-bold mb-0 text-dark">{{ h.score }} / {{ h.total }}</h6>
-                                </div>
-                                <button class="btn btn-sm rounded-pill px-3 fw-bold"
-                                    style="background: var(--primary-light); color: var(--primary);">
-                                    Details <i class="fas fa-chevron-right ms-1"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="modal fade" id="detailModal{{ h.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content modal-content-pro">
-                                    <div class="modal-header-pro">
-                                        <div class="d-flex justify-content-between align-items-start w-100">
-                                            <div>
-                                                <span class="detail-badge mb-2 d-inline-block">QUIZ SUMMARY</span>
-                                                <h3 class="fw-extrabold mb-0">Quiz Analysis</h3>
-                                            </div>
-                                            <button type="button" class="btn-close btn-close-white"
-                                                data-bs-dismiss="modal"></button>
-                                        </div>
+                        <a href="{{ url_for('student.quiz_summary', quiz_id=h.quiz_id) }}" class="text-decoration-none">
+                            <div class="history-card">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div class="score-circle">
+                                        {{ percentage | round(0) }}%
                                     </div>
-                                    <div class="modal-body p-4">
-                                        <div class="result-item">
-                                            <span class="text-muted fw-bold"><i
-                                                    class="fas fa-check-circle text-success me-2"></i> Correct
-                                                Answers</span>
-                                            <span class="fw-extrabold text-dark">{{ h.score }}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="text-muted fw-bold"><i
-                                                    class="fas fa-times-circle text-danger me-2"></i> Total
-                                                Questions</span>
-                                            <span class="fw-extrabold text-dark">{{ h.total }}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="text-muted fw-bold"><i
-                                                    class="fas fa-stopwatch text-primary me-2"></i> Completion
-                                                Time</span>
-                                            <span class="fw-extrabold text-dark">04:22 mins</span>
-                                        </div>
+                                    {% if percentage >= 40 %}
+                                    <span class="status-pill-advanced pill-pass">PASSED</span>
+                                    {% else %}
+                                    <span class="status-pill-advanced pill-fail">RE-TAKE</span>
+                                    {% endif %}
+                                </div>
 
-                                        <div class="mt-4 text-center">
-                                            <p class="small text-muted mb-0">Great job, {{ session.username }}!</p>
-                                            <p class="tiny text-muted uppercase">Keep pushing for that 100%</p>
-                                        </div>
+                                <h5 class="fw-extrabold mb-1">Quiz #{{ h.quiz_id }}</h5>
+                                <p class="text-muted tiny fw-bold">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {% if h.submitted_at %}
+                                    {{ h.submitted_at.strftime('%d %B %Y') }}
+                                    {% else %}
+                                    Not Available
+                                    {% endif %}
+                                </p>
+
+                                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                                    <div>
+                                        <p class="text-muted tiny mb-0">Points Earned</p>
+                                        <h6 class="fw-bold mb-0 text-dark">{{ h.score }} / {{ h.total }}</h6>
                                     </div>
+                                    <span class="btn btn-sm rounded-pill px-3 fw-bold"
+                                        style="background: var(--primary-light); color: var(--primary);">
+                                        Details <i class="fas fa-chevron-right ms-1"></i>
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     {% endfor %}
                 </div>
@@ -148,9 +114,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/responsive.js') }}"></script>
 
-{# ── QuizX AI Chat Widget ── #}
-{% include 'components/chat_widget.html' %}
+    {# ── QuizX AI Chat Widget ── #}
+    {% include 'components/chat_widget.html' %}
 
 </body>
 

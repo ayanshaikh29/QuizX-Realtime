@@ -23,6 +23,23 @@ def register_socket_events():
         join_room(room_name)
         print(f'✅ User joined room: {room_name}')
     
+    @socketio.on('admin_start_quiz')
+    def admin_start_quiz(data):
+        """Admin starts the quiz - emit quiz_started event to all students"""
+        quiz_id = int(data['quiz_id'])
+        room_name = f"quiz_{quiz_id}"
+        print(f'🚀 Admin started quiz {quiz_id}')
+        
+        # Initialize quiz state
+        if quiz_id not in quiz_state:
+            quiz_state[quiz_id] = {'current_qindex': 0, 'started': True}
+        else:
+            quiz_state[quiz_id]['started'] = True
+        
+        # Emit quiz_started event to all students in the room
+        socketio.emit('quiz_started', {'quiz_id': quiz_id}, room=room_name)
+        print(f'📡 Emitted quiz_started to room {room_name}')
+    
     @socketio.on('admin_next_question')
     def admin_next_question(data):
         """Admin advances to next question"""
