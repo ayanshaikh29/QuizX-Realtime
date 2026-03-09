@@ -205,34 +205,65 @@
                             <h6 class="text-muted">Question {{ loop.index }}</h6>
                             <h5 class="fw-bold mb-3">{{ q.question }}</h5>
 
+                            {% if q.question_type == 'mcq' or q.question_type == 'checkbox' %}
+                            {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
                             {% if q.question_type == 'checkbox' %}
                             {% set correct_list = (q.correct_answers or "").split(',') %}
                             {% set selected_list = (selected or "").split(',') %}
+                            {% set is_this_correct = (opt in correct_list) %}
+                            {% set student_picked_this = (opt in selected_list) %}
+                            {% else %}
+                            {% set is_this_correct = (opt == q.answer) %}
+                            {% set student_picked_this = (selected == opt) %}
                             {% endif %}
-
                             <div
-                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option1 in correct_list %}correct{% elif q.option1 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option1 == q.answer %}correct{% elif selected == q.option1 %}wrong-selected{% endif %}{% endif %}">
-                                <span class="option-letter">A</span>
-                                <span>{{ q.option1 }}</span>
+                                class="option-item {{ 'correct' if is_this_correct else 'wrong-selected' if student_picked_this else '' }}">
+                                <span class="option-letter">{{ ["A", "B", "C", "D"][loop.index0] }}</span>
+                                <span>{{ opt }}</span>
+                                {% if student_picked_this and not is_this_correct %}
+                                <span class="badge bg-danger ms-auto"><i class="fas fa-times me-1"></i>Your
+                                    Answer</span>
+                                {% elif student_picked_this and is_this_correct %}
+                                <span class="badge bg-success ms-auto"><i class="fas fa-check me-1"></i>Your
+                                    Answer</span>
+                                {% endif %}
                             </div>
-
+                            {% endfor %}
+                            {% elif q.question_type == 'true_false' %}
+                            {% for opt in ['True', 'False'] %}
+                            {% set is_this_correct = (opt == q.answer) %}
+                            {% set student_picked_this = (selected == opt) %}
                             <div
-                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option2 in correct_list %}correct{% elif q.option2 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option2 == q.answer %}correct{% elif selected == q.option2 %}wrong-selected{% endif %}{% endif %}">
-                                <span class="option-letter">B</span>
-                                <span>{{ q.option2 }}</span>
+                                class="option-item {{ 'correct' if is_this_correct else 'wrong-selected' if student_picked_this else '' }}">
+                                <span class="option-letter">{{ ["T", "F"][loop.index0] }}</span>
+                                <span>{{ opt | upper }}</span>
+                                {% if student_picked_this and not is_this_correct %}
+                                <span class="badge bg-danger ms-auto"><i class="fas fa-times me-1"></i>Your
+                                    Answer</span>
+                                {% elif student_picked_this and is_this_correct %}
+                                <span class="badge bg-success ms-auto"><i class="fas fa-check me-1"></i>Your
+                                    Answer</span>
+                                {% endif %}
                             </div>
-
+                            {% endfor %}
+                            {% elif q.question_type == 'short_answer' %}
+                            {% set is_correct = (selected and selected|lower == q.answer|lower) %}
                             <div
-                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option3 in correct_list %}correct{% elif q.option3 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option3 == q.answer %}correct{% elif selected == q.option3 %}wrong-selected{% endif %}{% endif %}">
-                                <span class="option-letter">C</span>
-                                <span>{{ q.option3 }}</span>
+                                class="p-3 border rounded-3 mb-3 {{ 'border-success bg-success bg-opacity-10' if is_correct else 'border-danger bg-danger bg-opacity-10' if selected else 'bg-light' }}">
+                                <div class="text-uppercase text-muted small fw-bold mb-1">Your Answer</div>
+                                <div
+                                    class="fs-5 {{ 'text-success fw-bold' if is_correct else 'text-danger fw-bold' if selected else 'text-muted fst-italic' }}">
+                                    {{ selected if selected else "No answer provided" }}
+                                </div>
                             </div>
-
-                            <div
-                                class="option-item {% if q.question_type == 'checkbox' %}{% if q.option4 in correct_list %}correct{% elif q.option4 in selected_list %}wrong-selected{% endif %}{% else %}{% if q.option4 == q.answer %}correct{% elif selected == q.option4 %}wrong-selected{% endif %}{% endif %}">
-                                <span class="option-letter">D</span>
-                                <span>{{ q.option4 }}</span>
+                            {% if not is_correct %}
+                            <div class="p-3 border border-success rounded-3 bg-white mt-2">
+                                <div class="text-uppercase text-success small fw-bold mb-1"><i
+                                        class="fas fa-lightbulb me-1"></i>Correct Answer</div>
+                                <div class="fs-5 fw-bold">{{ q.answer }}</div>
                             </div>
+                            {% endif %}
+                            {% endif %}
 
                         </div>
 

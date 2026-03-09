@@ -58,24 +58,12 @@
                     <i class="fas fa-bolt me-1"></i> LIVE QUIZ
                 </span>
             </div>
-            
+
             <h1 class="question-title text-center">{{ current_question.question | safe }}</h1>
 
             <form id="quizForm">
                 <div class="options-grid mt-4">
-                    {% if current_question.question_type == 'checkbox' %}
-                    {% for opt in [current_question.option1, current_question.option2, current_question.option3,
-                    current_question.option4] if opt %}
-                    <label class="option-label checkbox-option animate__animated animate__zoomIn"
-                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
-                        <input type="checkbox" name="answer[]" value="{{ opt }}" data-option="{{ opt }}">
-                        <div class="option-content" data-option="{{ opt }}">
-                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
-                            <div class="option-text">{{ opt }}</div>
-                        </div>
-                    </label>
-                    {% endfor %}
-                    {% else %}
+                    {% if current_question.question_type == 'mcq' %}
                     {% for opt in [current_question.option1, current_question.option2, current_question.option3,
                     current_question.option4] if opt %}
                     <label class="option-label animate__animated animate__zoomIn"
@@ -87,6 +75,36 @@
                         </div>
                     </label>
                     {% endfor %}
+                    {% elif current_question.question_type == 'checkbox' %}
+                    {% for opt in [current_question.option1, current_question.option2, current_question.option3,
+                    current_question.option4] if opt %}
+                    <label class="option-label checkbox-option animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="checkbox" name="answer[]" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["A", "B", "C", "D"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% elif current_question.question_type == 'true_false' %}
+                    {% for opt in ['True', 'False'] %}
+                    <label class="option-label animate__animated animate__zoomIn"
+                        style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                        <input type="radio" name="answer" value="{{ opt }}" data-option="{{ opt }}">
+                        <div class="option-content" data-option="{{ opt }}">
+                            <div class="option-key">{{ ["T", "F"][loop.index0] }}</div>
+                            <div class="option-text">{{ opt | upper }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% elif current_question.question_type == 'short_answer' %}
+                    <div class="w-100 animate__animated animate__fadeInUp" style="grid-column: 1 / -1;">
+                        <input type="text" name="answer" id="shortAnswerInput"
+                            class="form-control form-control-lg rounded-4 border-2 p-3 text-center fw-bold"
+                            placeholder="Type your answer here..." autocomplete="off"
+                            style="border-color: #e2e8f0; font-size: 1.25rem;">
+                    </div>
                     {% endif %}
                 </div>
 
@@ -216,6 +234,9 @@
                         if (qType === 'checkbox') {
                             const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
                             if (selected.length > 0) val = selected.join(',');
+                        } else if (qType === 'short_answer') {
+                            const input = document.getElementById("shortAnswerInput");
+                            if (input && input.value.trim()) val = input.value.trim();
                         } else {
                             const selectedRadio = document.querySelector('input[name="answer"]:checked');
                             if (selectedRadio) val = selectedRadio.value;
@@ -261,6 +282,9 @@
             if (qType === 'checkbox') {
                 const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
                 if (selected.length > 0) val = selected.join(',');
+            } else if (qType === 'short_answer') {
+                const input = document.getElementById("shortAnswerInput");
+                if (input && input.value.trim()) val = input.value.trim();
             } else {
                 const sel = document.querySelector("input[name='answer']:checked");
                 if (sel) val = sel.value;
@@ -281,7 +305,15 @@
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
-            document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = true);
+
+            const qType = "{{ current_question.question_type }}";
+            if (qType === 'short_answer') {
+                document.getElementById("shortAnswerInput").disabled = true;
+            } else if (qType === 'checkbox') {
+                document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = true);
+            } else {
+                document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
+            }
             const actualTimeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
             const finalTime = Math.min(actualTimeTaken, timerMode === "overall" ? totalQuizTime : timeLimit);
 
@@ -333,7 +365,13 @@
                     submitted = false;
                     btn.disabled = false;
                     btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
-                    document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                    if (qType === 'short_answer') {
+                        document.getElementById("shortAnswerInput").disabled = false;
+                    } else if (qType === 'checkbox') {
+                        document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
+                    } else {
+                        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                    }
                 });
         }
 
@@ -342,11 +380,25 @@
             const correctList = correctAnswer.split(',');
             const selectedList = selectedAnswer.split(',');
 
-            document.querySelectorAll(".option-content").forEach(opt => {
-                const t = opt.getAttribute("data-option");
-                if (correctList.includes(t)) opt.classList.add("correct");
-                if (selectedList.includes(t) && !correctList.includes(t)) opt.classList.add("incorrect");
-            });
+            if (qType === 'short_answer') {
+                const input = document.getElementById("shortAnswerInput");
+                input.classList.remove("is-valid", "is-invalid");
+                if (isCorrect) {
+                    input.classList.add("is-valid");
+                    input.style.borderColor = "#10b981";
+                    input.style.backgroundColor = "#f0fdf4";
+                } else {
+                    input.classList.add("is-invalid");
+                    input.style.borderColor = "#ef4444";
+                    input.style.backgroundColor = "#fef2f2";
+                }
+            } else {
+                document.querySelectorAll(".option-content").forEach(opt => {
+                    const t = opt.getAttribute("data-option");
+                    if (correctList.includes(t)) opt.classList.add("correct");
+                    if (selectedList.includes(t) && !correctList.includes(t)) opt.classList.add("incorrect");
+                });
+            }
 
             const banner = document.createElement("div");
             banner.className = `result-banner ${isCorrect ? "correct" : "incorrect"} animate__animated animate__zoomIn`;
@@ -363,38 +415,38 @@
 
         document.addEventListener('keydown', function (event) {
 
-        if (submitted) return;
+            if (submitted) return;
 
-        const qType = "{{ current_question.question_type }}";
+            const qType = "{{ current_question.question_type }}";
 
-        if (event.key >= '1' && event.key <= '4') {
+            if (event.key >= '1' && event.key <= '4' && qType !== 'short_answer') {
 
-            const index = parseInt(event.key) - 1;
-            let option;
-            if (qType === 'checkbox') {
-                option = document.querySelectorAll('input[name="answer[]"]')[index];
-            } else {
-                option = document.querySelectorAll('input[name="answer"]')[index];
+                const index = parseInt(event.key) - 1;
+                let option;
+                if (qType === 'checkbox') {
+                    option = document.querySelectorAll('input[name="answer[]"]')[index];
+                } else {
+                    option = document.querySelectorAll('input[name="answer"]')[index];
+                }
+
+                if (!option) return;
+
+                if (qType === "checkbox") {
+                    // toggle checkbox
+                    option.checked = !option.checked;
+                } else {
+                    // radio behavior
+                    option.checked = true;
+                }
+
+                option.dispatchEvent(new Event('change'));
             }
 
-            if (!option) return;
-
-            if (qType === "checkbox") {
-            // toggle checkbox
-                option.checked = !option.checked;
-            } else {
-            // radio behavior
-                option.checked = true;
+            if (event.key === "Enter") {
+                document.getElementById("submitBtn").click();
             }
 
-            option.dispatchEvent(new Event('change'));
-        }
-
-        if (event.key === "Enter") {
-            document.getElementById("submitBtn").click();
-        }
-
-    });
+        });
 
         // Add event listeners for radio inputs
         document.querySelectorAll('input[name="answer"]').forEach(input => {

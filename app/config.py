@@ -19,6 +19,10 @@ class Config:
     # Use SAFE FREE MODEL as default
     AI_MODEL_NAME = os.getenv("AI_MODEL_NAME", "openrouter/free")
 
+    # ================= GOOGLE OAUTH =================
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "599203668761-afep71h813l6k97ikhlv7i9rqur63147.apps.googleusercontent.com")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "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")
+
     # ================= DATABASE =================
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",

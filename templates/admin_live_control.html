@@ -285,22 +285,52 @@
                                         <div class="question-badge"><span>Question {{ current_index + 1 }}</span></div>
                                         <h2 class="question-text">{{ current_question.question }}</h2>
                                         <div class="options-grid">
+                                            {% if current_question.question_type == 'mcq' or
+                                            current_question.question_type == 'checkbox' %}
                                             {% set options = [
                                             {'value': current_question.option1, 'letter': 'A', 'color': 'red'},
                                             {'value': current_question.option2, 'letter': 'B', 'color': 'blue'},
                                             {'value': current_question.option3, 'letter': 'C', 'color': 'yellow'},
                                             {'value': current_question.option4, 'letter': 'D', 'color': 'green'}
                                             ] %}
+                                            {% for opt in options if opt.value %}
+                                            <div
+                                                class="option-card {{ opt.color }} {{ 'correct' if opt.value in (current_question.answer or '').split(',') else '' }}">
+                                                <span class="option-letter">{{ opt.letter }}</span>
+                                                <span class="option-text">{{ opt.value }}</span>
+                                                {% if opt.value in (current_question.answer or '').split(',') %}
+                                                <span class="correct-badge"><i class="fas fa-check"></i></span>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                            {% elif current_question.question_type == 'true_false' %}
+                                            {% set options = [
+                                            {'value': 'True', 'letter': 'T', 'color': 'blue'},
+                                            {'value': 'False', 'letter': 'F', 'color': 'red'}
+                                            ] %}
                                             {% for opt in options %}
                                             <div
                                                 class="option-card {{ opt.color }} {{ 'correct' if current_question.answer == opt.value else '' }}">
                                                 <span class="option-letter">{{ opt.letter }}</span>
-                                                <span class="option-text">{{ opt.value }}</span>
+                                                <span class="option-text">{{ opt.value | upper }}</span>
                                                 {% if current_question.answer == opt.value %}
                                                 <span class="correct-badge"><i class="fas fa-check"></i></span>
                                                 {% endif %}
                                             </div>
                                             {% endfor %}
+                                            {% elif current_question.question_type == 'short_answer' %}
+                                            <div class="w-100 p-4 border rounded-3 bg-light text-center"
+                                                style="grid-column: 1 / -1;">
+                                                <p class="text-muted mb-2 text-uppercase fw-bold"
+                                                    style="font-size: 0.85rem;"><i
+                                                        class="fas fa-keyboard me-2"></i>Short Answer Response Format
+                                                </p>
+                                                <div
+                                                    class="fs-4 fw-bold text-success border border-success border-2 rounded p-3 d-inline-block bg-white shadow-sm">
+                                                    {{ current_question.answer }}
+                                                </div>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     {% endif %}

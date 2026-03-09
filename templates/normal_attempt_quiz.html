@@ -395,21 +395,21 @@
                     option = document.querySelectorAll('input[name="answer"]')[index];
                 }
 
-            if (!option) return;
+                if (!option) return;
 
-            if (qType === "checkbox") {
-                option.checked = !option.checked;
-            } else {
-                option.checked = true;
+                if (qType === "checkbox") {
+                    option.checked = !option.checked;
+                } else {
+                    option.checked = true;
+                }
+
+                option.dispatchEvent(new Event('change'));
             }
 
-            option.dispatchEvent(new Event('change'));
-        }
-
-        if (event.key === 'Enter') {
-            document.getElementById("submitBtn").click();
-        }
-    });
+            if (event.key === 'Enter') {
+                document.getElementById("submitBtn").click();
+            }
+        });
 
         // Add event listeners for all input types
         document.querySelectorAll('input[name="answer"]').forEach(input => {

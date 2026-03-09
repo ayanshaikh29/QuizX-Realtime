@@ -5,7 +5,7 @@ Creates and configures the Flask application
 
 from flask import Flask
 from app.config import get_config
-from app.extensions import db, socketio, migrate
+from app.extensions import db, socketio, migrate, oauth
 from sqlalchemy import text
 import pytz
 
@@ -36,6 +36,15 @@ def create_app(config_name=None):
     # ----------------------------
     db.init_app(app)
     migrate.init_app(app, db)
+    oauth.init_app(app)
+
+    oauth.register(
+        name='google',
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
 
     socketio.init_app(
         app,
@@ -96,6 +105,11 @@ def create_app(config_name=None):
             db.session.execute(text("""
                 ALTER TABLE partial_answer
                 ADD COLUMN IF NOT EXISTS selected_answer VARCHAR(255);
+            """))
+
+            db.session.execute(text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS email VARCHAR(120) UNIQUE;
             """))
 
             # Create group table if not exists (must be before adding FK)

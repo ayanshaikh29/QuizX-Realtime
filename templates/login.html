@@ -72,6 +72,16 @@
                     </div>
 
                     <button type="submit" class="btn-main anim-btn">Sign Up</button>
+
+                    <div class="separator anim-text">
+                        <span>OR</span>
+                    </div>
+
+                    <a href="{{ url_for('auth.google_login') }}" class="btn-google anim-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                        <span>Sign up with Google</span>
+                    </a>
+
                     <div class="mobile-toggle">Already have an account? <span onclick="toggleAuth()">Sign In</span>
                     </div>
                 </div>
@@ -110,6 +120,16 @@
                     </div>
 
                     <button type="submit" class="btn-main anim-btn">Sign In</button>
+
+                    <div class="separator anim-text">
+                        <span>OR</span>
+                    </div>
+
+                    <a href="{{ url_for('auth.google_login') }}" class="btn-google anim-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                        <span>Sign in with Google</span>
+                    </a>
+
                     <div class="mobile-toggle">Don't have an account? <span onclick="toggleAuth()">Sign Up</span></div>
                 </div>
             </form>

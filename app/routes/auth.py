@@ -2,11 +2,12 @@
 Authentication Routes
 Handles login, logout, registration, profile
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import secrets
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.extensions import db
+from app.extensions import db, oauth
 from app.models import User
-from app.utils import get_current_user
+from app.utils.helpers import get_current_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -97,6 +98,88 @@ def logout():
     session.clear()
     flash('Logged out successfully.', 'info')
     return redirect(url_for('auth.index'))
+
+
+@auth_bp.route('/google-login')
+def google_login():
+    """Initiate Google OAuth login"""
+    try:
+        google = oauth.create_client('google')
+        redirect_uri = url_for('auth.google_callback', _external=True)
+        nonce = secrets.token_urlsafe(16)   # ✅ Generate nonce
+        session['oauth_nonce'] = nonce      # ✅ Store nonce in session
+        return google.authorize_redirect(redirect_uri, nonce=nonce)  # ✅ Pass nonce to Google
+    except Exception as e:
+        flash(f'Failed to initiate Google login: {str(e)}', 'error')
+        return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/google-callback')
+def google_callback():
+    """Handle Google OAuth callback"""
+    try:
+        google = oauth.create_client('google')
+        token = google.authorize_access_token()
+
+        nonce = session.pop('oauth_nonce', None)               # ✅ Retrieve stored nonce
+        user_info = google.parse_id_token(token, nonce=nonce)  # ✅ Pass nonce for verification
+
+        if not user_info:
+            flash('Failed to retrieve user info from Google.', 'error')
+            return redirect(url_for('auth.login'))
+
+        email = user_info.get('email')
+
+        # ✅ Extract real name from Google, fallback to given_name, then a default
+        name = (
+            user_info.get('name')
+            or user_info.get('given_name')
+            or "Google User"
+        )
+
+        if not email:
+            flash('Google account must have an email attached.', 'error')
+            return redirect(url_for('auth.login'))
+
+        # ✅ Look up existing user by email first
+        user = User.query.filter_by(email=email).first()
+
+        # ✅ Fallback: check by username = email (legacy/migration accounts)
+        if not user:
+            user = User.query.filter_by(username=email).first()
+
+        if not user:
+            # ✅ New user — store real name as username, not email
+            user = User(
+                username=name,
+                email=email,
+                role='student',
+                password=generate_password_hash('google_oauth_no_password')  # Placeholder
+            )
+            db.session.add(user)
+            db.session.commit()
+            flash(f'Welcome to QuizX, {name}!', 'success')
+        else:
+            # ✅ Existing user — keep their username, only patch missing email
+            if not user.email:
+                user.email = email
+                db.session.commit()
+            flash(f'Welcome back, {user.username}!', 'success')
+
+        # ✅ Store correct username (real name) in session
+        session['user_id'] = user.id
+        session['username'] = user.username  # will be real name, not email
+        session['role'] = user.role
+
+        return redirect(
+            url_for('admin.dashboard')
+            if user.role == 'admin'
+            else url_for('student.dashboard')
+        )
+
+    except Exception as e:
+        flash(f'Login failed: {str(e)}', 'error')
+        return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/profile')

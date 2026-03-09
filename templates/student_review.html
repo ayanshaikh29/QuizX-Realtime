@@ -18,26 +18,31 @@
 
 <body style="background: #f8fafc;">
 
-    <div class="dashboard-wrapper">
+    <div class="dashboard-wrapper d-flex">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>QuizX Student</span>
-                </div>
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" class="logo-img" alt="QuizX Logo">
+                </a>
             </div>
             <nav class="sidebar-nav">
-                <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
-                    Dashboard</a>
-                <a href="{{ url_for('student.quizzes') }}" class="nav-link"><i class="fas fa-play-circle"></i> Live
-                    Quizzes</a>
-                <a href="{{ url_for('student.history') }}" class="nav-link"><i class="fas fa-history"></i> My
-                    History</a>
-                <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="{{ url_for('student.dashboard') }}" class="nav-link">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{{ url_for('student.quizzes') }}" class="nav-link">
+                    <i class="fas fa-play-circle"></i> Live Quizzes
+                </a>
+                <a href="{{ url_for('student.history') }}" class="nav-link">
+                    <i class="fas fa-history"></i> My History
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
             </nav>
             <div class="sidebar-footer">
-                <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i>
-                    Logout</a>
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
         </aside>
 
@@ -166,6 +171,7 @@
                             <h3 class="q-text">{{ q.question }}</h3>
 
                             <div class="options-list">
+                                {% if q.question_type == 'mcq' or q.question_type == 'checkbox' %}
                                 {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
                                 {% if q.question_type == 'checkbox' %}
                                 {% set correct_list = (q.correct_answers or "").split(',') %}
@@ -174,10 +180,8 @@
                                 {% set student_picked_this = (opt in selected_list) %}
                                 {% else %}
                                 {% set is_this_correct = (opt == q.answer) %}
-                                {% set student_picked_this = (student_data and student_data.answer == loop.index|string)
-                                %}
+                                {% set student_picked_this = (student_data and student_data.answer == opt) %}
                                 {% endif %}
-
                                 <div
                                     class="opt-row {{ 'opt-correct' if is_this_correct }}{{ ' opt-wrong' if student_picked_this and not is_this_correct }}">
                                     <div class="d-flex align-items-center">
@@ -188,22 +192,60 @@
                                         <span class="your-pick">YOUR PICK</span>
                                         {% endif %}
                                     </div>
-
                                     {% if is_this_correct %}
-                                    <div class="opt-dot" style="background: #22c55e; color: white;">
-                                        <i class="fas fa-check"></i>
-                                    </div>
+                                    <div class="opt-dot" style="background: #22c55e; color: white;"><i
+                                            class="fas fa-check"></i></div>
                                     {% elif student_picked_this and not is_this_correct %}
-                                    <div class="opt-dot" style="background: #ef4444; color: white;">
-                                        <i class="fas fa-times"></i>
-                                    </div>
+                                    <div class="opt-dot" style="background: #ef4444; color: white;"><i
+                                            class="fas fa-times"></i></div>
                                     {% endif %}
                                 </div>
                                 {% endfor %}
+                                {% elif q.question_type == 'true_false' %}
+                                {% for opt in ['True', 'False'] %}
+                                {% set is_this_correct = (opt == q.answer) %}
+                                {% set student_picked_this = (student_data and student_data.answer == opt) %}
+                                <div
+                                    class="opt-row {{ 'opt-correct' if is_this_correct }}{{ ' opt-wrong' if student_picked_this and not is_this_correct }}">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-3 opacity-50 fw-bold">{{ ["T", "F"][loop.index0] }}</span>
+                                        <span>{{ opt | upper }}</span>
+                                        {% if student_picked_this %}
+                                        <span class="your-pick">YOUR PICK</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if is_this_correct %}
+                                    <div class="opt-dot" style="background: #22c55e; color: white;"><i
+                                            class="fas fa-check"></i></div>
+                                    {% elif student_picked_this and not is_this_correct %}
+                                    <div class="opt-dot" style="background: #ef4444; color: white;"><i
+                                            class="fas fa-times"></i></div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                {% elif q.question_type == 'short_answer' %}
+                                <div
+                                    class="p-3 border rounded-3 mb-3 {% if is_correct %}border-success bg-success bg-opacity-10{% elif student_data and student_data.answer %}border-danger bg-danger bg-opacity-10{% else %}bg-light{% endif %}">
+                                    <div class="text-uppercase text-muted small fw-bold mb-1">Your Answer</div>
+                                    <div
+                                        class="fs-5 {% if is_correct %}text-success fw-bold{% elif student_data and student_data.answer %}text-danger fw-bold{% else %}text-muted fst-italic{% endif %}">
+                                        {{ student_data.answer if student_data and student_data.answer else "No answer
+                                        provided" }}
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
 
-                            {% if not is_correct %}
-                            <div class="explain-box">
+                            {% if not is_correct and q.question_type == 'short_answer' %}
+                            <div class="explain-box mt-2">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="fas fa-lightbulb text-success"></i>
+                                    <span class="text-success fw-bold small text-uppercase">Correct Answer</span>
+                                </div>
+                                <p class="mb-0 fw-bold fs-5">{{ q.answer }}</p>
+                            </div>
+                            {% elif not is_correct and q.question_type != 'short_answer' %}
+                            <div class="explain-box mt-2">
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <i class="fas fa-lightbulb text-success"></i>
                                     <span class="text-success fw-bold small text-uppercase">Correct Answer</span>
