@@ -24,10 +24,7 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
     # ================= DATABASE =================
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg2://postgres:12345678@localhost:5432/quizx"
-    )
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
 
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
