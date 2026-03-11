@@ -1,0 +1,449 @@
+/* ═══════════════════════════════════════════════════════
+ *  chatbot_cards.css — QuizX AI Question Card Styles
+ *  Companion to chatbot_mcq.js multi-type quiz cards
+ * ═══════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ── Panel ── */
+.qx-quiz-panel {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    width: 100%;
+}
+
+.qx-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 4px 14px;
+}
+
+.qx-panel-count {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #5ba33a;
+}
+
+.qx-panel-time {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* ── Cards Container ── */
+.qx-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ── Card ── */
+.qx-qcard {
+    background: #fff;
+    border: 1px solid rgba(111, 191, 74, 0.15);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.qx-qcard:hover {
+    border-color: rgba(111, 191, 74, 0.3);
+    box-shadow: 0 4px 16px rgba(91, 163, 58, 0.08);
+}
+
+.qx-qcard.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+/* ── Card top bar ── */
+.qx-qcard-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px 8px;
+}
+
+.qx-qcard-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qx-grip {
+    color: #cbd5e1;
+    cursor: grab;
+    font-size: 0.85rem;
+}
+
+.qx-qcard-num {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #475569;
+}
+
+.qx-qcard-type {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.qx-qcard-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* ── Icon buttons ── */
+.qx-icon-btn {
+    background: none;
+    border: 1px solid rgba(111, 191, 74, 0.12);
+    border-radius: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.qx-icon-btn:hover {
+    color: #5ba33a;
+    border-color: #5ba33a;
+    background: rgba(91, 163, 58, 0.06);
+}
+
+.qx-icon-btn.del:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.06);
+}
+
+/* ── Question text ── */
+.qx-qcard-question {
+    padding: 0 16px 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+/* ── Card body (options area) ── */
+.qx-qcard-body {
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Option row ── */
+.qcard-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+}
+
+.qcard-opt-correct {
+    background: rgba(91, 163, 58, 0.08);
+    border-color: rgba(91, 163, 58, 0.2);
+}
+
+.qcard-opt-label {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.qcard-opt-label.correct {
+    background: #5ba33a;
+    color: #fff;
+}
+
+.qcard-opt-text {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #334155;
+    font-weight: 500;
+}
+
+.qcard-correct-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #5ba33a;
+    white-space: nowrap;
+}
+
+/* ── Short Answer ── */
+.qcard-short-ans {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.qcard-ans-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.qcard-ans-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+/* ── Explanation ── */
+.qcard-explanation {
+    margin-top: 6px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.12);
+    font-size: 0.8rem;
+    color: #78716c;
+    line-height: 1.5;
+}
+
+.qcard-explanation strong {
+    color: #f59e0b;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Card bottom bar ── */
+.qx-qcard-bottom {
+    padding: 8px 16px 14px;
+    display: flex;
+    gap: 8px;
+}
+
+/* ── Add to Quiz button ── */
+.qx-btn-add {
+    background: rgba(91, 163, 58, 0.08);
+    color: #5ba33a;
+    border: 1px solid rgba(91, 163, 58, 0.2);
+    border-radius: 10px;
+    padding: 7px 16px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.qx-btn-add:hover:not(:disabled) {
+    background: #5ba33a;
+    color: #fff;
+    border-color: #5ba33a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(91, 163, 58, 0.2);
+}
+
+.qx-btn-add.added {
+    background: #dcfce7;
+    color: #16a34a;
+    border-color: #bbf7d0;
+    cursor: default;
+}
+
+/* ═══════ Edit Mode ═══════ */
+.qcard-edit-form {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.qcard-edit-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.qcard-edit-textarea {
+    width: 100%;
+    border: 1px solid rgba(111, 191, 74, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1e293b;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.qcard-edit-textarea:focus {
+    border-color: #6fbf4a;
+    box-shadow: 0 0 0 3px rgba(111, 191, 74, 0.12);
+}
+
+.qcard-edit-textarea.small {
+    min-height: 40px;
+}
+
+.qcard-edit-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.qcard-radio,
+.qcard-checkbox {
+    accent-color: #5ba33a;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.qcard-edit-input {
+    flex: 1;
+    border: 1px solid rgba(111, 191, 74, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.qcard-edit-input:focus {
+    border-color: #6fbf4a;
+    box-shadow: 0 0 0 3px rgba(111, 191, 74, 0.12);
+}
+
+.qcard-edit-opt-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #94a3b8;
+    width: 20px;
+    text-align: center;
+}
+
+.qcard-edit-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.qcard-btn-cancel {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 7px 18px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.qcard-btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.qcard-btn-save {
+    background: #5ba33a;
+    border: none;
+    border-radius: 10px;
+    padding: 7px 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    box-shadow: 0 4px 10px rgba(91, 163, 58, 0.2);
+}
+
+.qcard-btn-save:hover {
+    background: #4e8f31;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(91, 163, 58, 0.3);
+}
+
+/* ═══════ Panel Action Bar ═══════ */
+.qx-panel-actions {
+    display: flex;
+    gap: 10px;
+    padding: 16px 0 4px;
+    flex-wrap: wrap;
+}
+
+.qx-btn-generate {
+    background: linear-gradient(135deg, #5ba33a, #6fbf4a);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(91, 163, 58, 0.2);
+}
+
+.qx-btn-generate:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(91, 163, 58, 0.3);
+}
+
+.qx-btn-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.qx-btn-addall {
+    background: rgba(91, 163, 58, 0.1);
+    color: #5ba33a;
+    border: 1px solid rgba(91, 163, 58, 0.25);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.qx-btn-addall:hover:not(:disabled) {
+    background: #5ba33a;
+    color: #fff;
+    border-color: #5ba33a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(91, 163, 58, 0.2);
+}
+
+.qx-btn-addall.added {
+    background: #dcfce7;
+    color: #16a34a;
+    border-color: #bbf7d0;
+    cursor: default;
+}

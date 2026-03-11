@@ -304,6 +304,73 @@
             clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
+    <script src="{{ url_for('static', filename='js/chatbot_mcq.js') }}"></script>
+    <script>
+    // ── Auto-fill from localStorage (AI-generated questions — multi-type) ──
+    (function () {
+        if (!window.QuizXMCQ) return;
+        var KEY = window.QuizXMCQ.STORAGE_KEY;
+        var stored;
+        try { stored = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (_) { stored = []; }
+        if (!stored.length) return;
+
+        var msg = stored.length + ' AI-generated question(s) ready. Load them into the form?';
+        if (!confirm(msg)) { localStorage.removeItem(KEY); return; }
+
+        stored.forEach(function (q, i) {
+            if (i > 0 && typeof addQuestion === 'function') addQuestion(false);
+
+            var container = document.getElementById('questions-container');
+            var blocks = container.querySelectorAll('.question-block');
+            var block = blocks[blocks.length - 1];
+            if (!block) return;
+
+            var editor = block.querySelector('.editor');
+            var hidden = block.querySelector("input[type='hidden'][name='question[]']");
+            if (editor) editor.textContent = q.question || '';
+            if (hidden) hidden.value = q.question || '';
+
+            var qtype = q.type || 'mcq';
+            var sel = block.querySelector('.q-type-group select');
+            if (sel) {
+                sel.value = qtype;
+                var allBlocks = container.querySelectorAll('.question-block');
+                var idx = 0;
+                allBlocks.forEach(function (b, bi) { if (b === block) idx = bi + 1; });
+                if (typeof changeQuestionType === 'function') changeQuestionType(sel, idx);
+            }
+
+            if (qtype === 'mcq') {
+                var opts = q.options || [];
+                var textInputs = block.querySelectorAll('.options-grid input[type="text"]');
+                for (var oi = 0; oi < 4; oi++) { if (textInputs[oi] && opts[oi]) textInputs[oi].value = opts[oi]; }
+                var letter = (q.correct_answer || 'A').toUpperCase();
+                var radioVal = letter.charCodeAt(0) - 64;
+                var radio = block.querySelector("input[type='radio'][value='" + radioVal + "']");
+                if (radio) radio.checked = true;
+            } else if (qtype === 'checkbox') {
+                var cbOpts = q.options || [];
+                var cbInputs = block.querySelectorAll('.options-grid input[type="text"]');
+                for (var ci = 0; ci < 4; ci++) { if (cbInputs[ci] && cbOpts[ci]) cbInputs[ci].value = cbOpts[ci]; }
+                (q.correct_answer_letters || []).forEach(function (l) {
+                    var v = l.charCodeAt(0) - 64;
+                    var cb = block.querySelector("input[type='checkbox'][value='" + v + "']");
+                    if (cb) cb.checked = true;
+                });
+            } else if (qtype === 'true_false') {
+                var ans = q.correct_answer || 'True';
+                var tfr = block.querySelector("input[type='radio'][value='" + ans + "']");
+                if (tfr) tfr.checked = true;
+            } else if (qtype === 'short_answer') {
+                var saInp = block.querySelector('.short-answer-wrapper input[type="text"]');
+                if (saInp) saInp.value = q.correct_answer || '';
+            }
+        });
+
+        localStorage.removeItem(KEY);
+        window.QuizXMCQ.showToast(stored.length + ' question(s) loaded into the form!');
+    })();
+    </script>
     {% include 'components/chat_widget.html' %}
 
 </body>

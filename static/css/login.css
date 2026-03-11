@@ -24,7 +24,7 @@ body {
     overflow: hidden;
     width: 850px;
     max-width: 100%;
-    min-height: 550px;
+    min-height: 620px;
 }
 
 /* ===== FORM CONTAINERS ===== */
@@ -81,9 +81,10 @@ form {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 50px;
+    padding: 0 40px;
     height: 100%;
     text-align: center;
+    overflow-y: auto;
 }
 
 .content-wrapper {
@@ -94,21 +95,21 @@ form {
 }
 
 .auth-logo {
-    height: 60px;
-    margin-bottom: 15px;
+    height: 50px;
+    margin-bottom: 10px;
 }
 
 h1 {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .subtitle {
     color: #64748b;
-    font-size: 14px;
-    margin-bottom: 25px;
+    font-size: 13px;
+    margin-bottom: 16px;
 }
 
 /* ===== INPUT GROUPS ===== */
@@ -116,9 +117,9 @@ h1 {
     background-color: #f1f5f9;
     display: flex;
     align-items: center;
-    padding: 12px 15px;
+    padding: 10px 15px;
     border-radius: 12px;
-    margin: 8px 0;
+    margin: 5px 0;
     width: 100%;
     position: relative;
     transition: box-shadow 0.3s ease;
@@ -164,7 +165,7 @@ h1 {
 /* ===== ROLE SLIDER ===== */
 .role-slider-container {
     width: 100%;
-    margin: 12px 0;
+    margin: 8px 0;
 }
 
 .role-slider {
@@ -224,11 +225,11 @@ h1 {
     color: #fff;
     font-size: 14px;
     font-weight: 700;
-    padding: 14px 45px;
+    padding: 12px 45px;
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    margin-top: 20px;
+    margin-top: 14px;
     width: 100%;
     transition: 0.3s;
     position: relative;
@@ -346,6 +347,32 @@ h1 {
     margin-top: 15px;
     font-size: 14px;
     color: #64748b;
+}
+
+/* ===== SIGN-IN PANEL SPACING (fewer fields, more room) ===== */
+.sign-in .input-group-custom {
+    padding: 12px 15px;
+    margin: 8px 0;
+}
+
+.sign-in .auth-logo {
+    height: 60px;
+    margin-bottom: 15px;
+}
+
+.sign-in h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.sign-in .subtitle {
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.sign-in .btn-main {
+    margin-top: 20px;
+    padding: 14px 45px;
 }
 
 .mobile-toggle span {
@@ -551,13 +578,13 @@ h1 {
     justify-content: center;
     gap: 12px;
     width: 100%;
-    padding: 12px;
-    margin-top: 15px;
+    padding: 10px;
+    margin-top: 10px;
     background: #ffffff !important;
     color: #3c4043 !important;
     border: 1px solid #dadce0 !important;
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     text-decoration: none;
     transition: all 0.3s ease;
@@ -580,7 +607,7 @@ h1 {
     display: flex;
     align-items: center;
     text-align: center;
-    margin: 20px 0;
+    margin: 12px 0;
     width: 100%;
     color: #8c8c8c;
     font-size: 0.85rem;

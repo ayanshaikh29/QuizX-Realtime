@@ -30,6 +30,7 @@
         <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
         <div class="nav-links" id="navLinks">
             <a href="#features">Features</a>
+            <a href="#ai-features">AI Features</a>
             <a href="#how-it-works">How it Works</a>
             <a href="#testimonials">Testimonials</a>
         </div>
@@ -149,6 +150,75 @@
                 <h3>Secure Workspaces</h3>
                 <p>Dedicated admin portals and student hubs. Keep your data safe with enterprise-grade role-based
                     authentication.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════ AI-Powered Learning Section ════════ -->
+    <section class="ai-section" id="ai-features">
+        <div class="ai-bg-orb ai-orb-1"></div>
+        <div class="ai-bg-orb ai-orb-2"></div>
+
+        <div class="section-header reveal">
+            <div class="ai-label">
+                <span class="ai-label-dot"></span> Powered by AI
+            </div>
+            <h2 class="section-title">AI-Powered <span class="gradient-text">Learning Experience</span></h2>
+            <p class="section-subtitle">Our intelligent engine adapts, generates, and explains — so every quiz feels personal, engaging, and effortless to create.</p>
+        </div>
+
+        <div class="ai-grid">
+            <!-- Card 1 — AI Quiz Generator -->
+            <div class="ai-card ai-card-reveal tilt-card">
+                <div class="ai-card-glow"></div>
+                <div class="ai-icon-wrap">
+                    <div class="ai-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                    <div class="ai-icon-ring"></div>
+                </div>
+                <h3>AI Quiz Generator</h3>
+                <p>Type a topic and let AI craft a complete quiz in seconds — questions, options, and answers, all ready to go live.</p>
+                <div class="ai-card-tag"><i class="fas fa-bolt"></i> Instant Generation</div>
+            </div>
+
+            <!-- Card 2 — AI Adaptive Quiz -->
+            <div class="ai-card ai-card-reveal tilt-card" style="--ai-delay: .12s">
+                <div class="ai-card-glow"></div>
+                <div class="ai-icon-wrap">
+                    <div class="ai-icon" style="background: rgba(168,85,247,.1); color: #a855f7;"><i class="fas fa-brain"></i></div>
+                    <div class="ai-icon-ring" style="border-color: rgba(168,85,247,.2);"></div>
+                </div>
+                <h3>AI Adaptive Quiz</h3>
+                <p>Questions dynamically adjust difficulty based on each student's performance — harder when they ace it, easier when they struggle.</p>
+                <div class="ai-card-tag" style="background: rgba(168,85,247,.08); color: #a855f7;"><i class="fas fa-chart-line"></i> Smart Difficulty</div>
+            </div>
+
+            <!-- Card 3 — AI Explanation System -->
+            <div class="ai-card ai-card-reveal tilt-card" style="--ai-delay: .24s">
+                <div class="ai-card-glow"></div>
+                <div class="ai-icon-wrap">
+                    <div class="ai-icon" style="background: rgba(59,130,246,.1); color: #3b82f6;"><i class="fas fa-lightbulb"></i></div>
+                    <div class="ai-icon-ring" style="border-color: rgba(59,130,246,.2);"></div>
+                </div>
+                <h3>AI Explanation System</h3>
+                <p>Wrong answer? AI instantly generates a clear, personalized explanation so students actually learn, not just guess.</p>
+                <div class="ai-card-tag" style="background: rgba(59,130,246,.08); color: #3b82f6;"><i class="fas fa-comment-dots"></i> Instant Feedback</div>
+            </div>
+
+            <!-- Card 4 — AI Multi-Question Generator (Featured) -->
+            <div class="ai-card ai-card-featured ai-card-reveal tilt-card" style="--ai-delay: .36s">
+                <div class="ai-card-glow"></div>
+                <div class="ai-icon-wrap">
+                    <div class="ai-icon ai-icon-lg"><i class="fas fa-layer-group"></i></div>
+                    <div class="ai-icon-ring"></div>
+                </div>
+                <h3>AI Multi-Question Generator</h3>
+                <p>Generate diverse question types from any topic with a single prompt. AI creates a balanced mix tailored to your needs.</p>
+                <div class="ai-types-row">
+                    <span class="ai-type-pill"><i class="fas fa-list-ol"></i> MCQ</span>
+                    <span class="ai-type-pill" style="--pill-color: #a855f7;"><i class="fas fa-check-double"></i> True/False</span>
+                    <span class="ai-type-pill" style="--pill-color: #f59e0b;"><i class="fas fa-square-check"></i> Checkbox</span>
+                    <span class="ai-type-pill" style="--pill-color: #3b82f6;"><i class="fas fa-pen-fancy"></i> Short Answer</span>
+                </div>
             </div>
         </div>
     </section>
@@ -441,6 +511,11 @@
         }, revealOptions);
 
         revealElements.forEach(el => {
+            revealOnScroll.observe(el);
+        });
+
+        // AI section card reveal (staggered)
+        document.querySelectorAll('.ai-card-reveal').forEach(el => {
             revealOnScroll.observe(el);
         });
 

@@ -3,6 +3,7 @@ Authentication Routes
 Handles login, logout, registration, profile
 """
 import secrets
+import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db, oauth
@@ -22,19 +23,34 @@ def index():
 def register():
     """User registration"""
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
         role = request.form.get('role')
 
-        if not username or not password or role not in ['admin', 'student']:
-            flash('Invalid input', 'error')
+        if not username or not email or not password or role not in ['admin', 'student']:
+            flash('All fields are required', 'error')
+
+        elif not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            flash('Please enter a valid email address', 'error')
+
+        elif password != confirm_password:
+            flash('Passwords do not match', 'error')
+
+        elif len(password) < 6:
+            flash('Password must be at least 6 characters', 'error')
 
         elif User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
 
+        elif User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+
         else:
             user = User(
                 username=username,
+                email=email,
                 password=generate_password_hash(password),
                 role=role,
             )

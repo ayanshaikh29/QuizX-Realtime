@@ -1,108 +1,182 @@
 /* ================= GROUP PAGE CSS ================= */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8fafc;
+}
+
+/* ─── Global Animations ─── */
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseSoft {
+    0% { box-shadow: 0 0 0 0 rgba(111, 191, 74, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(111, 191, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(111, 191, 74, 0); }
+}
+
+.animate-slide-up {
+    animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+}
+
+/* ─── Staggered Animation Delays ─── */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.15s; }
+.delay-3 { animation-delay: 0.2s; }
+.delay-4 { animation-delay: 0.25s; }
+.delay-5 { animation-delay: 0.3s; }
+.delay-6 { animation-delay: 0.35s; }
+.delay-7 { animation-delay: 0.4s; }
+.delay-8 { animation-delay: 0.45s; }
+.delay-9 { animation-delay: 0.5s; }
+.delay-10 { animation-delay: 0.55s; }
+
+/* ─── Typography Enhancements ─── */
+.text-gradient {
+    background: linear-gradient(135deg, #1e293b, #5ba33a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
 /* ─── Create Group Box ─── */
 .create-group-box {
-    background: white;
-    border-radius: 24px;
-    padding: 28px 35px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
     margin-bottom: 35px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid rgba(241, 245, 249, 0.8);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .create-group-box:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 40px rgba(91, 163, 58, 0.1);
-    border-color: rgba(111, 191, 74, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(91, 163, 58, 0.08);
+    border-color: rgba(111, 191, 74, 0.2);
 }
 
 /* ─── Group Cards ─── */
 .group-card {
-    background: white;
-    border-radius: 28px;
-    padding: 30px;
-    border: 1px solid #f1f5f9;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 28px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     height: 100%;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    z-index: 1;
+}
+
+/* Decorative Card Background Graphic */
+.group-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 60%, rgba(111, 191, 74, 0.03) 100%);
+    z-index: -1;
+    transition: opacity 0.4s ease;
+    opacity: 0;
 }
 
 .group-card::after {
     content: '';
     position: absolute;
-    width: 150px;
-    height: 150px;
-    background: radial-gradient(circle, rgba(111, 191, 74, 0.08) 0%, transparent 60%);
-    top: -40px;
-    right: -40px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(111, 191, 74, 0.1) 0%, transparent 70%);
+    top: -30px;
+    right: -30px;
     border-radius: 50%;
     opacity: 0;
-    transition: all 0.5s ease;
+    z-index: -1;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.group-card:hover::before {
+    opacity: 1;
 }
 
 .group-card:hover::after {
     opacity: 1;
-    transform: scale(1.5);
+    transform: scale(2);
 }
 
 .group-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 25px 50px rgba(91, 163, 58, 0.12);
-    border-color: rgba(111, 191, 74, 0.4);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(91, 163, 58, 0.08);
+    border-color: rgba(111, 191, 74, 0.3);
 }
 
 .group-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 18px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
 .group-icon {
-    width: 55px;
-    height: 55px;
-    border-radius: 16px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #f0fdf4, #dcfce7);
     color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
-    box-shadow: 0 6px 15px rgba(22, 163, 10, 0.1);
-    transition: all 0.4s ease;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 10px rgba(22, 163, 10, 0.1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .group-card:hover .group-icon {
     transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 15px rgba(22, 163, 10, 0.2);
 }
 
 .group-actions-top .delete-icon {
-    opacity: 0.4;
-    transition: all 0.3s ease;
-    font-size: 14px;
-    color: #ef4444;
+    color: #cbd5e1;
+    font-size: 1.1rem;
     padding: 8px;
     border-radius: 10px;
     text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
 }
 
 .group-actions-top .delete-icon:hover {
-    opacity: 1;
+    color: #ef4444;
     background: #fee2e2;
-    transform: scale(1.15);
+    transform: scale(1.1);
 }
 
 .group-name {
     font-weight: 800;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     color: #1e293b;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     transition: color 0.3s;
+    letter-spacing: -0.01em;
 }
 
 .group-card:hover .group-name {
@@ -110,344 +184,300 @@
 }
 
 .group-desc {
-    color: #94a3b8;
-    font-size: 0.85rem;
-    margin-bottom: 18px;
-    line-height: 1.5;
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
     flex-grow: 1;
 }
 
 .group-stats {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #f1f5f9;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-top: 18px;
+    border-top: 1px dashed #e2e8f0;
 }
 
 .group-stat-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-size: 0.85rem;
-    color: #64748b;
-    font-weight: 500;
+    color: #475569;
 }
 
-.group-stat-item i {
+.stat-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #94a3b8;
-    width: 18px;
-    text-align: center;
-    font-size: 14px;
-    transition: color 0.3s;
+    transition: all 0.3s ease;
 }
 
-.group-card:hover .group-stat-item i {
+.group-card:hover .stat-icon-wrapper {
+    background: #f0fdf4;
     color: #6fbf4a;
 }
 
 .btn-view-group {
-    background: linear-gradient(135deg, #6fbf4a, #5ba33a);
-    color: white;
-    border-radius: 14px;
+    background: #ffffff;
+    color: #5ba33a;
+    border: 1px solid #5ba33a;
+    border-radius: 12px;
     font-weight: 700;
-    padding: 12px;
-    border: none;
-    box-shadow: 0 8px 20px rgba(111, 191, 74, 0.25);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    padding: 10px 15px;
+    transition: all 0.3s ease;
     text-decoration: none;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.transition-icon {
+    transition: transform 0.3s ease;
 }
 
 .btn-view-group:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 28px rgba(111, 191, 74, 0.4);
+    background: linear-gradient(135deg, #6fbf4a, #5ba33a);
     color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 20px rgba(111, 191, 74, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-view-group:hover .transition-icon {
+    transform: translateX(4px);
 }
 
 /* Empty State */
 .empty-state {
-    opacity: 0.7;
+    background: white;
+    border-radius: 24px;
+    border: 2px dashed #e2e8f0;
+    transition: all 0.3s ease;
 }
 
-/* ─── Group Detail Page ─── */
+.empty-state:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.empty-icon-pulse i {
+    animation: pulseSoft 2s infinite;
+    border-radius: 50%;
+}
+
+/* ─── Group Detail Page (Hero & Cards) ─── */
 .group-detail-hero {
     background: linear-gradient(135deg, #5ba33a 0%, #6fbf4a 100%);
-    border-radius: 28px;
+    border-radius: 24px;
     padding: 35px 40px;
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    box-shadow: 0 15px 35px rgba(91, 163, 58, 0.2);
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(91, 163, 58, 0.25);
     transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.group-detail-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
 }
 
 .group-detail-hero:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 45px rgba(91, 163, 58, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(91, 163, 58, 0.35);
 }
 
 .group-detail-hero h2 {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
 }
 
 .hero-meta {
     display: flex;
     gap: 12px;
+    position: relative;
+    z-index: 2;
 }
 
 .badge-stat {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
-    padding: 8px 18px;
-    border-radius: 12px;
+    padding: 8px 16px;
+    border-radius: 10px;
     font-size: 0.85rem;
     font-weight: 700;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Detail Cards */
 .detail-card {
     background: white;
-    border-radius: 24px;
-    padding: 30px;
-    border: 1px solid #f1f5f9;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     height: 100%;
     transition: all 0.4s ease;
 }
 
 .detail-card:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
 }
 
 .detail-card-header {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Member List */
-.member-list {
+/* Lists */
+.member-list, .quiz-assign-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
-.member-item {
+.member-item, .quiz-assign-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-radius: 14px;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
 }
 
-.member-item:hover {
-    background: #f0fdf4;
-    border-color: #dcfce7;
-    transform: translateX(5px);
+.member-item:hover, .quiz-assign-item:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
-.member-info {
+.member-info, .quiz-assign-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
 }
 
 .member-avatar {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
     object-fit: cover;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.member-name {
+.member-name, .quiz-assign-name {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #1e293b;
+    margin-bottom: 2px;
 }
 
 .btn-remove {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: #fee2e2;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #fef2f2;
     color: #ef4444;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    font-size: 12px;
+    font-size: 14px;
     transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .btn-remove:hover {
     background: #ef4444;
     color: white;
-    transform: scale(1.1);
-}
-
-/* Quiz Assignment List */
-.quiz-assign-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.quiz-assign-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-radius: 14px;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
-    transition: all 0.3s ease;
-}
-
-.quiz-assign-item:hover {
-    background: #eff6ff;
-    border-color: #dbeafe;
-    transform: translateX(5px);
-}
-
-.quiz-assign-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
 }
 
 .quiz-assign-icon {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
     background: linear-gradient(135deg, #eff6ff, #dbeafe);
     color: #3b82f6;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-}
-
-.quiz-assign-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #1e293b;
-    display: block;
+    font-size: 16px;
 }
 
 .quiz-assign-status {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #64748b;
     font-weight: 600;
 }
 
-/* ─── Responsive ─── */
-/* ─── Responsive ─── */
-@media (max-width: 1200px) {
-    .create-group-box {
-        padding: 24px 30px;
-    }
-}
-
-@media (max-width: 992px) {
-    .group-detail-hero {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-        padding: 30px 25px;
-    }
-
-    .hero-meta {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .create-group-box {
-        padding: 25px;
-    }
-}
-
-@media (max-width: 768px) {
-    .create-group-box .col-lg-3 {
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .create-group-box form .col-md-4,
-    .create-group-box form .col-md-5,
-    .create-group-box form .col-md-3 {
-        width: 100%;
-    }
-
-    .group-card {
-        padding: 24px;
-        border-radius: 20px;
-    }
-
-    .group-detail-hero h2 {
-        font-size: 1.5rem;
-    }
-
-    .detail-card {
-        padding: 20px;
-    }
-}
-
-@media (max-width: 576px) {
-    .group-detail-hero {
-        padding: 25px 15px;
-        border-radius: 20px;
-    }
-
-    .badge-stat {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-
-    .member-info {
-        gap: 8px;
-    }
-
-    .member-name {
-        font-size: 0.85rem;
-    }
-}
-
-/* ─── Custom Input (shared) ─── */
+/* ─── Custom Inputs & Buttons ─── */
 .custom-input {
     border-radius: 12px;
     padding: 12px 18px;
-    border: 1px solid #e2e8f0;
-    font-size: 14px;
-    transition: all 0.3s;
+    border: 1px solid #cbd5e1;
+    font-size: 0.95rem;
+    background-color: #f8fafc;
+    color: #1e293b;
+    transition: all 0.3s ease;
 }
 
 .custom-input:focus {
+    background-color: #ffffff;
     border-color: #6fbf4a;
-    box-shadow: 0 0 0 4px rgba(111, 191, 74, 0.1);
+    box-shadow: 0 0 0 4px rgba(111, 191, 74, 0.15);
+    outline: none;
 }
 
 .btn-success-custom {
-    background: #6fbf4a;
+    background: linear-gradient(135deg, #6fbf4a, #5ba33a);
     color: white;
     border: none;
     border-radius: 12px;
     padding: 12px;
     font-weight: 700;
-    transition: all 0.3s;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(111, 191, 74, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-success-custom:hover {
-    background: #5ba33a;
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(111, 191, 74, 0.3);
     color: white;
 }
 
@@ -456,51 +486,84 @@
     display: flex;
     align-items: center;
     text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.logo-box:hover {
+    opacity: 0.8;
 }
 
 .logo-img {
-    width: 150px;
-    height: 70px;
-    margin-right: 8px;
+    width: auto;
+    max-width: 140px;
+    height: 50px;
+    object-fit: contain;
 }
 
-/* Staggered Animation Delays */
-.delay-1 {
-    animation-delay: 0.1s;
+/* Flash Messages */
+.flash-messages-container {
+    margin-bottom: 20px;
 }
 
-.delay-2 {
-    animation-delay: 0.2s;
+/* ─── Responsive Adjustments ─── */
+@media (max-width: 1200px) {
+    .create-group-box {
+        padding: 20px 25px;
+    }
 }
 
-.delay-3 {
-    animation-delay: 0.3s;
+@media (max-width: 992px) {
+    .group-detail-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 30px 20px;
+    }
+
+    .hero-meta {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
-.delay-4 {
-    animation-delay: 0.4s;
+@media (max-width: 768px) {
+    .create-group-box .col-lg-3 {
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .create-group-box form .col-md-4,
+    .create-group-box form .col-md-5,
+    .create-group-box form .col-md-3 {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .group-card {
+        padding: 24px;
+    }
+
+    .group-detail-hero h2 {
+        font-size: 1.5rem;
+    }
 }
 
-.delay-5 {
-    animation-delay: 0.5s;
-}
+@media (max-width: 576px) {
+    .group-detail-hero {
+        padding: 25px 15px;
+        border-radius: 16px;
+    }
 
-.delay-6 {
-    animation-delay: 0.6s;
-}
+    .badge-stat {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
 
-.delay-7 {
-    animation-delay: 0.7s;
-}
+    .member-info, .quiz-assign-info {
+        gap: 10px;
+    }
 
-.delay-8 {
-    animation-delay: 0.8s;
-}
-
-.delay-9 {
-    animation-delay: 0.9s;
-}
-
-.delay-10 {
-    animation-delay: 1.0s;
+    .member-name {
+        font-size: 0.85rem;
+    }
 }

@@ -1,4 +1,5 @@
 <!-- QuizX AI Chat Widget (Green & White Glassmorphism Theme) -->
+<link rel="stylesheet" href="/static/css/chatbot_cards.css">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -23,987 +24,683 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    /* ═══════ FAB (Floating Action Button) ═══════ */
+    /* ═══════ FAB ═══════ */
     #quizx-chat-fab {
-        position: fixed;
-        bottom: 32px;
-        right: 32px;
-        width: 62px;
-        height: 62px;
-        border-radius: 20px;
+        position: fixed; bottom: 32px; right: 32px;
+        width: 66px; height: 66px; border-radius: 50%;
         background: linear-gradient(135deg, #5ba33a, #6fbf4a);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 9998;
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; z-index: 9998;
         transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 8px 25px rgba(91, 163, 58, 0.35), 0 0 0 0 rgba(111, 191, 74, 0.4);
+        box-shadow: 0 8px 25px rgba(91,163,58,.35), 0 0 0 0 rgba(111,191,74,.4);
         animation: fabPulse 3s infinite;
-    }
-
-    @keyframes fabPulse {
-
-        0%,
-        100% {
-            box-shadow: 0 8px 25px rgba(91, 163, 58, 0.35), 0 0 0 0 rgba(111, 191, 74, 0.4);
-        }
-
-        50% {
-            box-shadow: 0 8px 25px rgba(91, 163, 58, 0.35), 0 0 0 12px rgba(111, 191, 74, 0);
-        }
-    }
-
-    #quizx-chat-fab:hover {
-        transform: scale(1.12) rotate(-5deg);
-        box-shadow: 0 12px 35px rgba(91, 163, 58, 0.45);
-    }
-
-    #quizx-chat-fab.open {
-        transform: scale(0.9) rotate(180deg);
-        background: linear-gradient(135deg, #ef4444, #f87171);
-        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.35);
-        border-radius: 50%;
-        animation: none;
-    }
-
-    #quizx-chat-fab svg {
-        transition: all 0.3s ease;
-    }
-
-    /* ═══════ PANEL (50% Width, Glassmorphism) ═══════ */
-    .quizx-chat-panel {
-        position: fixed;
-        top: 0;
-        right: -52%;
-        width: 50%;
-        height: 100vh;
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(30px);
-        box-shadow: -15px 0 60px rgba(0, 0, 0, 0.08), -2px 0 8px rgba(0, 0, 0, 0.03);
-        display: flex;
-        flex-direction: row;
         overflow: hidden;
-        z-index: 9999;
-        transition: right 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes fabPulse {
+        0%,100% { box-shadow: 0 8px 25px rgba(91,163,58,.35), 0 0 0 0 rgba(111,191,74,.4); }
+        50%     { box-shadow: 0 8px 25px rgba(91,163,58,.35), 0 0 0 12px rgba(111,191,74,0); }
+    }
+    #quizx-chat-fab:hover { transform: scale(1.12); box-shadow: 0 12px 35px rgba(91,163,58,.45); }
+    #quizx-chat-fab:hover .fab-bot { animation: fabBotWave .6s ease; }
+    #quizx-chat-fab.open { animation: none; box-shadow: 0 8px 25px rgba(239,68,68,.35); background: linear-gradient(135deg,#ef4444,#f87171); }
+    #quizx-chat-fab.open .fab-bot { display: none; }
+    #quizx-chat-fab.open .fab-close { display: flex; }
+    .fab-bot { display: flex; flex-direction: column; align-items: center; gap: 0; animation: fabFloat 3s ease-in-out infinite; }
+    .fab-close { display: none; align-items: center; justify-content: center; }
+    @keyframes fabFloat {
+        0%,100% { transform: translateY(0); }
+        50%     { transform: translateY(-3px); }
+    }
+    @keyframes fabBotWave {
+        0%,100% { transform: rotate(0deg); }
+        25%     { transform: rotate(-12deg); }
+        50%     { transform: rotate(8deg); }
+        75%     { transform: rotate(-5deg); }
+    }
+
+    /* ═══════ PANEL ═══════ */
+    .quizx-chat-panel {
+        position: fixed; top: 0; right: -52%; width: 50%; height: 100vh;
+        background: rgba(255,255,255,.92); backdrop-filter: blur(30px);
+        box-shadow: -15px 0 60px rgba(0,0,0,.08); display: flex; flex-direction: row;
+        overflow: hidden; z-index: 9999;
+        transition: right .5s cubic-bezier(.4,0,.2,1);
         border-left: 1px solid var(--qx-border);
     }
-
-    .quizx-chat-panel.open {
-        right: 0;
-    }
+    .quizx-chat-panel.open { right: 0; }
 
     /* ═══════ SIDEBAR ═══════ */
     .quizx-sidebar {
-        width: 260px;
-        background: var(--qx-sidebar-bg);
-        display: flex;
-        flex-direction: column;
-        border-right: 1px solid var(--qx-border);
-        flex-shrink: 0;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 260px; background: var(--qx-sidebar-bg);
+        display: flex; flex-direction: column;
+        border-right: 1px solid var(--qx-border); flex-shrink: 0;
     }
-
     .new-chat-btn {
-        margin: 14px;
-        padding: 13px 16px;
-        background: linear-gradient(135deg, #5ba33a, #6fbf4a);
-        border: none;
-        border-radius: 14px;
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 4px 12px rgba(91, 163, 58, 0.2);
+        margin: 14px; padding: 13px 16px;
+        background: linear-gradient(135deg,#5ba33a,#6fbf4a); border: none;
+        border-radius: 14px; color: #fff; cursor: pointer;
+        display: flex; align-items: center; gap: 10px;
+        font-size: .85rem; font-weight: 700;
+        transition: all .3s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 12px rgba(91,163,58,.2);
     }
-
-    .new-chat-btn:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 8px 20px rgba(91, 163, 58, 0.3);
-    }
-
-    .history-list {
-        flex: 1;
-        overflow-y: auto;
-        padding: 6px 10px;
-    }
-
-    .history-list::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .history-list::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .history-list::-webkit-scrollbar-thumb {
-        background: rgba(111, 191, 74, 0.2);
-        border-radius: 10px;
-    }
-
+    .new-chat-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 20px rgba(91,163,58,.3); }
+    .history-list { flex: 1; overflow-y: auto; padding: 6px 10px; }
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-thumb { background: rgba(111,191,74,.2); border-radius: 10px; }
     .history-item {
-        padding: 11px 14px;
-        border-radius: 12px;
-        color: var(--qx-text);
-        font-size: 0.82rem;
-        font-weight: 500;
-        cursor: pointer;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        transition: all 0.25s ease;
-        margin-bottom: 3px;
+        padding: 11px 14px; border-radius: 12px; color: var(--qx-text);
+        font-size: .82rem; font-weight: 500; cursor: pointer;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        display: flex; align-items: center; gap: 9px;
+        transition: all .25s ease; margin-bottom: 3px;
     }
+    .history-item:hover { background: rgba(111,191,74,.1); transform: translateX(4px); }
+    .history-item.active { background: rgba(111,191,74,.15); color: var(--qx-green); font-weight: 700; }
 
-    .history-item:hover {
-        background: rgba(111, 191, 74, 0.1);
-        transform: translateX(4px);
-    }
-
-    .history-item.active {
-        background: rgba(111, 191, 74, 0.15);
-        color: var(--qx-green);
-        font-weight: 700;
-    }
-
-    /* ═══════ MAIN CHAT AREA ═══════ */
-    .quizx-chat-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        background: var(--qx-main-bg);
-    }
-
+    /* ═══════ MAIN CHAT ═══════ */
+    .quizx-chat-main { flex: 1; display: flex; flex-direction: column; background: var(--qx-main-bg); }
     .chat-header {
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 22px;
-        border-bottom: 1px solid var(--qx-border);
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
+        height: 64px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 22px; border-bottom: 1px solid var(--qx-border);
+        background: rgba(255,255,255,.8); backdrop-filter: blur(10px);
     }
+    .chat-header-title { font-weight: 800; font-size: 1rem; color: var(--qx-text); }
+    .chat-header-title .qx-dot { display: inline-block; width: 8px; height: 8px; background: #6fbf4a; border-radius: 50%; margin-right: 8px; animation: dotPulse 2s infinite; }
+    @keyframes dotPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(.8); } }
 
-    .chat-header-title {
-        font-weight: 800;
-        font-size: 1rem;
-        color: var(--qx-text);
-    }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 24px 0; scroll-behavior: smooth; }
+    .chat-messages::-webkit-scrollbar { width: 5px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(111,191,74,.15); border-radius: 10px; }
+    .messages-container { max-width: 800px; margin: 0 auto; width: 100%; padding: 0 28px; }
 
-    .chat-header-title .qx-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background: #6fbf4a;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: dotPulse 2s infinite;
-    }
-
-    @keyframes dotPulse {
-
-        0%,
-        100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        50% {
-            opacity: 0.5;
-            transform: scale(0.8);
-        }
-    }
-
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 24px 0;
-        scroll-behavior: smooth;
-    }
-
-    .chat-messages::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    .chat-messages::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb {
-        background: rgba(111, 191, 74, 0.15);
-        border-radius: 10px;
-    }
-
-    .messages-container {
-        max-width: 800px;
-        margin: 0 auto;
-        width: 100%;
-        padding: 0 28px;
-    }
-
-    /* ═══════ MESSAGE BUBBLES ═══════ */
-    .message-row {
-        display: flex;
-        gap: 14px;
-        margin-bottom: 20px;
-        animation: msgSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    @keyframes msgSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.97);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    .message-row.user {
-        flex-direction: row-reverse;
-    }
-
+    /* ═══════ BUBBLES ═══════ */
+    .message-row { display: flex; gap: 14px; margin-bottom: 20px; animation: msgSlideIn .4s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes msgSlideIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .message-row.user { flex-direction: row-reverse; }
     .message-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 16px;
-        transition: transform 0.3s ease;
+        width: 36px; height: 36px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; font-size: 16px;
     }
+    .user .message-avatar { background: linear-gradient(135deg,#6366f1,#818cf8); color: white; font-size: 14px; box-shadow: 0 4px 12px rgba(99,102,241,.25); }
+    .bot .message-avatar { background: linear-gradient(135deg,#5ba33a,#6fbf4a); box-shadow: 0 4px 12px rgba(91,163,58,.25); }
+    .message-content { flex: 1; font-size: .92rem; line-height: 1.7; color: var(--qx-text); }
+    .user .message-content { background: var(--qx-msg-user); color: white; padding: 14px 20px; border-radius: 20px 20px 4px 20px; box-shadow: 0 4px 15px rgba(91,163,58,.2); }
+    .bot .message-content { background: var(--qx-msg-bot-bg); padding: 14px 20px; border-radius: 20px 20px 20px 4px; border: 1px solid var(--qx-border); }
+    .bot .message-content:hover { border-color: rgba(111,191,74,.3); box-shadow: 0 4px 15px rgba(111,191,74,.08); }
+    .message-content code { background: rgba(111,191,74,.1); padding: 2px 7px; border-radius: 6px; font-size: .85em; color: var(--qx-green); }
+    .message-content strong { color: var(--qx-green); }
+    .user .message-content strong, .user .message-content code { color: white; background: rgba(255,255,255,.15); }
 
-    .message-row:hover .message-avatar {
-        transform: scale(1.1) rotate(-5deg);
-    }
+    /* ── Message timestamp ── */
+    .msg-time { font-size: .68rem; color: var(--qx-muted); margin-top: 6px; opacity: .7; }
+    .user .msg-time { text-align: right; }
 
-    .user .message-avatar {
-        background: linear-gradient(135deg, #6366f1, #818cf8);
-        color: white;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    /* ── Copy + Regenerate bar ── */
+    .msg-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .msg-action-btn {
+        background: none; border: 1px solid var(--qx-border); border-radius: 8px;
+        padding: 4px 10px; font-size: .72rem; color: var(--qx-muted); cursor: pointer;
+        font-weight: 600; transition: all .2s; font-family: 'Plus Jakarta Sans', sans-serif;
     }
+    .msg-action-btn:hover { color: var(--qx-green); border-color: var(--qx-green); background: var(--qx-green-surface); }
 
-    .bot .message-avatar {
-        background: linear-gradient(135deg, #5ba33a, #6fbf4a);
-        box-shadow: 0 4px 12px rgba(91, 163, 58, 0.25);
-    }
+    /* ── Loading skeleton ── */
+    .qx-skeleton { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+    .qx-skeleton-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .qx-skeleton-line:nth-child(1) { width: 85%; }
+    .qx-skeleton-line:nth-child(2) { width: 65%; }
+    .qx-skeleton-line:nth-child(3) { width: 45%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    .message-content {
-        flex: 1;
-        font-size: 0.92rem;
-        line-height: 1.7;
-        color: var(--qx-text);
-    }
+    /* ── Typing text ── */
+    .qx-typing-text { font-size: .78rem; color: var(--qx-green); font-weight: 600; margin-bottom: 6px; animation: typeFade 1.5s infinite; }
+    @keyframes typeFade { 0%,100% { opacity:1; } 50% { opacity:.5; } }
 
-    .user .message-content {
-        background: var(--qx-msg-user);
-        color: white;
-        padding: 14px 20px;
-        border-radius: 20px 20px 4px 20px;
-        box-shadow: 0 4px 15px rgba(91, 163, 58, 0.2);
-    }
-
-    .bot .message-content {
-        background: var(--qx-msg-bot-bg);
-        padding: 14px 20px;
-        border-radius: 20px 20px 20px 4px;
-        border: 1px solid var(--qx-border);
-        transition: all 0.3s ease;
-    }
-
-    .bot .message-content:hover {
-        border-color: rgba(111, 191, 74, 0.3);
-        box-shadow: 0 4px 15px rgba(111, 191, 74, 0.08);
-    }
-
-    .message-content code {
-        background: rgba(111, 191, 74, 0.1);
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-size: 0.85em;
-        color: var(--qx-green);
-        font-family: 'Fira Code', monospace;
-    }
-
-    .message-content strong {
-        color: var(--qx-green);
-    }
-
-    .user .message-content strong,
-    .user .message-content code {
-        color: white;
-        background: rgba(255, 255, 255, 0.15);
-    }
+    .typing { display: flex; gap: 5px; padding: 4px 0; }
+    .typing span { width: 8px; height: 8px; background: var(--qx-green-light); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out; }
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingBounce { 0%,80%,100% { transform: scale(.5); opacity:.4; } 40% { transform: scale(1.1); opacity:1; } }
 
     /* ═══════ INPUT AREA ═══════ */
-    .chat-input-wrapper {
-        padding: 16px 24px 20px;
-        background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.95));
+    .chat-input-wrapper { padding: 12px 24px 16px; background: linear-gradient(180deg, transparent, rgba(255,255,255,.95)); }
+
+    /* ── Quick prompts row ── */
+    .qx-quick-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; max-width: 760px; margin-left: auto; margin-right: auto; }
+    .qx-quick-btn {
+        padding: 6px 14px; border-radius: 999px;
+        border: 1px solid var(--qx-border); background: var(--qx-green-surface);
+        color: var(--qx-text); font-size: .76rem; font-weight: 700; cursor: pointer;
+        transition: all .25s; font-family: 'Plus Jakarta Sans', sans-serif;
     }
+    .qx-quick-btn:hover { border-color: var(--qx-green); color: var(--qx-green); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(91,163,58,.12); }
+    .qx-quick-btn i { margin-right: 5px; }
+
+    /* ── Selectors row (difficulty + type) ── */
+    .qx-selectors-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .qx-sel-group { display: flex; gap: 6px; align-items: center; }
+    .qx-sel-label { font-size: .72rem; font-weight: 700; color: var(--qx-muted); margin-right: 2px; }
+    .qx-sel-btn {
+        padding: 4px 12px; border-radius: 999px;
+        border: 1px solid var(--qx-border); background: #fff;
+        color: #475569; font-weight: 700; font-size: .72rem;
+        cursor: pointer; transition: all .2s; font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .qx-sel-btn.active { background: var(--qx-green); color: #fff; border-color: var(--qx-green); }
 
     .input-box-outer {
-        max-width: 760px;
-        margin: 0 auto;
-        background: var(--qx-input-bg);
-        border-radius: 20px;
-        border: 1.5px solid var(--qx-border);
-        padding: 10px 16px;
-        transition: all 0.35s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        max-width: 760px; margin: 0 auto;
+        background: var(--qx-input-bg); border-radius: 20px;
+        border: 1.5px solid var(--qx-border); padding: 10px 16px;
+        transition: all .35s ease; box-shadow: 0 4px 15px rgba(0,0,0,.03);
     }
+    .input-box-outer:focus-within { border-color: var(--qx-green-light); box-shadow: 0 0 0 4px var(--qx-green-glow), 0 8px 25px rgba(0,0,0,.05); background: #fff; }
+    .file-preview { display: none; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .file-preview.active { display: flex; }
+    .preview-item { background: var(--qx-green-surface); padding: 5px 12px; border-radius: 10px; font-size: .78rem; color: var(--qx-green); font-weight: 600; display: flex; align-items: center; gap: 6px; border: 1px solid var(--qx-border); }
+    .preview-item span:last-child { cursor: pointer; font-size: 14px; opacity: .7; }
+    .preview-item span:last-child:hover { opacity: 1; }
+    .input-row { display: flex; align-items: flex-end; gap: 10px; }
+    .quizx-chat-container textarea { flex: 1; background: transparent; border: none; outline: none; color: var(--qx-text); resize: none; font-size: .95rem; max-height: 180px; line-height: 1.5; font-family: 'Plus Jakarta Sans', sans-serif; padding: 6px 0; }
+    .quizx-chat-container textarea::placeholder { color: var(--qx-muted); }
+    .input-actions { display: flex; gap: 4px; align-items: center; }
+    .action-btn { background: transparent; border: none; color: var(--qx-muted); cursor: pointer; padding: 8px; border-radius: 10px; transition: all .25s ease; display: flex; align-items: center; justify-content: center; }
+    .action-btn:hover { color: var(--qx-green); background: var(--qx-green-surface); transform: scale(1.1); }
+    #qx-send-btn { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg,#5ba33a,#6fbf4a); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .3s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 4px 12px rgba(91,163,58,.25); }
+    #qx-send-btn:hover:not(:disabled) { transform: scale(1.1) translateY(-1px); box-shadow: 0 6px 18px rgba(91,163,58,.35); }
+    #qx-send-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .input-hint { text-align: center; font-size: .72rem; color: var(--qx-muted); margin-top: 8px; opacity: .7; max-width: 760px; margin-left: auto; margin-right: auto; }
 
-    .input-box-outer:focus-within {
-        border-color: var(--qx-green-light);
-        box-shadow: 0 0 0 4px var(--qx-green-glow), 0 8px 25px rgba(0, 0, 0, 0.05);
-        background: #fff;
-    }
-
-    .file-preview {
-        display: none;
-        gap: 8px;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-    }
-
-    .file-preview.active {
-        display: flex;
-    }
-
-    .preview-item {
-        background: var(--qx-green-surface);
-        padding: 5px 12px;
-        border-radius: 10px;
-        font-size: 0.78rem;
-        color: var(--qx-green);
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        border: 1px solid var(--qx-border);
-        animation: msgSlideIn 0.3s ease;
-    }
-
-    .preview-item span:last-child {
-        cursor: pointer;
-        font-size: 14px;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    }
-
-    .preview-item span:last-child:hover {
-        opacity: 1;
-    }
-
-    .input-row {
-        display: flex;
-        align-items: flex-end;
-        gap: 10px;
-    }
-
-    .quizx-chat-container textarea {
-        flex: 1;
-        background: transparent;
-        border: none;
-        outline: none;
-        color: var(--qx-text);
-        resize: none;
-        font-size: 0.95rem;
-        max-height: 180px;
-        line-height: 1.5;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        padding: 6px 0;
-    }
-
-    .quizx-chat-container textarea::placeholder {
-        color: var(--qx-muted);
-    }
-
-    .input-actions {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-    }
-
-    .action-btn {
-        background: transparent;
-        border: none;
-        color: var(--qx-muted);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
-        transition: all 0.25s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .action-btn:hover {
-        color: var(--qx-green);
-        background: var(--qx-green-surface);
-        transform: scale(1.1);
-    }
-
-    #qx-send-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #5ba33a, #6fbf4a);
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 4px 12px rgba(91, 163, 58, 0.25);
-    }
-
-    #qx-send-btn:hover:not(:disabled) {
-        transform: scale(1.1) translateY(-1px);
-        box-shadow: 0 6px 18px rgba(91, 163, 58, 0.35);
-    }
-
-    #qx-send-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    /* ═══════ TYPING INDICATOR ═══════ */
-    .typing {
-        display: flex;
-        gap: 5px;
-        padding: 8px 0;
-    }
-
-    .typing span {
-        width: 8px;
-        height: 8px;
-        background: var(--qx-green-light);
-        border-radius: 50%;
-        animation: typingBounce 1.4s infinite ease-in-out;
-    }
-
-    .typing span:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .typing span:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes typingBounce {
-
-        0%,
-        80%,
-        100% {
-            transform: scale(0.5);
-            opacity: 0.4;
-        }
-
-        40% {
-            transform: scale(1.1);
-            opacity: 1;
-        }
-    }
-
-    /* ═══════ WELCOME STATE ═══════ */
-    .qx-welcome {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        text-align: center;
-        padding: 40px;
-        animation: msgSlideIn 0.6s ease;
-    }
-
-    .qx-welcome-icon {
-        width: 72px;
-        height: 72px;
-        border-radius: 22px;
-        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        margin-bottom: 18px;
-        box-shadow: 0 8px 20px rgba(91, 163, 58, 0.1);
-        animation: floatIcon 4s ease-in-out infinite;
-    }
-
-    @keyframes floatIcon {
-
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(-8px);
-        }
-    }
-
-    .qx-welcome h3 {
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: var(--qx-text);
-        margin-bottom: 8px;
-    }
-
-    .qx-welcome p {
-        color: var(--qx-muted);
-        font-size: 0.9rem;
-        max-width: 360px;
-        line-height: 1.6;
-    }
-
-    .qx-suggestions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 24px;
-        max-width: 440px;
-        width: 100%;
-    }
-
-    .qx-suggestion-chip {
-        background: var(--qx-green-surface);
-        border: 1px solid var(--qx-border);
-        border-radius: 14px;
-        padding: 14px;
-        cursor: pointer;
-        text-align: left;
-        font-size: 0.82rem;
-        color: var(--qx-text);
-        font-weight: 600;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .qx-suggestion-chip:hover {
-        background: rgba(111, 191, 74, 0.12);
-        border-color: var(--qx-green-light);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(111, 191, 74, 0.12);
-    }
-
-    .qx-suggestion-chip span {
-        display: block;
-        font-size: 18px;
-        margin-bottom: 6px;
-    }
-
-    /* ═══════ INPUT HINT ═══════ */
-    .input-hint {
-        text-align: center;
-        font-size: 0.72rem;
-        color: var(--qx-muted);
-        margin-top: 8px;
-        opacity: 0.7;
-    }
+    /* ═══════ WELCOME ═══════ */
+    .qx-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; animation: msgSlideIn .6s ease; }
+    .qx-welcome-icon { width: 72px; height: 72px; border-radius: 22px; background: linear-gradient(135deg,#f0fdf4,#dcfce7); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 18px; box-shadow: 0 8px 20px rgba(91,163,58,.1); animation: floatIcon 4s ease-in-out infinite; }
+    @keyframes floatIcon { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .qx-welcome h3 { font-size: 1.4rem; font-weight: 800; color: var(--qx-text); margin-bottom: 8px; }
+    .qx-welcome p { color: var(--qx-muted); font-size: .9rem; max-width: 360px; line-height: 1.6; }
+    .qx-suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; max-width: 440px; width: 100%; }
+    .qx-suggestion-chip { background: var(--qx-green-surface); border: 1px solid var(--qx-border); border-radius: 14px; padding: 14px; cursor: pointer; text-align: left; font-size: .82rem; color: var(--qx-text); font-weight: 600; transition: all .3s cubic-bezier(.34,1.56,.64,1); }
+    .qx-suggestion-chip:hover { background: rgba(111,191,74,.12); border-color: var(--qx-green-light); transform: translateY(-3px); box-shadow: 0 6px 16px rgba(111,191,74,.12); }
+    .qx-suggestion-chip span { display: block; font-size: 18px; margin-bottom: 6px; }
 
     /* ═══════ RESPONSIVE ═══════ */
-    @media (max-width: 1024px) {
-        .quizx-chat-panel {
-            width: 70%;
-            right: -72%;
-        }
-    }
-
+    @media (max-width: 1024px) { .quizx-chat-panel { width: 70%; right: -72%; } }
     @media (max-width: 768px) {
-        .quizx-chat-panel {
-            width: 100%;
-            right: -100%;
-        }
-
-        .quizx-sidebar {
-            position: absolute;
-            left: -260px;
-            z-index: 100;
-            height: 100%;
-            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .quizx-sidebar.show {
-            left: 0;
-        }
-
-        .messages-container {
-            padding: 0 14px;
-        }
-
-        #quizx-chat-fab {
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-        }
-
-        .qx-suggestions {
-            grid-template-columns: 1fr;
-        }
+        .quizx-chat-panel { width: 100%; right: -100%; }
+        .quizx-sidebar { position: absolute; left: -260px; z-index: 100; height: 100%; transition: left .35s; box-shadow: 4px 0 20px rgba(0,0,0,.08); }
+        .quizx-sidebar.show { left: 0; }
+        .messages-container { padding: 0 14px; }
+        #quizx-chat-fab { bottom: 20px; right: 20px; width: 58px; height: 58px; }
+        #quizx-chat-fab .fab-bot svg { width: 30px; height: 30px; }
+        .qx-suggestions { grid-template-columns: 1fr; }
+        .qx-quick-prompts { gap: 6px; }
     }
 </style>
 
 <div class="quizx-chat-container">
     <div id="quizx-chat-fab">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
+        <!-- Animated chatbot icon -->
+        <div class="fab-bot">
+            <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Antenna -->
+                <line x1="32" y1="6" x2="32" y2="16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="32" cy="5" r="3" fill="#fff" opacity=".85">
+                    <animate attributeName="opacity" values=".85;.4;.85" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <!-- Head -->
+                <rect x="12" y="16" width="40" height="30" rx="12" fill="#fff" opacity=".95"/>
+                <!-- Eyes -->
+                <circle cx="24" cy="30" r="4" fill="#5ba33a">
+                    <animate attributeName="cy" values="30;28;30" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="40" cy="30" r="4" fill="#5ba33a">
+                    <animate attributeName="cy" values="30;28;30" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <!-- Mouth -->
+                <path d="M26 38 Q32 44 38 38" stroke="#5ba33a" stroke-width="2.5" stroke-linecap="round" fill="none">
+                    <animate attributeName="d" values="M26 38 Q32 44 38 38;M26 38 Q32 41 38 38;M26 38 Q32 44 38 38" dur="4s" repeatCount="indefinite"/>
+                </path>
+                <!-- Body -->
+                <rect x="18" y="48" width="28" height="10" rx="5" fill="#fff" opacity=".7"/>
+            </svg>
+        </div>
+        <!-- Close X icon (shown when open) -->
+        <div class="fab-close">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
     </div>
 
     <div id="quizx-chat-panel" class="quizx-chat-panel">
         <aside class="quizx-sidebar" id="qx-sidebar">
             <button class="new-chat-btn" id="qx-new-chat">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 New Chat
             </button>
-            <div class="history-list" id="qx-history-list">
-                <!-- JS Rendered -->
-            </div>
+            <div class="history-list" id="qx-history-list"></div>
         </aside>
 
         <main class="quizx-chat-main">
             <header class="chat-header">
-                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
                     <button class="action-btn" id="qx-sidebar-toggle" style="display:none;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <line x1="3" y1="18" x2="21" y2="18"></line>
-                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
                     <span class="chat-header-title"><span class="qx-dot"></span>QuizX AI</span>
                 </div>
                 <button class="action-btn" id="qx-close-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </header>
 
             <div class="chat-messages" id="qx-messages">
-                <div class="messages-container" id="qx-msgs-container">
-                    <!-- JS Rendered -->
-                </div>
+                <div class="messages-container" id="qx-msgs-container"></div>
             </div>
 
             <div class="chat-input-wrapper">
+                <!-- Quick prompt buttons -->
+                <div class="qx-quick-prompts" id="qx-quick-prompts">
+                    <button class="qx-quick-btn" data-type="mcq" data-prompt="Generate MCQ quiz on "><i class="fas fa-list-ol"></i>Generate MCQ</button>
+                    <button class="qx-quick-btn" data-type="true_false" data-prompt="Generate True/False quiz on "><i class="fas fa-check-double"></i>Generate True/False</button>
+                    <button class="qx-quick-btn" data-type="short_answer" data-prompt="Generate Short Answer quiz on "><i class="fas fa-pen-fancy"></i>Generate Short Answer</button>
+                    <button class="qx-quick-btn" data-type="mixed" data-prompt="Generate Mixed quiz on "><i class="fas fa-shuffle"></i>Generate Mixed Quiz</button>
+                </div>
+
+                <!-- Difficulty + Type selectors -->
+                <div class="qx-selectors-row" id="qx-selectors" style="max-width:760px;margin:0 auto;">
+                    <div class="qx-sel-group" id="qx-diff-bar">
+                        <span class="qx-sel-label">Difficulty:</span>
+                        <button class="qx-sel-btn" data-diff="easy">Easy</button>
+                        <button class="qx-sel-btn active" data-diff="medium">Medium</button>
+                        <button class="qx-sel-btn" data-diff="hard">Hard</button>
+                    </div>
+                    <div class="qx-sel-group" id="qx-type-bar">
+                        <span class="qx-sel-label">Type:</span>
+                        <button class="qx-sel-btn active" data-qtype="mcq">MCQ</button>
+                        <button class="qx-sel-btn" data-qtype="true_false">T/F</button>
+                        <button class="qx-sel-btn" data-qtype="short_answer">Short</button>
+                        <button class="qx-sel-btn" data-qtype="checkbox">Checkbox</button>
+                        <button class="qx-sel-btn" data-qtype="mixed">Mixed</button>
+                    </div>
+                </div>
+
                 <div class="input-box-outer">
                     <div class="file-preview" id="qx-file-preview"></div>
                     <div class="input-row">
                         <textarea id="qx-input" placeholder="Message QuizX AI..." rows="1"></textarea>
                         <div class="input-actions">
                             <button class="action-btn" id="qx-attach-file" title="Attach File">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path
-                                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
-                                    </path>
-                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                             </button>
                             <button class="action-btn" id="qx-attach-image" title="Upload Image">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                             </button>
                             <button id="qx-send-btn" disabled title="Send">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5">
-                                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                             </button>
                         </div>
                     </div>
                 </div>
-                <div class="input-hint">Enter to send · Shift+Enter for new line · Powered by QuizX AI</div>
+                <div class="input-hint">Enter to send &middot; Shift+Enter for new line &middot; Powered by QuizX AI</div>
             </div>
         </main>
     </div>
 
-    <!-- Hidden Inputs -->
     <input type="file" id="qx-file-input" style="display:none;" multiple>
     <input type="file" id="qx-image-input" style="display:none;" accept="image/*" multiple>
 </div>
 
 <script>
-    (function () {
-        const fab = document.getElementById('quizx-chat-fab');
-        const panel = document.getElementById('quizx-chat-panel');
-        const closeBtn = document.getElementById('qx-close-btn');
-        const input = document.getElementById('qx-input');
-        const sendBtn = document.getElementById('qx-send-btn');
-        const msgsContainer = document.getElementById('qx-msgs-container');
-        const msgsArea = document.getElementById('qx-messages');
-        const historyList = document.getElementById('qx-history-list');
-        const newChatBtn = document.getElementById('qx-new-chat');
-        const fileInput = document.getElementById('qx-file-input');
-        const imageInput = document.getElementById('qx-image-input');
-        const filePrev = document.getElementById('qx-file-preview');
+(function () {
+    const fab = document.getElementById('quizx-chat-fab');
+    const panel = document.getElementById('quizx-chat-panel');
+    const closeBtn = document.getElementById('qx-close-btn');
+    const input = document.getElementById('qx-input');
+    const sendBtn = document.getElementById('qx-send-btn');
+    const msgsContainer = document.getElementById('qx-msgs-container');
+    const msgsArea = document.getElementById('qx-messages');
+    const historyList = document.getElementById('qx-history-list');
+    const newChatBtn = document.getElementById('qx-new-chat');
+    const fileInput = document.getElementById('qx-file-input');
+    const imageInput = document.getElementById('qx-image-input');
+    const filePrev = document.getElementById('qx-file-preview');
 
-        let chatSessions = JSON.parse(localStorage.getItem('qx_chat_history') || '[]');
-        let currentSessionId = null;
-        let pendingFiles = [];
-        let isWelcomeVisible = false;
+    let chatSessions = JSON.parse(localStorage.getItem('qx_chat_history') || '[]');
+    let currentSessionId = null;
+    let pendingFiles = [];
+    let isWelcomeVisible = false;
+    let selectedDifficulty = 'medium';
+    let selectedQType = 'mcq';
+    let lastUserMessage = '';
 
-        function init() {
-            renderHistory();
-            if (chatSessions.length > 0) loadSession(chatSessions[0].id);
-            else createNewChat();
+    // Load MCQ script
+    if (!window.QuizXMCQ) {
+        const s = document.createElement('script');
+        s.src = '/static/js/chatbot_mcq.js';
+        document.head.appendChild(s);
+    }
 
-            input.addEventListener('input', () => {
-                input.style.height = 'auto';
-                input.style.height = Math.min(input.scrollHeight, 180) + 'px';
-                sendBtn.disabled = !input.value.trim() && pendingFiles.length === 0;
-            });
+    /* ── Difficulty selector ── */
+    const diffBar = document.getElementById('qx-diff-bar');
+    diffBar.querySelectorAll('.qx-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            diffBar.querySelectorAll('.qx-sel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedDifficulty = btn.dataset.diff;
+        });
+    });
 
-            fab.addEventListener('click', () => {
-                panel.classList.toggle('open');
-                fab.classList.toggle('open');
-                if (panel.classList.contains('open')) setTimeout(() => input.focus(), 450);
-            });
+    /* ── Type selector ── */
+    const typeBar = document.getElementById('qx-type-bar');
+    typeBar.querySelectorAll('.qx-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeBar.querySelectorAll('.qx-sel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedQType = btn.dataset.qtype;
+        });
+    });
 
-            closeBtn.addEventListener('click', () => {
-                panel.classList.remove('open');
-                fab.classList.remove('open');
-            });
-
-            sendBtn.addEventListener('click', sendMessage);
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            });
-
-            newChatBtn.addEventListener('click', createNewChat);
-
-            if (window.innerWidth <= 768) {
-                document.getElementById('qx-sidebar-toggle').style.display = 'flex';
-                document.getElementById('qx-sidebar-toggle').addEventListener('click', () => {
-                    document.getElementById('qx-sidebar').classList.toggle('show');
-                });
+    /* ── Quick prompt buttons ── */
+    document.querySelectorAll('.qx-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Set type from quick button
+            const qtype = btn.dataset.type;
+            if (qtype) {
+                typeBar.querySelectorAll('.qx-sel-btn').forEach(b => b.classList.remove('active'));
+                const match = typeBar.querySelector('[data-qtype="' + qtype + '"]');
+                if (match) match.classList.add('active');
+                selectedQType = qtype;
             }
-
-            document.getElementById('qx-attach-file').addEventListener('click', () => fileInput.click());
-            document.getElementById('qx-attach-image').addEventListener('click', () => imageInput.click());
-            fileInput.addEventListener('change', (e) => handleFiles(e.target.files, 'file'));
-            imageInput.addEventListener('change', (e) => handleFiles(e.target.files, 'image'));
-        }
-
-        function handleFiles(files, type) {
-            Array.from(files).forEach(f => {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    pendingFiles.push({ name: f.name, data: ev.target.result, type });
-                    renderPreviews();
-                    sendBtn.disabled = false;
-                };
-                reader.readAsDataURL(f);
-            });
-        }
-
-        function renderPreviews() {
-            filePrev.innerHTML = '';
-            if (pendingFiles.length > 0) {
-                filePrev.classList.add('active');
-                pendingFiles.forEach((f, idx) => {
-                    const item = document.createElement('div');
-                    item.className = 'preview-item';
-                    item.innerHTML = `<span>📎 ${f.name}</span><span onclick="window.removeQxFile(${idx})">×</span>`;
-                    filePrev.appendChild(item);
-                });
-            } else {
-                filePrev.classList.remove('active');
-            }
-        }
-
-        window.removeQxFile = (idx) => {
-            pendingFiles.splice(idx, 1);
-            renderPreviews();
-            sendBtn.disabled = !input.value.trim() && pendingFiles.length === 0;
-        };
-
-        function showWelcome() {
-            isWelcomeVisible = true;
-            msgsContainer.innerHTML = `
-                <div class="qx-welcome">
-                    <div class="qx-welcome-icon">🤖</div>
-                    <h3>QuizX AI</h3>
-                    <p>Your intelligent study assistant. Ask me anything about concepts, quiz prep, or study tips!</p>
-                    <div class="qx-suggestions">
-                        <div class="qx-suggestion-chip" data-prompt="Explain machine learning basics">
-                            <span>🧠</span> Explain a concept
-                        </div>
-                        <div class="qx-suggestion-chip" data-prompt="Give me 5 exam preparation tips">
-                            <span>📚</span> Study strategies
-                        </div>
-                        <div class="qx-suggestion-chip" data-prompt="Create a Python quiz question">
-                            <span>📝</span> Quiz practice
-                        </div>
-                        <div class="qx-suggestion-chip" data-prompt="Best revision techniques for memory">
-                            <span>⚡</span> Quick revision
-                        </div>
-                    </div>
-                </div>
-            `;
-            msgsContainer.querySelectorAll('.qx-suggestion-chip').forEach(chip => {
-                chip.addEventListener('click', () => {
-                    input.value = chip.getAttribute('data-prompt');
-                    sendBtn.disabled = false;
-                    input.focus();
-                    sendMessage();
-                });
-            });
-        }
-
-        function createNewChat() {
-            currentSessionId = 'session_' + Date.now();
-            showWelcome();
-            document.getElementById('qx-sidebar').classList.remove('show');
+            input.value = btn.dataset.prompt;
             input.focus();
-        }
+            // Place cursor at end
+            input.selectionStart = input.selectionEnd = input.value.length;
+            sendBtn.disabled = false;
+        });
+    });
 
-        function loadSession(id) {
-            currentSessionId = id;
-            const session = chatSessions.find(s => s.id === id);
-            if (!session) return;
-            msgsContainer.innerHTML = '';
-            isWelcomeVisible = false;
-            session.messages.forEach(m => renderMessage(m.role, m.content, m.files));
-            renderHistory();
-            scrollToBottom();
-        }
+    function timeNow() {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-        function saveMessage(role, content, files) {
-            let session = chatSessions.find(s => s.id === currentSessionId);
-            if (!session) {
-                session = { id: currentSessionId, title: content.slice(0, 30), messages: [] };
-                chatSessions.unshift(session);
-            }
-            session.messages.push({ role, content, files });
-            localStorage.setItem('qx_chat_history', JSON.stringify(chatSessions));
-            renderHistory();
-        }
+    function escHtml(text) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(text || ''));
+        return d.innerHTML;
+    }
 
-        function renderHistory() {
-            historyList.innerHTML = '';
-            chatSessions.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'history-item' + (s.id === currentSessionId ? ' active' : '');
-                div.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${s.title}`;
-                div.onclick = () => loadSession(s.id);
-                historyList.appendChild(div);
+    function init() {
+        renderHistory();
+        if (chatSessions.length > 0) loadSession(chatSessions[0].id);
+        else createNewChat();
+
+        input.addEventListener('input', () => {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+            sendBtn.disabled = !input.value.trim() && pendingFiles.length === 0;
+        });
+
+        fab.addEventListener('click', () => {
+            panel.classList.toggle('open');
+            fab.classList.toggle('open');
+            if (panel.classList.contains('open')) setTimeout(() => input.focus(), 450);
+        });
+
+        closeBtn.addEventListener('click', () => { panel.classList.remove('open'); fab.classList.remove('open'); });
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        newChatBtn.addEventListener('click', createNewChat);
+
+        if (window.innerWidth <= 768) {
+            document.getElementById('qx-sidebar-toggle').style.display = 'flex';
+            document.getElementById('qx-sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('qx-sidebar').classList.toggle('show');
             });
         }
 
-        function renderMessage(role, content, files) {
-            if (isWelcomeVisible) {
-                msgsContainer.innerHTML = '';
-                isWelcomeVisible = false;
-            }
+        document.getElementById('qx-attach-file').addEventListener('click', () => fileInput.click());
+        document.getElementById('qx-attach-image').addEventListener('click', () => imageInput.click());
+        fileInput.addEventListener('change', e => handleFiles(e.target.files, 'file'));
+        imageInput.addEventListener('change', e => handleFiles(e.target.files, 'image'));
+    }
 
-            const row = document.createElement('div');
-            row.className = `message-row ${role}`;
+    function handleFiles(files, type) {
+        Array.from(files).forEach(f => {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                pendingFiles.push({ name: f.name, data: ev.target.result, type });
+                renderPreviews(); sendBtn.disabled = false;
+            };
+            reader.readAsDataURL(f);
+        });
+    }
 
-            let fileHtml = '';
-            if (files && files.length > 0) {
-                files.forEach(f => {
-                    if (f.type === 'image') {
-                        fileHtml += `<img src="${f.data}" style="max-width:200px; display:block; border-radius:12px; margin-bottom:10px; border:1px solid var(--qx-border)">`;
-                    } else {
-                        fileHtml += `<div style="background:var(--qx-green-surface); padding:8px 12px; border-radius:10px; font-size:0.8rem; margin-bottom:10px; display:inline-flex; align-items:center; gap:8px; color:var(--qx-green); font-weight:600; border:1px solid var(--qx-border);">📎 ${f.name}</div><br>`;
-                    }
-                });
-            }
+    function renderPreviews() {
+        filePrev.innerHTML = '';
+        if (pendingFiles.length > 0) {
+            filePrev.classList.add('active');
+            pendingFiles.forEach((f, idx) => {
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.innerHTML = '<span>' + escHtml(f.name) + '</span><span onclick="window.removeQxFile(' + idx + ')">&#215;</span>';
+                filePrev.appendChild(item);
+            });
+        } else { filePrev.classList.remove('active'); }
+    }
 
-            row.innerHTML = `
-                <div class="message-avatar">${role === 'bot' ? '🤖' : '👤'}</div>
-                <div class="message-content">
-                    ${fileHtml}
-                    <div>${parseMarkdown(content)}</div>
+    window.removeQxFile = idx => {
+        pendingFiles.splice(idx, 1); renderPreviews();
+        sendBtn.disabled = !input.value.trim() && pendingFiles.length === 0;
+    };
+
+    function showWelcome() {
+        isWelcomeVisible = true;
+        msgsContainer.innerHTML = `
+            <div class="qx-welcome">
+                <div class="qx-welcome-icon">&#129302;</div>
+                <h3>QuizX AI</h3>
+                <p>Your intelligent quiz assistant. Generate MCQs, True/False, Short Answer, or Mixed quizzes instantly!</p>
+                <div class="qx-suggestions">
+                    <div class="qx-suggestion-chip" data-prompt="Generate MCQ quiz on Python OOP"><span>&#128221;</span> MCQ — Python OOP</div>
+                    <div class="qx-suggestion-chip" data-prompt="Generate True/False quiz on Data Structures"><span>&#9989;</span> True/False — Data Structures</div>
+                    <div class="qx-suggestion-chip" data-prompt="Generate Short Answer quiz on Networking"><span>&#9999;&#65039;</span> Short Answer — Networking</div>
+                    <div class="qx-suggestion-chip" data-prompt="Generate Mixed quiz on Web Development"><span>&#128256;</span> Mixed — Web Dev</div>
                 </div>
-            `;
-            msgsContainer.appendChild(row);
-            scrollToBottom();
+            </div>`;
+        msgsContainer.querySelectorAll('.qx-suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                input.value = chip.getAttribute('data-prompt');
+                sendBtn.disabled = false; input.focus(); sendMessage();
+            });
+        });
+    }
+
+    function createNewChat() {
+        currentSessionId = 'session_' + Date.now();
+        showWelcome();
+        document.getElementById('qx-sidebar').classList.remove('show');
+        input.focus();
+    }
+
+    function loadSession(id) {
+        currentSessionId = id;
+        const session = chatSessions.find(s => s.id === id);
+        if (!session) return;
+        msgsContainer.innerHTML = ''; isWelcomeVisible = false;
+        session.messages.forEach(m => renderMessage(m.role, m.content, m.files, m.time, false));
+        renderHistory(); scrollToBottom();
+    }
+
+    function saveMessage(role, content, files, time) {
+        let session = chatSessions.find(s => s.id === currentSessionId);
+        if (!session) {
+            session = { id: currentSessionId, title: content.slice(0, 30), messages: [] };
+            chatSessions.unshift(session);
+        }
+        session.messages.push({ role, content, files, time });
+        localStorage.setItem('qx_chat_history', JSON.stringify(chatSessions));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        historyList.innerHTML = '';
+        chatSessions.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'history-item' + (s.id === currentSessionId ? ' active' : '');
+            div.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ' + escHtml(s.title);
+            div.onclick = () => loadSession(s.id);
+            historyList.appendChild(div);
+        });
+    }
+
+    function renderMessage(role, content, files, time, withActions) {
+        if (isWelcomeVisible) { msgsContainer.innerHTML = ''; isWelcomeVisible = false; }
+        const row = document.createElement('div');
+        row.className = 'message-row ' + role;
+
+        let fileHtml = '';
+        if (files && files.length > 0) {
+            files.forEach(f => {
+                if (f.type === 'image') {
+                    fileHtml += '<img src="' + f.data + '" style="max-width:200px;display:block;border-radius:12px;margin-bottom:10px;border:1px solid var(--qx-border)">';
+                } else {
+                    fileHtml += '<div style="background:var(--qx-green-surface);padding:8px 12px;border-radius:10px;font-size:.8rem;margin-bottom:10px;display:inline-flex;align-items:center;gap:8px;color:var(--qx-green);font-weight:600;border:1px solid var(--qx-border);">' + escHtml(f.name) + '</div><br>';
+                }
+            });
         }
 
-        async function sendMessage() {
-            const text = input.value.trim();
-            if (!text && pendingFiles.length === 0) return;
+        const ts = time || timeNow();
+        let actionsHtml = '';
+        if (role === 'bot' && withActions !== false) {
+            actionsHtml = '<div class="msg-actions">'
+                + '<button class="msg-action-btn btn-msg-copy" title="Copy"><i class="fas fa-copy"></i> Copy</button>'
+                + '<button class="msg-action-btn btn-msg-regen" title="Regenerate"><i class="fas fa-rotate-right"></i> Regenerate</button>'
+                + '</div>';
+        }
 
-            const files = [...pendingFiles];
-            pendingFiles = [];
-            renderPreviews();
+        row.innerHTML = '<div class="message-avatar">' + (role === 'bot' ? '&#129302;' : '&#128100;') + '</div>'
+            + '<div class="message-content">'
+            + fileHtml
+            + '<div>' + parseMarkdown(content) + '</div>'
+            + '<div class="msg-time">' + ts + '</div>'
+            + actionsHtml
+            + '</div>';
 
-            input.value = '';
-            input.style.height = 'auto';
-            sendBtn.disabled = true;
-
-            renderMessage('user', text, files);
-            saveMessage('user', text, files);
-
-            const typing = document.createElement('div');
-            typing.className = 'message-row bot';
-            typing.innerHTML = `<div class="message-avatar">🤖</div><div class="message-content"><div class="typing"><span></span><span></span><span></span></div></div>`;
-            msgsContainer.appendChild(typing);
-            scrollToBottom();
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+        // Copy handler
+        const copyBtn = row.querySelector('.btn-msg-copy');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(content).then(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 1500);
                 });
-                const data = await res.json();
-                typing.remove();
-                const reply = data?.response?.reply || "I'm sorry, I couldn't process that.";
-                renderMessage('bot', reply);
-                saveMessage('bot', reply);
-            } catch (e) {
-                typing.remove();
-                renderMessage('bot', "Connection error. Please try again later.");
+            });
+        }
+
+        // Regenerate handler
+        const regenBtn = row.querySelector('.btn-msg-regen');
+        if (regenBtn) {
+            regenBtn.addEventListener('click', () => {
+                if (lastUserMessage) {
+                    input.value = lastUserMessage;
+                    sendMessage();
+                }
+            });
+        }
+
+        msgsContainer.appendChild(row);
+        scrollToBottom();
+        return row;
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text && pendingFiles.length === 0) return;
+
+        lastUserMessage = text;
+        const files = [...pendingFiles];
+        pendingFiles = []; renderPreviews();
+        input.value = ''; input.style.height = 'auto'; sendBtn.disabled = true;
+
+        const userTime = timeNow();
+        renderMessage('user', text, files, userTime);
+        saveMessage('user', text, files, userTime);
+
+        // Show loading skeleton with typing text
+        const loadingRow = document.createElement('div');
+        loadingRow.className = 'message-row bot';
+        loadingRow.innerHTML = '<div class="message-avatar">&#129302;</div>'
+            + '<div class="message-content">'
+            + '<div class="qx-typing-text">AI is generating questions...</div>'
+            + '<div class="qx-skeleton"><div class="qx-skeleton-line"></div><div class="qx-skeleton-line"></div><div class="qx-skeleton-line"></div></div>'
+            + '<div class="typing"><span></span><span></span><span></span></div>'
+            + '</div>';
+        msgsContainer.appendChild(loadingRow);
+        scrollToBottom();
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    difficulty: selectedDifficulty,
+                    question_type: selectedQType
+                })
+            });
+            const data = await res.json();
+            loadingRow.remove();
+
+            const responseData = data?.response || {};
+            const reply = responseData.reply || "I'm sorry, I couldn't process that.";
+            const botTime = timeNow();
+
+            if (responseData.type === 'admin_quiz' && responseData.quiz_data && window.QuizXMCQ) {
+                renderMessage('bot', reply, null, botTime);
+                saveMessage('bot', reply, null, botTime);
+
+                const cardsEl = window.QuizXMCQ.renderQuizResponse(responseData.quiz_data);
+                if (cardsEl) {
+                    const cardRow = document.createElement('div');
+                    cardRow.className = 'message-row bot';
+                    cardRow.innerHTML = '<div class="message-avatar">&#129302;</div>';
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.style.padding = '14px';
+                    contentDiv.appendChild(cardsEl);
+                    cardRow.appendChild(contentDiv);
+                    msgsContainer.appendChild(cardRow);
+                    scrollToBottom();
+                }
+            } else {
+                renderMessage('bot', reply, null, botTime);
+                saveMessage('bot', reply, null, botTime);
             }
+        } catch (e) {
+            loadingRow.remove();
+            renderMessage('bot', "Connection error. Please try again later.", null, timeNow());
         }
+    }
 
-        function parseMarkdown(text) {
-            return text
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code>$1</code>')
-                .replace(/\n/g, '<br>');
-        }
+    function parseMarkdown(text) {
+        return (text || '')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
 
-        function scrollToBottom() {
+    function scrollToBottom() {
+        requestAnimationFrame(() => {
             msgsArea.scrollTo({ top: msgsArea.scrollHeight, behavior: 'smooth' });
-        }
+        });
+    }
 
-        init();
-    })();
+    init();
+})();
 </script>
