@@ -1444,7 +1444,6 @@ body {
    Question Display
    =========================================== */
 .question-display {
-    flex: 1;
     display: flex;
     flex-direction: column;
 }
@@ -1635,8 +1634,8 @@ body {
 .navigation-controls {
     display: flex;
     gap: 16px;
-    margin-top: auto;
-    padding-top: 24px;
+    margin-top: 40px;
+    padding-top: 20px;
     border-top: 1px solid var(--border-color);
 }
 

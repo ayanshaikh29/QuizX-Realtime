@@ -276,11 +276,16 @@
 
     <div id="quizx-chat-panel" class="quizx-chat-panel">
         <aside class="quizx-sidebar" id="qx-sidebar">
-            <button class="new-chat-btn" id="qx-new-chat">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                New Chat
-            </button>
-            <div class="history-list" id="qx-history-list"></div>
+            <div style="display:flex; padding: 14px 14px 0 14px; gap: 8px;">
+                <button class="new-chat-btn" id="qx-new-chat" style="flex:1; margin:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Chat
+                </button>
+                <button class="new-chat-btn" id="qx-del-chat" style="background: linear-gradient(135deg, #ef4444, #f87171); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); padding: 13px; margin:0;" title="Delete All Chats">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+            <div class="history-list" id="qx-history-list" style="margin-top: 14px;"></div>
         </aside>
 
         <main class="quizx-chat-main">
@@ -455,6 +460,27 @@
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
         newChatBtn.addEventListener('click', createNewChat);
+        
+        document.getElementById('qx-del-chat').addEventListener('click', () => {
+            if (confirm("Are you sure you want to delete ALL chat history? This cannot be undone.")) {
+                chatSessions = [];
+                localStorage.removeItem('qx_chat_history');
+                renderHistory();
+                createNewChat();
+                
+                // Show a quick visual confirmation within the chat container if possible
+                const t = document.createElement('div');
+                t.textContent = "Chat history deleted.";
+                Object.assign(t.style, {
+                    position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
+                    background: '#ef4444', color: '#fff', padding: '8px 16px', borderRadius: '8px',
+                    fontSize: '0.8rem', fontWeight: 'bold', zIndex: '99999', opacity: '1', transition: 'opacity 0.3s'
+                });
+                msgsArea.style.position = 'relative';
+                msgsArea.appendChild(t);
+                setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+            }
+        });
 
         if (window.innerWidth <= 768) {
             document.getElementById('qx-sidebar-toggle').style.display = 'flex';

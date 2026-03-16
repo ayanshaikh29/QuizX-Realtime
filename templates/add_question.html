@@ -411,7 +411,7 @@
                 sel.value = qtype;
                 var allBlocks = container.querySelectorAll('.question-block');
                 var idx = 0;
-                allBlocks.forEach(function (b, bi) { if (b === block) idx = bi + 1; });
+                allBlocks.forEach(function (b, bi) { if (b === block) idx = bi; });
                 if (typeof changeQuestionType === 'function') changeQuestionType(sel, idx);
             }
 

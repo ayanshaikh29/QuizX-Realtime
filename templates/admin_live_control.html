@@ -67,12 +67,12 @@
             </div>
             <div class="qr-modal-body text-center">
                 <div class="qr-main-wrapper shadow-lg mb-4">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={{ request.host_url }}join/{{ quiz.join_code }}"
+                    <img src="{{ qr_base64 }}"
                         alt="Join QR Code" class="img-fluid qr-big-img">
                 </div>
                 <div class="join-info-box p-3 rounded-4 shadow-sm border mb-4">
                     <span class="d-block text-muted small mb-2">JOIN LINK</span>
-                    <h3 class="join-url-text mb-3">{{ request.host_url }}join/{{ quiz.join_code }}</h3>
+                    <h3 class="join-url-text mb-3 text-truncate">{{ join_url }}</h3>
                     <button class="btn btn-primary btn-lg rounded-pill px-4" onclick="copyJoinLink(event)">
                         <i class="fas fa-copy me-2"></i>Copy Invitation Link
                     </button>
@@ -101,9 +101,8 @@
                 <a href="{{ url_for('admin.quizzes') }}" class="nav-link active">
                     <i class="fas fa-book"></i> Quizzes
                 </a>
-                <a href="{{ url_for('admin.quizzes') }}" class="nav-link">
-                    <i class="fas fa-chart-line"></i> Analytics
-                </a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link"><i class="fas fa-layer-group"></i>
+                    Groups</a>
                 <a href="{{ url_for('auth.profile') }}" class="nav-link">
                     <i class="fas fa-user-circle"></i> Profile
                 </a>
@@ -210,7 +209,7 @@
                                 <div class="qr-display text-center p-3">
                                     <div class="qr-wrapper mb-3 shadow-sm"
                                         style="background: white; padding: 8px; border-radius: 12px; display: inline-block; cursor: zoom-in;">
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.host_url }}join/{{ quiz.join_code }}"
+                                        <img src="{{ qr_base64 }}"
                                             alt="Join QR Code" class="img-fluid" style="border-radius: 4px;">
                                     </div>
                                     <div
@@ -294,11 +293,17 @@
                                             {'value': current_question.option4, 'letter': 'D', 'color': 'green'}
                                             ] %}
                                             {% for opt in options if opt.value %}
+                                            {% set ns = namespace(is_correct=false) %}
+                                            {% for ans in (current_question.answer or '').split(',') %}
+                                                {% if (ans|string|trim|lower) == (opt.value|string|trim|lower) %}
+                                                    {% set ns.is_correct = true %}
+                                                {% endif %}
+                                            {% endfor %}
                                             <div
-                                                class="option-card {{ opt.color }} {{ 'correct' if opt.value in (current_question.answer or '').split(',') else '' }}">
+                                                class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
                                                 <span class="option-letter">{{ opt.letter }}</span>
                                                 <span class="option-text">{{ opt.value }}</span>
-                                                {% if opt.value in (current_question.answer or '').split(',') %}
+                                                {% if ns.is_correct %}
                                                 <span class="correct-badge"><i class="fas fa-check"></i></span>
                                                 {% endif %}
                                             </div>
@@ -309,11 +314,15 @@
                                             {'value': 'False', 'letter': 'F', 'color': 'red'}
                                             ] %}
                                             {% for opt in options %}
+                                            {% set ns = namespace(is_correct=false) %}
+                                            {% if ((current_question.answer or '')|string|trim|lower) == (opt.value|string|trim|lower) %}
+                                                {% set ns.is_correct = true %}
+                                            {% endif %}
                                             <div
-                                                class="option-card {{ opt.color }} {{ 'correct' if current_question.answer == opt.value else '' }}">
+                                                class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
                                                 <span class="option-letter">{{ opt.letter }}</span>
                                                 <span class="option-text">{{ opt.value | upper }}</span>
-                                                {% if current_question.answer == opt.value %}
+                                                {% if ns.is_correct %}
                                                 <span class="correct-badge"><i class="fas fa-check"></i></span>
                                                 {% endif %}
                                             </div>
@@ -457,7 +466,7 @@
 
         function copyJoinLink(e) {
             if (e) e.stopPropagation();
-            const joinUrl = "{{ request.host_url }}join/{{ quiz.join_code }}";
+            const joinUrl = "{{ join_url }}";
             const btn = (e && e.currentTarget) ? e.currentTarget : event.currentTarget;
 
             navigator.clipboard.writeText(joinUrl).then(() => {

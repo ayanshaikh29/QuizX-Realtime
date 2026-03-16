@@ -342,6 +342,9 @@ def publish_quiz(quiz_id):
     if not quiz.join_code:
         quiz.join_code = generate_join_code()
     
+    # Pre-initialise quiz_state so live_control can read current_qindex immediately.
+    # question_started_at is intentionally NOT set here — it will be stamped
+    # when the admin clicks 'Start Quiz', at which point the timer begins.
     quiz_state[quiz.id] = {'current_qindex': 0}
     db.session.commit()
     
@@ -436,13 +439,18 @@ def start_quiz(quiz_id):
     # Now start the quiz
     quiz.is_active = True
     quiz.is_paused = False
-    
-    # Initialize quiz state
-    if quiz.has_timer:
-        quiz_state[quiz_id] = {
-            'current_qindex': 0,
-            'started_at': time.time()
-        }
+
+    # ── Server-controlled timer: stamp question_started_at NOW ──────
+    # This is the single source of truth for the per-question timer.
+    # Both the HTTP route and the Socket.IO handler use the same dict
+    # shape so quiz_state is always consistent regardless of which path
+    # triggered the start.
+    start_ts = time.time()
+    quiz_state[quiz_id] = {
+        'current_qindex':      0,
+        'started':             True,
+        'question_started_at': start_ts,
+    }
     
     db.session.commit()
     
@@ -511,13 +519,30 @@ def live_control(quiz_id):
     current_index = quiz_state.get(quiz_id, {}).get('current_qindex', 0)
     current_question = questions[current_index] if current_index < len(questions) else None
     
+    base_url = request.host_url.rstrip("/")
+    
+    from app.utils.qr_generator import generate_qr_base64, get_local_ip
+    
+    # Check if accessing via localhost and replace with local network IP for mobile scanning
+    if '127.0.0.1' in base_url or 'localhost' in base_url:
+        local_ip = get_local_ip()
+        from urllib.parse import urlparse
+        parsed = urlparse(base_url)
+        base_url = f"{parsed.scheme}://{local_ip}:{parsed.port}" if parsed.port else f"{parsed.scheme}://{local_ip}"
+        
+    join_url = f"{base_url}{url_for('student.join_by_link', code=quiz.join_code)}"
+    
+    qr_base64 = generate_qr_base64(join_url)
+    
     return render_template(
         'admin_live_control.html',
         quiz=quiz,
         questions=questions,
         total_questions=len(questions),
         current_index=current_index,
-        current_question=current_question
+        current_question=current_question,
+        qr_base64=qr_base64,
+        join_url=join_url
     )
 
 
@@ -526,7 +551,22 @@ def live_control(quiz_id):
 def waiting_room(quiz_id):
     """Admin waiting room to monitor live participants"""
     quiz = Quiz.query.get_or_404(quiz_id)
-    return render_template('admin_waiting_room.html', quiz=quiz)
+    
+    base_url = request.host_url.rstrip("/")
+    
+    from app.utils.qr_generator import generate_qr_base64, get_local_ip
+    
+    if '127.0.0.1' in base_url or 'localhost' in base_url:
+        local_ip = get_local_ip()
+        from urllib.parse import urlparse
+        parsed = urlparse(base_url)
+        base_url = f"{parsed.scheme}://{local_ip}:{parsed.port}" if parsed.port else f"{parsed.scheme}://{local_ip}"
+        
+    join_url = f"{base_url}{url_for('student.join_by_link', code=quiz.join_code)}"
+    
+    qr_base64 = generate_qr_base64(join_url)
+    
+    return render_template('admin_waiting_room.html', quiz=quiz, qr_base64=qr_base64, join_url=join_url)
 
 
 @admin_bp.route('/live-leaderboard/<int:quiz_id>')
@@ -708,55 +748,8 @@ def rename_quiz():
 # SOCKET.IO EVENT HANDLERS
 # ═══════════════════════════════════════════════════════════
 
-@socketio.on('admin_start_quiz')
-def handle_admin_start_quiz(data):
-    """
-    Admin starts quiz via Socket.IO
-    Clears old data before starting
-    """
-    quiz_id = data.get('quiz_id')
-    
-    if not quiz_id:
-        return {'error': 'No quiz_id provided'}
-    
-    quiz = Quiz.query.get(quiz_id)
-    
-    if not quiz:
-        return {'error': 'Quiz not found'}
-    
-    # Clear old data
-    print(f"Admin starting quiz {quiz_id} via Socket.IO - clearing old data")
-    cleared = clear_quiz_session_data(quiz_id)
-    
-    # Start quiz
-    quiz.is_active = True
-    quiz.is_paused = False
-    
-    if quiz.has_timer:
-        quiz_state[quiz_id] = {
-            'current_qindex': 0,
-            'started_at': time.time()
-        }
-    
-    db.session.commit()
-    
-    # Notify all participants
-    socketio.emit(
-        'quiz_started',
-        {
-            'quiz_id': quiz_id,
-            'title': quiz.title,
-            'has_timer': quiz.has_timer,
-            'timestamp': time.time()
-        },
-        room=f"quiz_{quiz_id}"
-    )
-    
-    return {
-        'success': True,
-        'cleared': cleared['partial_answers_cleared'],
-        'quiz_id': quiz_id
-    }
+# NOTE: admin_start_quiz socket event is handled exclusively in quiz_events.py
+# to avoid duplicate handler firing. Do not add a second handler here.
 
 
 @socketio.on("admin_finish_quiz")

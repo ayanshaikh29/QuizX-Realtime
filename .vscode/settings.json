@@ -1,3 +1,6 @@
 {
-    "kiroAgent.configureMCP": "Disabled"
+    "kiroAgent.configureMCP": "Disabled",
+    "github.copilot.chat.agent.autoFix": true,
+    "chat.checkpoints.showFileChanges": true,
+    "chat.editing.explainChanges.enabled": true
 }

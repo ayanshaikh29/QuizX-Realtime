@@ -119,51 +119,265 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // SERVER-CONTROLLED TIMER SYNCHRONISATION
+        //
+        // The single source of truth for "when did this question start" is
+        // quiz_state[quiz_id]["question_started_at"] on the server (a Unix
+        // float, seconds).  The server embeds it in every page render AND
+        // in every socket event so every path — on-time join, late join,
+        // page refresh, next-question redirect — always derives remaining
+        // time from the same origin.
+        //
+        // NEVER start a timer from a fixed timeLimit.
+        // NEVER store timer state in Flask session.
+        // ═══════════════════════════════════════════════════════════════════
+
         const socket = io();
-        const quizId = parseInt("{{ quiz.id }}");
-        const user = "{{ session.get('username', 'Guest') }}";
-        const curIdx = parseInt("{{ current_index }}");
-        const totalQs = parseInt("{{ total_questions }}");
-        const isLastQuestion = (curIdx === totalQs - 1);
-        const correctAnswer = "{{ current_question.answer }}"; // use 'answer' instead of 'correct_answer' to match model
 
-        // Quiz Configuration Variables
-        const showLeaderboardEach = "{{ quiz.show_leaderboard_each_question }}" === "True";
-        const timerMode = "{{ quiz.timer_mode }}";
-        const totalQuizTime = parseInt("{{ quiz.total_quiz_time or 0 }}") * 60; // Convert minutes to seconds
-        const timeLimit = parseInt("{{ current_question.time_limit }}");
+        // ── Quiz / question constants (server-rendered, immutable) ────────
+        const quizId          = parseInt("{{ quiz.id }}");
+        const user            = "{{ session.get('username', 'Guest') }}";
+        const curIdx          = parseInt("{{ current_index }}");
+        const totalQs         = parseInt("{{ total_questions }}");
+        const isLastQuestion  = (curIdx === totalQs - 1);
+        const correctAnswer   = "{{ current_question.answer }}";
+        const showLeaderboard = "{{ quiz.show_leaderboard_each_question }}" === "True";
+        const timerMode       = "{{ quiz.timer_mode }}";           // 'per_question' | 'overall'
+        const totalQuizTime   = parseInt("{{ quiz.total_quiz_time or 0 }}") * 60; // seconds
+        const timeLimit       = parseInt("{{ current_question.time_limit }}");
+        const quizIsActive    = {{ 'true' if quiz.is_active else 'false' }};
 
-        let submitted = false;
-        let timerTick = null;
-        let questionStartTime = Date.now();
+        // ── Server-authoritative question start timestamp ─────────────────
+        // Injected by attempt_quiz route from quiz_state[quiz_id]["question_started_at"].
+        // Set by server when admin starts or advances a question.
+        const questionStartedAt = parseFloat("{{ question_started_at }}");
 
+        // ── Server time for clock-offset correction ───────────────────────
+        // The server embeds its current time alongside questionStartedAt.
+        // We use the difference to correct for client clocks that are
+        // ahead of or behind the server (e.g. mobile devices with wrong time).
+        // clockOffset = how many seconds the CLIENT is behind the server.
+        // Positive → client clock is slow; Negative → client clock is fast.
+        const serverTimeAtRender = parseFloat("{{ server_time }}");
+        const clockOffset = serverTimeAtRender - (Date.now() / 1000);
+
+        // ── Mutable state ─────────────────────────────────────────────────
+        let submitted        = false;
+        let timerInterval    = null;
+        // questionStartTime: Date.now() (ms) when THIS student's countdown
+        // began — used only to measure the student's personal response time.
+        let questionStartTime = null;
+        // Guard: ignore duplicate quiz_started events (duplicate handler bug)
+        let quizAlreadyStarted = false;
+
+        // Overall-mode elapsed tracking (client-side only, not Flask session)
+        let elapsedQuizTime = parseInt(sessionStorage.getItem(`quiz_${quizId}_elapsed`) || "0");
+
+        // ── DOM references ────────────────────────────────────────────────
+        const timerBadge     = document.getElementById("timerBadge");
+        const timerLabel     = document.getElementById("timerLabel");
+        const progressBar    = document.getElementById("progressBar");
+        const waitingOverlay = document.getElementById("waitingOverlay");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // serverAdjustedNow()
+        // Returns the client's current time adjusted for clock skew.
+        // This is the correct "now" to use when computing elapsed time
+        // against a server-provided Unix timestamp.
+        // ═══════════════════════════════════════════════════════════════════
+        function serverAdjustedNow() {
+            return (Date.now() / 1000) + clockOffset;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // computeRemainingFromTs(questionStartTs)
+        // Core computation: given a server Unix timestamp for when the
+        // question started, return how many seconds are left RIGHT NOW.
+        // Works for on-time joins, late joins, and page refreshes.
+        // ═══════════════════════════════════════════════════════════════════
+        function computeRemainingFromTs(questionStartTs) {
+            if (timerMode === "overall") {
+                return Math.max(0, totalQuizTime - elapsedQuizTime);
+            }
+            const now     = serverAdjustedNow();
+            const elapsed = Math.max(0, now - questionStartTs);
+            const remaining = Math.max(0, Math.floor(timeLimit - elapsed));
+            console.log(
+                `[Timer] questionStartedAt=${questionStartTs.toFixed(3)}, ` +
+                `serverAdjustedNow=${now.toFixed(3)}, ` +
+                `clockOffset=${clockOffset.toFixed(3)}s, ` +
+                `elapsed=${elapsed.toFixed(2)}s, ` +
+                `remaining=${remaining}s`
+            );
+            return remaining;
+        }
+
+        // Convenience: compute remaining using the page-rendered timestamp
+        function computeRemainingTime() {
+            return computeRemainingFromTs(questionStartedAt);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // updateTimerUI(remaining)
+        // Keeps the badge label and progress bar in sync.
+        // ═══════════════════════════════════════════════════════════════════
         function formatTime(seconds) {
-            if (seconds <= 0) return "0:00";
+            if (seconds <= 0) return "0s";
             const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
+            const s = Math.floor(seconds % 60);
             return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
         }
 
-        // Basic Overall Timer Tracking via sessionStorage
-        let elapsedQuizTime = parseInt(sessionStorage.getItem(`quiz_${quizId}_elapsed`) || "0");
-        let timeLeft = timerMode === "overall" ? Math.max(0, totalQuizTime - elapsedQuizTime) : timeLimit;
+        function updateTimerUI(remaining) {
+            const maxTime    = timerMode === "overall" ? totalQuizTime : timeLimit;
+            const percentage = maxTime > 0 ? Math.max(0, (remaining / maxTime) * 100) : 0;
 
-        // HTML elements
-        const timerBadge = document.getElementById("timerBadge");
-        const timerLabel = document.getElementById("timerLabel");
-        const progressBar = document.getElementById("progressBar");
-        const timerEl = timerLabel; // The span that shows time
-        const timerProgress = progressBar; // The progress bar
+            timerLabel.innerText       = formatTime(remaining);
+            progressBar.style.width    = percentage + "%";
+            progressBar.classList.remove("bg-primary", "bg-warning", "bg-danger");
+            timerLabel.classList.remove("text-danger");
 
+            if (percentage <= 0) {
+                progressBar.classList.add("bg-danger");
+                timerLabel.classList.add("text-danger");
+            } else if (percentage < 25) {
+                progressBar.classList.add("bg-danger");
+                timerLabel.classList.add("text-danger");
+            } else if (percentage < 50) {
+                progressBar.classList.add("bg-warning");
+            } else {
+                progressBar.classList.add("bg-primary");
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // startCountdown(timeRemaining)
+        // The ONLY entry point for starting/restarting the timer.
+        // Always pass the result of computeRemainingTime() or
+        // computeRemainingTimeFromEvent() — never a raw timeLimit.
+        // ═══════════════════════════════════════════════════════════════════
+        function startCountdown(timeRemaining) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            // Record when this student's countdown began (for scoring only)
+            questionStartTime = Date.now();
+
+            // Adjust badge icon for overall mode
+            if (timerMode === "overall") {
+                const icon = timerBadge.querySelector('i');
+                if (icon) icon.className = 'fas fa-hourglass-half me-2';
+            }
+
+            // If time has already run out when the student joins, auto-submit now
+            if (timeRemaining <= 0) {
+                updateTimerUI(0);
+                autoSubmitAnswer();
+                return;
+            }
+
+            // Render the initial state immediately (no blank frame)
+            let timer = timeRemaining;
+            updateTimerUI(timer);
+
+            timerInterval = setInterval(() => {
+                timer--;
+
+                if (timerMode === "overall") {
+                    elapsedQuizTime++;
+                    sessionStorage.setItem(`quiz_${quizId}_elapsed`, elapsedQuizTime);
+                }
+
+                updateTimerUI(timer);
+
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    autoSubmitAnswer();
+                }
+            }, 1000);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // autoSubmitAnswer()
+        // Called when the timer reaches zero. Submits whatever is selected,
+        // or "No Answer" if nothing is selected.
+        // ═══════════════════════════════════════════════════════════════════
+        function autoSubmitAnswer() {
+            if (submitted) return;
+            const qType = "{{ current_question.question_type }}";
+            let val = "No Answer";
+
+            if (qType === 'checkbox') {
+                const checked = Array.from(
+                    document.querySelectorAll("input[name='answer[]']:checked")
+                ).map(cb => cb.value);
+                if (checked.length > 0) val = checked.join(',');
+            } else if (qType === 'short_answer') {
+                const input = document.getElementById("shortAnswerInput");
+                if (input && input.value.trim()) val = input.value.trim();
+            } else {
+                const radio = document.querySelector('input[name="answer"]:checked');
+                if (radio) val = radio.value;
+            }
+
+            handleSubmission(val);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // SOCKET.IO — join room & event handlers
+        // ═══════════════════════════════════════════════════════════════════
         socket.emit("join_quiz", { quiz_id: quizId });
 
-        socket.on('connect', () => { console.log('✅ Connected'); });
+        socket.on('connect', () => console.log('✅ Socket connected'));
 
+        // Admin fires "Start Quiz" from the live-control panel.
+        // GUARD: quizAlreadyStarted prevents duplicate quiz_started events
+        // (which happen when both admin.py and quiz_events.py both had handlers)
+        // from restarting the timer and giving all students a fresh full timer.
+        socket.on("quiz_started", (data) => {
+            if (parseInt(data.quiz_id) !== quizId) return;
+            if (quizAlreadyStarted) {
+                console.warn('⚠️ Duplicate quiz_started ignored');
+                return;
+            }
+            quizAlreadyStarted = true;
+            console.log('📣 quiz_started received from server');
+
+            waitingOverlay.classList.remove("active");
+
+            // Prefer question_started_at from the event.
+            // If the event also carries server_time, we recompute clockOffset
+            // from the event payload for tighter accuracy than the page render.
+            let ts = data.question_started_at || questionStartedAt;
+            if (data.server_time) {
+                const eventClockOffset = data.server_time - (Date.now() / 1000);
+                const now     = (Date.now() / 1000) + eventClockOffset;
+                const elapsed = Math.max(0, now - ts);
+                const remaining = Math.max(0, Math.floor(timeLimit - elapsed));
+                console.log(`[quiz_started] eventClockOffset=${eventClockOffset.toFixed(3)}s, elapsed=${elapsed.toFixed(2)}s, remaining=${remaining}s`);
+                startCountdown(remaining);
+            } else {
+                startCountdown(computeRemainingFromTs(ts));
+            }
+        });
+
+        // Admin advances to the next question
         socket.on("load_next_question", (data) => {
             if (parseInt(data.quiz_id) !== quizId) return;
-            clearInterval(timerTick);
-            resetTimer();
-            // Redirect to next question - timer will start when page loads and admin has started quiz
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            // Navigate to the next question page.
+            // The server will embed the fresh question_started_at that was
+            // saved in quiz_state when admin_next_question ran — so the new
+            // page will call computeRemainingTime() correctly on load.
             window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
         });
 
@@ -178,110 +392,53 @@
             }
         });
 
-        // Listen for quiz_started event from admin
-        socket.on("quiz_started", (data) => {
-            if (parseInt(data.quiz_id) === quizId) {
-                console.log('Quiz started by admin!');
-                document.getElementById("waitingOverlay").classList.remove("active");
-                questionStartTime = Date.now();
-                startTimer();
-            }
-        });
-
-        function resetTimer() {
-            clearInterval(timerTick);
-            timeLeft = timeLimit;
-            questionStartTime = Date.now();
-        }
-
-        function startTimer() {
-            if (timeLeft <= 0) {
-                timerEl.innerText = "0:00";
-                timerProgress.style.width = "0%";
-                timerProgress.classList.replace("bg-primary", "bg-danger");
-                handleSubmission("No Answer");
-                return;
-            }
-
-            // Set initial display
-            timerEl.innerText = formatTime(timeLeft);
-            const maxTime = timerMode === "overall" ? totalQuizTime : timeLimit;
-            timerProgress.style.width = (timeLeft / maxTime) * 100 + "%";
-
-            // For overall mode, update the badge icon (but keep timerLabel span intact)
-            if (timerMode === "overall") {
-                const icon = timerBadge.querySelector('i');
-                if (icon) { icon.className = 'fas fa-hourglass-half me-2'; }
-            }
-
-            timerTick = setInterval(() => {
-                timeLeft--;
-
-                if (timerMode === "overall") {
-                    elapsedQuizTime++;
-                    sessionStorage.setItem(`quiz_${quizId}_elapsed`, elapsedQuizTime);
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerTick);
-                    timerEl.innerText = "0:00";
-                    timerProgress.style.width = "0%";
-                    timerProgress.classList.replace("bg-primary", "bg-danger");
-
-                    if (!submitted) {
-                        const qType = "{{ current_question.question_type }}";
-                        let val = "No Answer";
-                        if (qType === 'checkbox') {
-                            const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
-                            if (selected.length > 0) val = selected.join(',');
-                        } else if (qType === 'short_answer') {
-                            const input = document.getElementById("shortAnswerInput");
-                            if (input && input.value.trim()) val = input.value.trim();
-                        } else {
-                            const selectedRadio = document.querySelector('input[name="answer"]:checked');
-                            if (selectedRadio) val = selectedRadio.value;
-                        }
-                        handleSubmission(val);
-                    }
-                } else {
-                    timerEl.innerText = formatTime(timeLeft);
-                    const percentage = (timeLeft / maxTime) * 100;
-                    timerProgress.style.width = percentage + "%";
-
-                    timerProgress.classList.remove("bg-primary", "bg-warning", "bg-danger");
-                    if (percentage < 25) {
-                        timerProgress.classList.add("bg-danger");
-                        timerEl.classList.add("text-danger");
-                    } else if (percentage < 50) {
-                        timerProgress.classList.add("bg-warning");
-                        timerEl.classList.remove("text-danger");
-                    } else {
-                        timerProgress.classList.add("bg-primary");
-                        timerEl.classList.remove("text-danger");
-                    }
-                }
-            }, 1000);
-        }
-
-        // Check if quiz is already active - if so, start timer immediately
-        const quizIsActive = {{ 'true' if quiz.is_active else 'false' }};
+        // ═══════════════════════════════════════════════════════════════════
+        // INITIAL TIMER BOOT
+        //
+        // Two cases on page load:
+        //
+        //  A) Quiz is already active (on-time join, late join, page refresh)
+        //     → hide overlay, compute remaining time from server timestamp,
+        //       call startCountdown(remaining).
+        //
+        //  B) Quiz not yet started (student in waiting room)
+        //     → show overlay, do NOT start timer.
+        //       Timer starts only when quiz_started socket event arrives.
+        // ═══════════════════════════════════════════════════════════════════
         if (quizIsActive) {
-            console.log('Quiz is already active, starting timer...');
-            document.getElementById("waitingOverlay").classList.remove("active");
-            questionStartTime = Date.now();
-            startTimer();
+            // Quiz is already live — student is on-time, late, or refreshing.
+            // Mark as started so any incoming quiz_started socket event is ignored.
+            quizAlreadyStarted = true;
+            waitingOverlay.classList.remove("active");
+
+            // computeRemainingTime() uses questionStartedAt (server-rendered)
+            // and serverAdjustedNow() (client clock corrected for skew).
+            // This works correctly for ALL cases:
+            //   • On-time join   → elapsed ≈ 0    → remaining ≈ timeLimit
+            //   • LATE join      → elapsed = N    → remaining = timeLimit - N ✓
+            //   • Page refresh   → same as late join ✓
+            const remaining = computeRemainingTime();
+            console.log(`[Boot] quizIsActive=true, clockOffset=${clockOffset.toFixed(3)}s, remaining=${remaining}s`);
+            startCountdown(remaining);
         } else {
-            // Show waiting overlay - timer starts only when admin starts quiz
-            document.getElementById("waitingOverlay").classList.add("active");
+            // Quiz has not started yet — show the waiting overlay.
+            // startCountdown() will be called from the quiz_started handler.
+            waitingOverlay.classList.add("active");
+            console.log(`[Boot] Waiting for admin. clockOffset=${clockOffset.toFixed(3)}s`);
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // SUBMIT BUTTON
+        // ═══════════════════════════════════════════════════════════════════
         document.getElementById("submitBtn").onclick = () => {
             const qType = "{{ current_question.question_type }}";
             let val = null;
 
             if (qType === 'checkbox') {
-                const selected = Array.from(document.querySelectorAll("input[name='answer[]']:checked")).map(cb => cb.value);
-                if (selected.length > 0) val = selected.join(',');
+                const checked = Array.from(
+                    document.querySelectorAll("input[name='answer[]']:checked")
+                ).map(cb => cb.value);
+                if (checked.length > 0) val = checked.join(',');
             } else if (qType === 'short_answer') {
                 const input = document.getElementById("shortAnswerInput");
                 if (input && input.value.trim()) val = input.value.trim();
@@ -297,14 +454,25 @@
             handleSubmission(val || "No Answer");
         };
 
+        // ═══════════════════════════════════════════════════════════════════
+        // handleSubmission(val)
+        // Sends the answer to the server via POST and handles the response.
+        // time_taken is measured from when startCountdown() was called —
+        // i.e. from when this student first saw (and could answer) the
+        // question, capped at the question time limit for fairness.
+        // ═══════════════════════════════════════════════════════════════════
         function handleSubmission(val = "No Answer") {
             if (submitted) return;
             submitted = true;
-            clearInterval(timerTick);
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
 
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting…`;
 
             const qType = "{{ current_question.question_type }}";
             if (qType === 'short_answer') {
@@ -314,157 +482,165 @@
             } else {
                 document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = true);
             }
-            const actualTimeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
-            const finalTime = Math.min(actualTimeTaken, timerMode === "overall" ? totalQuizTime : timeLimit);
+
+            // time_taken = seconds from when the student started answering.
+            // questionStartTime is set by startCountdown(), so it is always
+            // after the waiting overlay is hidden — never includes wait time.
+            const rawTimeTaken  = questionStartTime
+                ? Math.floor((Date.now() - questionStartTime) / 1000)
+                : 0;
+            const maxAllowedTime = timerMode === "overall" ? totalQuizTime : timeLimit;
+            const timeTaken     = Math.min(rawTimeTaken, maxAllowedTime);
 
             fetch(`/student/quiz/${quizId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({
-                    question_id: "{{ current_question.id }}",
-                    qindex: curIdx,
+                    question_id:     "{{ current_question.id }}",
+                    qindex:          curIdx,
                     selected_answer: val,
-                    time_taken: finalTime
+                    time_taken:      timeTaken
                 })
             })
-                .then(r => r.json())
-                .then(data => {
-                    socket.emit("student_submitted", {
-                        quiz_id: quizId,
-                        student: user,
-                        question_index: curIdx
-                    });
-
-                    showAnswerFeedback(val, data.is_correct);
-                    setTimeout(() => {
-                        if (isLastQuestion) {
-                            const banner = document.querySelector(".result-banner");
-                            if (banner) banner.remove();
-                            // Update overlay text for completion
-                            const overlay = document.getElementById("waitingOverlay");
-                            overlay.innerHTML = `
-                                <div class="text-center" style="color:var(--text-main);">
-                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-                                    <h3 class="fw-bold mb-2">Quiz Complete!</h3>
-                                    <p class="text-muted fs-5 mb-0">Waiting for admin to reveal final leaderboard...</p>
-                                </div>
-                            `;
-                            overlay.classList.add("active");
-                        } else {
-                            if (showLeaderboardEach) {
-                                window.location.href = `/student/leaderboard/live/${quizId}?qindex=${curIdx}`;
-                            } else {
-                                // Immediately go to next question — no leaderboard screen
-                                window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
-                            }
-                        }
-                    }, 2500);
-                })
-                .catch(err => {
-                    console.error("Error:", err);
-                    submitted = false;
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
-                    if (qType === 'short_answer') {
-                        document.getElementById("shortAnswerInput").disabled = false;
-                    } else if (qType === 'checkbox') {
-                        document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
-                    } else {
-                        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
-                    }
+            .then(r => r.json())
+            .then(data => {
+                socket.emit("student_submitted", {
+                    quiz_id:        quizId,
+                    student:        user,
+                    question_index: curIdx
                 });
+
+                showAnswerFeedback(val, data.is_correct);
+
+                setTimeout(() => {
+                    if (isLastQuestion) {
+                        const banner = document.querySelector(".result-banner");
+                        if (banner) banner.remove();
+                        // Show "waiting for admin" overlay after completing last question
+                        waitingOverlay.innerHTML = `
+                            <div class="text-center" style="color:var(--text-main);">
+                                <div class="spinner-border text-primary mb-3"
+                                     role="status" style="width:3rem;height:3rem;"></div>
+                                <h3 class="fw-bold mb-2">Quiz Complete!</h3>
+                                <p class="text-muted fs-5 mb-0">
+                                    Waiting for admin to reveal the final leaderboard…
+                                </p>
+                            </div>`;
+                        waitingOverlay.classList.add("active");
+                    } else {
+                        if (showLeaderboard) {
+                            window.location.href = `/student/leaderboard/live/${quizId}?qindex=${curIdx}`;
+                        } else {
+                            window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
+                        }
+                    }
+                }, 2500);
+            })
+            .catch(err => {
+                console.error("Submission error:", err);
+                submitted  = false;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
+                if (qType === 'short_answer') {
+                    document.getElementById("shortAnswerInput").disabled = false;
+                } else if (qType === 'checkbox') {
+                    document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
+                } else {
+                    document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
+                }
+            });
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // showAnswerFeedback(selectedAnswer, isCorrect)
+        // Visual highlight of correct / wrong options after submission.
+        // ═══════════════════════════════════════════════════════════════════
         function showAnswerFeedback(selectedAnswer, isCorrect) {
-            const qType = "{{ current_question.question_type }}";
-            const correctList = correctAnswer.split(',');
-            const selectedList = selectedAnswer.split(',');
+            const qType      = "{{ current_question.question_type }}";
+            const normalize  = s => (s || "").trim().toLowerCase();
+            const correctList  = correctAnswer.split(',').map(normalize);
+            const selectedList = selectedAnswer.split(',').map(normalize);
 
             if (qType === 'short_answer') {
                 const input = document.getElementById("shortAnswerInput");
                 input.classList.remove("is-valid", "is-invalid");
                 if (isCorrect) {
                     input.classList.add("is-valid");
-                    input.style.borderColor = "#10b981";
+                    input.style.borderColor     = "#10b981";
                     input.style.backgroundColor = "#f0fdf4";
                 } else {
                     input.classList.add("is-invalid");
-                    input.style.borderColor = "#ef4444";
+                    input.style.borderColor     = "#ef4444";
                     input.style.backgroundColor = "#fef2f2";
                 }
             } else {
                 document.querySelectorAll(".option-content").forEach(opt => {
-                    const t = opt.getAttribute("data-option");
-                    if (correctList.includes(t)) opt.classList.add("correct");
-                    if (selectedList.includes(t) && !correctList.includes(t)) opt.classList.add("incorrect");
+                    const t = normalize(opt.getAttribute("data-option"));
+                    opt.classList.remove("correct", "incorrect", "wrong");
+                    if (correctList.includes(t)) {
+                        opt.classList.add("correct");
+                    } else if (selectedList.includes(t)) {
+                        opt.classList.add("wrong", "incorrect");
+                    }
                 });
             }
 
             const banner = document.createElement("div");
-            banner.className = `result-banner ${isCorrect ? "correct" : "incorrect"} animate__animated animate__zoomIn`;
+            banner.className = `result-banner ${isCorrect ? "correct" : "wrong"} animate__animated animate__zoomIn`;
             banner.innerHTML = `
-            <div class="result-icon"><i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i></div>
-            <h3>${isCorrect ? "CORRECT!" : "INCORRECT"}</h3>
-            <p class="mb-0">${isCorrect ? "Great job! Well done!" : "Better luck next time!"}</p>
-        `;
+                <div class="result-icon">
+                    <i class="fas fa-${isCorrect ? 'check-circle' : 'times-circle'}"></i>
+                </div>
+                <h3>${isCorrect ? "CORRECT!" : "INCORRECT"}</h3>
+                <p class="mb-0">${isCorrect ? "Great job! Well done!" : "Better luck next time!"}</p>`;
             document.body.appendChild(banner);
 
             if (isCorrect) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             setTimeout(() => banner.remove(), 2000);
         }
 
-        document.addEventListener('keydown', function (event) {
-
+        // ═══════════════════════════════════════════════════════════════════
+        // KEYBOARD SHORTCUTS
+        // ═══════════════════════════════════════════════════════════════════
+        document.addEventListener('keydown', (event) => {
             if (submitted) return;
-
             const qType = "{{ current_question.question_type }}";
 
             if (event.key >= '1' && event.key <= '4' && qType !== 'short_answer') {
-
                 const index = parseInt(event.key) - 1;
-                let option;
-                if (qType === 'checkbox') {
-                    option = document.querySelectorAll('input[name="answer[]"]')[index];
-                } else {
-                    option = document.querySelectorAll('input[name="answer"]')[index];
-                }
+                const option = qType === 'checkbox'
+                    ? document.querySelectorAll('input[name="answer[]"]')[index]
+                    : document.querySelectorAll('input[name="answer"]')[index];
 
                 if (!option) return;
 
                 if (qType === "checkbox") {
-                    // toggle checkbox
                     option.checked = !option.checked;
                 } else {
-                    // radio behavior
                     option.checked = true;
                 }
-
                 option.dispatchEvent(new Event('change'));
             }
 
             if (event.key === "Enter") {
                 document.getElementById("submitBtn").click();
             }
-
         });
 
-        // Add event listeners for radio inputs
+        // Visual selection highlighting
         document.querySelectorAll('input[name="answer"]').forEach(input => {
             input.addEventListener('change', function () {
                 const qType = "{{ current_question.question_type }}";
                 if (qType !== 'checkbox') {
-                    document.querySelectorAll('.option-label').forEach(label => label.classList.remove('selected'));
+                    document.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
                 }
-                if (this.checked) this.parentElement.classList.add('selected');
-                else this.parentElement.classList.remove('selected');
+                this.parentElement.classList.toggle('selected', this.checked);
             });
         });
 
-        // Add event listeners for checkbox inputs
         document.querySelectorAll('input[name="answer[]"]').forEach(input => {
             input.addEventListener('change', function () {
-                if (this.checked) this.parentElement.classList.add('selected');
-                else this.parentElement.classList.remove('selected');
+                this.parentElement.classList.toggle('selected', this.checked);
             });
         });
     </script>

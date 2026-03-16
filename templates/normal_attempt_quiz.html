@@ -148,8 +148,9 @@
         const correctAnswer = "{{ current_question.answer }}";
         const isTimerQuiz = false;
 
+        const questionStartedAt = parseFloat("{{ question_started_at }}") || 0;
         let submitted = false;
-        let startTime = Date.now();
+        let startTime = questionStartedAt > 0 ? (questionStartedAt * 1000) : Date.now();
         let waitingForAdmin = false;
 
         socket.emit("join_quiz", { quiz_id: quizId });
@@ -286,17 +287,20 @@
             overlay.classList.add("animate__zoomIn");
 
             if (qType === 'mcq' || qType === 'checkbox' || qType === 'true_false') {
-                const correctList = data.correct_answer.split(',');
-                const selectedList = selectedVal.split(',');
+                const normalize = s => (s || "").trim().toLowerCase();
+                const correctList = (data.correct_answer || "").split(',').map(normalize);
+                const selectedList = selectedVal.split(',').map(normalize);
 
                 document.querySelectorAll(".option-label").forEach(label => {
                     const inp = label.querySelector("input");
                     const content = label.querySelector(".option-content");
-                    content.classList.remove("correct", "incorrect");
+                    const t = normalize(inp.value);
+                    content.classList.remove("correct", "incorrect", "wrong");
 
-                    if (correctList.includes(inp.value)) {
+                    if (correctList.includes(t)) {
                         content.classList.add("correct");
-                    } else if (selectedList.includes(inp.value) && !correctList.includes(inp.value)) {
+                    } else if (selectedList.includes(t)) {
+                        content.classList.add("wrong");
                         content.classList.add("incorrect");
                     }
                 });
@@ -321,7 +325,7 @@
                 title.innerText = "CORRECT!";
                 text.innerHTML = "Well done! Great job!";
             } else {
-                overlay.classList.add("incorrect");
+                overlay.classList.add("wrong");
                 icon.innerHTML = '<i class="fas fa-times-circle"></i>';
                 title.innerText = "INCORRECT";
                 text.innerHTML = `Correct answer: <strong>${data.correct_answer}</strong>`;

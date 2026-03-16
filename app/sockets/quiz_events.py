@@ -4,6 +4,7 @@ Real-time quiz events and leaderboard updates
 """
 from flask import session, request
 from flask_socketio import emit, join_room, leave_room
+import time
 from app.extensions import db, socketio, quiz_state
 from app.models import Quiz, Question, PartialAnswer
 from app.services.point_service import PointService
@@ -25,51 +26,105 @@ def register_socket_events():
     
     @socketio.on('admin_start_quiz')
     def admin_start_quiz(data):
-        """Admin starts the quiz - emit quiz_started event to all students"""
-        quiz_id = int(data['quiz_id'])
+        """
+        Admin starts the quiz — emits quiz_started to all students.
+
+        IDEMPOTENCY: If question_started_at is already set (e.g. the HTTP
+        start_quiz route fired first, or the admin accidentally re-emits
+        this event by refreshing the live-control page), we PRESERVE the
+        existing timestamp.  Only stamp a fresh time if the quiz is truly
+        starting for the first time.
+
+        This is the single handler for admin_start_quiz. The duplicate
+        handler that existed in admin.py has been removed.
+        """
+        quiz_id   = int(data['quiz_id'])
         room_name = f"quiz_{quiz_id}"
-        print(f'🚀 Admin started quiz {quiz_id}')
-        
-        # Initialize quiz state
-        if quiz_id not in quiz_state:
-            quiz_state[quiz_id] = {'current_qindex': 0, 'started': True}
+        print(f'🚀 admin_start_quiz received for quiz {quiz_id}')
+
+        existing_state = quiz_state.get(quiz_id, {})
+        existing_ts    = existing_state.get('question_started_at')
+
+        if existing_ts:
+            # Quiz was already started (HTTP route fired first, or admin
+            # re-emitted this event).  Preserve the original timestamp so
+            # late joiners compute the correct elapsed time.
+            start_ts = existing_ts
+            print(f'  ↳ Preserving existing question_started_at={start_ts:.3f}')
         else:
-            quiz_state[quiz_id]['started'] = True
-        
-        # Emit quiz_started event to all students in the room
-        socketio.emit('quiz_started', {'quiz_id': quiz_id}, room=room_name)
-        print(f'📡 Emitted quiz_started to room {room_name}')
+            # Genuinely first start — stamp now.
+            start_ts = time.time()
+            quiz_state[quiz_id] = {
+                'current_qindex':      existing_state.get('current_qindex', 0),
+                'started':             True,
+                'question_started_at': start_ts,
+            }
+            print(f'  ↳ Stamped new question_started_at={start_ts:.3f}')
+
+        # Always update the started flag
+        quiz_state[quiz_id]['started'] = True
+
+        # Include server_time alongside question_started_at so the
+        # frontend can compute a clock-offset and correct for client
+        # clocks that are ahead of or behind the server.
+        server_now = time.time()
+        socketio.emit('quiz_started', {
+            'quiz_id':             quiz_id,
+            'question_started_at': start_ts,
+            'server_time':         server_now,
+        }, room=room_name)
+        print(f'📡 Emitted quiz_started → {room_name}  (ts={start_ts:.3f}, server_now={server_now:.3f})')
     
     @socketio.on('admin_next_question')
     def admin_next_question(data):
-        """Admin advances to next question"""
-        quiz_id = int(data['quiz_id'])
+        """
+        Admin advances to the next question.
+
+        Sequence:
+          1. Increment current_qindex
+          2. Stamp question_started_at  ← BEFORE emitting
+          3. Emit load_next_question with the new timestamp
+
+        This guarantees that by the time any student's GET request
+        arrives, quiz_state already holds the correct timestamp for
+        the new question, so every page render is accurate.
+        """
+        quiz_id   = int(data['quiz_id'])
         room_name = f"quiz_{quiz_id}"
-        
+
         if quiz_id not in quiz_state:
             quiz_state[quiz_id] = {'current_qindex': 0}
-        
+
         total_questions = Question.query.filter_by(quiz_id=quiz_id).count()
-        current_index = quiz_state[quiz_id]['current_qindex']
-        
+        current_index   = quiz_state[quiz_id]['current_qindex']
+
         print(f'🎯 Current question: {current_index + 1} of {total_questions}')
-        
-        quiz = Quiz.query.get(quiz_id)
+
         if current_index >= total_questions - 1:
-            print('🏁 Quiz finished - emitting quiz_finished event')
-            socketio.emit('quiz_finished', {}, room=room_name)
+            print('🏁 Quiz finished — emitting quiz_finished')
+            socketio.emit('quiz_finished', {'quiz_id': quiz_id}, room=room_name)
             return
-        
+
+        # Advance index and stamp the start time atomically, then emit.
         quiz_state[quiz_id]['current_qindex'] += 1
+        new_ts = time.time()
+        quiz_state[quiz_id]['question_started_at'] = new_ts
         new_qindex = quiz_state[quiz_id]['current_qindex']
-        
-        print(f'📤 Moving to question {new_qindex + 1} of {total_questions}')
+
+        print(f'📤 Moving to question {new_qindex + 1} of {total_questions} (ts={new_ts:.3f})')
+
+        server_now = time.time()
         socketio.emit(
             'load_next_question',
-            {'qindex': new_qindex, 'quiz_id': quiz_id},
-            room=room_name
+            {
+                'qindex':              new_qindex,
+                'quiz_id':             quiz_id,
+                'question_started_at': new_ts,
+                'server_time':         server_now,  # for client clock-offset correction
+            },
+            room=room_name,
         )
-        print(f'📡 Emitted load_next_question with qindex={new_qindex} to room {room_name}')
+        print(f'📡 Emitted load_next_question qindex={new_qindex} → {room_name}  (ts={new_ts:.3f})')
     
     @socketio.on('admin_stop_quiz')
     def admin_stop_quiz(data):

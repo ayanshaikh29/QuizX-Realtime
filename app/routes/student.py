@@ -80,23 +80,19 @@ def join_by_code():
         flash('Admins cannot join quizzes ❌', 'danger')
         return redirect(url_for('admin.dashboard'))
     
-    ensure_guest_student()
+    code = request.args.get('code')
     
     if request.method == 'POST':
         code = request.form.get('code', '').strip().upper()
-        quiz = Quiz.query.filter_by(
-            join_code=code, is_active=True, is_published=True
-        ).first()
+        return redirect(url_for('student.join_by_link', code=code))
         
-        if quiz:
-            return redirect(url_for('student.waiting_room', quiz_id=quiz.id))
-        
-        flash('Invalid or inactive quiz code.', 'error')
+    # If authenticated, try to show them dashboard or pre-fill code logic if needed
+    # but the form handles everything. No immediate change needed here besides taking POST code.
     
     return render_template('student_quiz.html')
 
 
-@student_bp.route('/join/<code>')
+@student_bp.route('/join/<code>', methods=['GET', 'POST'])
 def join_by_link(code):
     """Join quiz by link - NO LOGIN REQUIRED (allows guests)"""
     # CRITICAL: Block only admins, allow students AND guests
@@ -104,16 +100,37 @@ def join_by_link(code):
         flash('Admins are not allowed to attempt quizzes ❌', 'danger')
         return redirect(url_for('admin.dashboard'))
     
-    ensure_guest_student()
-    
     quiz = Quiz.query.filter_by(
-        join_code=code.upper(), is_active=True, is_published=True
+        join_code=code.upper(), is_published=True
     ).first()
     
     if not quiz:
-        return render_template('quiz_closed.html', message='Quiz not found or not active.')
+        return render_template('quiz_closed.html', message='Quiz not found or not published.')
+
+    # ISSUE 1: If user is ALREADY logged in as a student, bypass the name form
+    if session.get('username') and session.get('role') == 'student':
+        if quiz.is_active:
+            return redirect(url_for('student.attempt_quiz', quiz_id=quiz.id))
+        else:
+            return redirect(url_for('student.waiting_room', quiz_id=quiz.id))
+        
+    if request.method == 'POST':
+        player_name = request.form.get('player_name', '').strip()
+        if not player_name:
+            flash('Player name cannot be empty.', 'error')
+            return render_template('join_quiz.html', quiz=quiz)
+            
+        session['username'] = player_name
+        session['role'] = 'student'
+        session['user_id'] = -1  # Guest identifier
+        
+        # Determine redirect destination based on quiz state
+        if quiz.is_active:
+            return redirect(url_for('student.attempt_quiz', quiz_id=quiz.id))
+        else:
+            return redirect(url_for('student.waiting_room', quiz_id=quiz.id))
     
-    return redirect(url_for('student.waiting_room', quiz_id=quiz.id))
+    return render_template('join_quiz.html', quiz=quiz)
 
 
 @student_bp.route('/waiting-room/<int:quiz_id>')
@@ -198,21 +215,9 @@ def attempt_quiz(quiz_id):
         db.session.commit()
         flash('Previous attempt cleared. Starting fresh!', 'info')
     
-    start_key = f'quiz_start_{quiz_id}'
-    if start_key not in session:
-        session[start_key] = time.time()
-    
     if request.method == 'POST':
         print('=== POST REQUEST RECEIVED ===')
         print(f'Form data: {dict(request.form)}')
-        
-        action = request.form.get('start_question')
-        if action == '1':
-            question_id = int(request.form.get('question_id'))
-            q_start_key = f'q_start_{quiz_id}_{question_id}'
-            if q_start_key not in session:
-                session[q_start_key] = time.time()
-            return jsonify({'success': True})
         
         # Get data from form
         qindex = int(request.form.get('qindex', 0))
@@ -234,27 +239,27 @@ def attempt_quiz(quiz_id):
             is_correct = False
             print('No answer selected - marking as incorrect')
         elif current_question.question_type == 'mcq' or current_question.question_type == 'true_false':
-            is_correct = (selected_answer.strip() == current_question.answer.strip())
-            print(f"Comparison ({current_question.question_type}): '{selected_answer.strip()}' == '{current_question.answer.strip()}' = {is_correct}")
+            is_correct = (selected_answer.strip().lower() == current_question.answer.strip().lower())
+            print(f"Comparison ({current_question.question_type}): '{selected_answer.strip().lower()}' == '{current_question.answer.strip().lower()}' = {is_correct}")
         elif current_question.question_type == 'checkbox':
             # Checkbox answers are comma-separated strings
-            selected_list = sorted([s.strip() for s in selected_answer.split(',') if s.strip()])
-            correct_list = sorted([s.strip() for s in (current_question.correct_answers or '').split(',') if s.strip()])
-            is_correct = (selected_list == correct_list)
-            print(f"Comparison (checkbox): {selected_list} == {correct_list} = {is_correct}")
+            selected_set = set(s.strip().lower() for s in selected_answer.split(',') if s.strip())
+            correct_set = set(s.strip().lower() for s in (current_question.answer or '').split(',') if s.strip())
+            is_correct = (selected_set == correct_set)
+            print(f"Comparison (checkbox): {selected_set} == {correct_set} = {is_correct}")
         elif current_question.question_type == 'short_answer':
             is_correct = (selected_answer.strip().lower() == current_question.answer.strip().lower())
             print(f"Comparison (short_answer): '{selected_answer.strip().lower()}' == '{current_question.answer.strip().lower()}' = {is_correct}")
         else:
             # Fallback
-            is_correct = (selected_answer.strip() == current_question.answer.strip())
+            is_correct = (selected_answer.strip().lower() == current_question.answer.strip().lower())
         
-        # Prevent duplicates
-        PartialAnswer.query.filter_by(
+        # Prevent duplicates - use synchronize_session for safety
+        db.session.query(PartialAnswer).filter_by(
             quiz_id=quiz_id,
             question_id=question_id,
             student=student_name,
-        ).delete()
+        ).delete(synchronize_session=False)
         db.session.commit()
         
         # Calculate points
@@ -352,13 +357,7 @@ def attempt_quiz(quiz_id):
             else:
                 print(f'Result already exists for {student_name}')
             
-            # Clear session timers for this student only
-            start_key = f'quiz_start_{quiz_id}'
-            session.pop(start_key, None)
-            for k in list(session.keys()):
-                if k.startswith(f'q_start_{quiz_id}_') or k == start_key:
-                    session.pop(k, None)
-            print(f'Cleared session timers for {student_name}')
+            print(f'Quiz complete for {student_name}')
             
             # Return completion response
             return jsonify({
@@ -424,8 +423,28 @@ def attempt_quiz(quiz_id):
     
     template_name = 'attempt_quiz.html' if quiz.has_timer else 'normal_attempt_quiz.html'
     
-    print(f"Rendering template: {template_name}")
-    
+    # ─────────────────────────────────────────────────────────────
+    # SERVER-AUTHORITATIVE TIMER TIMESTAMP
+    #
+    # quiz_state[quiz_id]["question_started_at"] is set by the server
+    # when the admin clicks "Start" or "Next Question" — never by the
+    # student and never from Flask session.
+    #
+    # Fallback: if quiz_state is missing (e.g. server restart mid-quiz)
+    # we embed 0 so the frontend falls back to the full time_limit,
+    # which is better than embedding time.time() (which would compute
+    # ~0 s elapsed and show the full timer anyway, but is semantically
+    # misleading and wastes a call to time.time()).
+    # ─────────────────────────────────────────────────────────────
+    q_started_at = quiz_state.get(quiz_id, {}).get('question_started_at', 0)
+    # server_now is passed alongside question_started_at so the client
+    # can compute clock_offset = server_now - Date.now()/1000 and correct
+    # for device clocks that are ahead of or behind the server.
+    server_now = time.time()
+
+    print(f"Rendering template: {template_name} | qindex={qindex} | "
+          f"q_started_at={q_started_at:.3f} | server_now={server_now:.3f}")
+
     return render_template(
         template_name,
         quiz=quiz,
@@ -433,6 +452,8 @@ def attempt_quiz(quiz_id):
         total_questions=total_questions,
         current_index=qindex,
         quiz_id=quiz_id,
+        question_started_at=q_started_at,
+        server_time=server_now,
     )
 
 @student_bp.route('/quiz/result/<int:quiz_id>')

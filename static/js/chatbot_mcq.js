@@ -108,7 +108,7 @@
             // Find block index to call changeQuestionType
             const allBlocks = block.parentElement.querySelectorAll('.question-block');
             let idx = 0;
-            allBlocks.forEach((b, i) => { if (b === block) idx = i + 1; });
+            allBlocks.forEach((b, i) => { if (b === block) idx = i; });
             if (typeof window.changeQuestionType === 'function') {
                 window.changeQuestionType(sel, idx);
             }
