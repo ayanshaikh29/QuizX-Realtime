@@ -1,0 +1,401 @@
+/* 🏎️ Premium Green-White Leaderboard Styles */
+:root {
+    --qx-green-primary: #16a34a;
+    --qx-green-light: #22c55e;
+    --qx-green-soft: #f0fdf4;
+    --qx-white: #ffffff;
+    --qx-text-main: #1e293b;
+    --qx-text-muted: #64748b;
+    --qx-border-light: rgba(22, 163, 74, 0.15);
+    --qx-shadow-premium: 0 10px 30px rgba(0, 0, 0, 0.05);
+    --qx-radius: 16px;
+}
+
+.f1-leaderboard-container {
+    position: relative;
+    width: 100%;           /* fills parent column — no max-width cap here */
+    font-family: 'Plus Jakarta Sans', 'Poppins', sans-serif;
+    background: var(--qx-white);
+    border-radius: var(--qx-radius);
+    padding: 28px 32px;
+    box-shadow: var(--qx-shadow-premium);
+    border: 1px solid var(--qx-border-light);
+    overflow: hidden;
+}
+
+.f1-board {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.f1-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--qx-green-soft);
+    margin-bottom: 8px;
+}
+
+.f1-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--qx-text-main);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.f1-title i {
+    color: var(--qx-green-primary);
+}
+
+.live-status-pill {
+    background: var(--qx-green-soft);
+    color: var(--qx-green-primary);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--qx-border-light);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--qx-green-primary);
+    border-radius: 50%;
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+    }
+}
+
+.f1-list {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+}
+
+/* 🏎️ Row Styling */
+.f1-row {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    /* Managed by JS */
+    display: flex;
+    align-items: center;
+    background: var(--qx-white);
+    border-radius: 12px;
+    padding: 0 24px;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid var(--qx-border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.f1-row:hover {
+    background: var(--qx-green-soft);
+    border-color: var(--qx-green-light);
+    transform: translateX(6px);
+    z-index: 10;
+}
+
+.f1-row.just-overtook {
+    background: #dcfce7 !important;
+    border-color: var(--qx-green-primary) !important;
+    animation: flash-green 1s ease-out;
+}
+
+@keyframes flash-green {
+    0% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
+    }
+
+    100% {
+        box-shadow: 0 0 0 15px rgba(22, 163, 74, 0);
+    }
+}
+
+.rank-box {
+    width: 48px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--qx-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ISSUE 1 FIX: #1 row gets a persistent gold glow */
+.f1-row[data-rank="1"] {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fff 100%);
+    box-shadow: 0 4px 20px rgba(245,158,11,0.18), 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.f1-row[data-rank="1"] .rank-box {
+    color: #f59e0b;
+}
+
+.f1-row[data-rank="2"] .rank-box {
+    color: #94a3b8;
+}
+
+.f1-row[data-rank="3"] .rank-box {
+    color: #b45309;
+}
+
+.f1-name-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 10px;
+}
+
+.f1-name {
+    font-weight: 700;
+    color: var(--qx-text-main);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.crown-icon {
+    font-size: 1rem;
+    color: #f59e0b;
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.3));
+}
+
+.fastest-badge {
+    background: var(--qx-green-primary);
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.score-progress-container {
+    width: 100%;
+    height: 6px;
+    background: var(--qx-green-soft);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.score-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--qx-green-light), var(--qx-green-primary));
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.score-pill {
+    background: var(--qx-green-soft);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-weight: 800;
+    color: var(--qx-green-primary);
+    font-size: 0.95rem;
+    margin-left: 15px;
+    border: 1px solid var(--qx-border-light);
+}
+
+.rank-change {
+    font-size: 0.85rem;
+    margin-left: 10px;
+    font-weight: 800;
+    width: 24px;
+    text-align: center;
+}
+
+.rank-up {
+    color: #16a34a;
+}
+
+.rank-down {
+    color: #ef4444;
+}
+
+.rank-same {
+    color: #cbd5e1;
+}
+
+/* 🚀 Overtake Notification */
+.f1-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: var(--qx-white);
+    border: 1px solid var(--qx-green-light);
+    padding: 16px 24px;
+    border-radius: 14px;
+    z-index: 10000;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: toast-slide-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes toast-slide-in {
+    from {
+        transform: translateX(120%) scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.f1-toast i {
+    width: 40px;
+    height: 40px;
+    background: var(--qx-green-soft);
+    color: var(--qx-green-primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.toast-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.toast-name {
+    font-weight: 800;
+    color: var(--qx-text-main);
+    font-size: 0.95rem;
+}
+
+.toast-msg {
+    font-weight: 600;
+    color: var(--qx-text-muted);
+    font-size: 0.8rem;
+}
+
+/* 🏆 Final Podium (for Final Standings page) */
+.podium-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 20px;
+    padding: 40px 0;
+    margin-bottom: 2rem;
+}
+
+.podium-card {
+    background: var(--qx-white);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    width: 180px;
+    border: 1px solid var(--qx-border-light);
+    box-shadow: var(--qx-shadow-premium);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.podium-card:hover {
+    transform: translateY(-10px);
+}
+
+.podium-card.rank-1 {
+    height: 260px;
+    border-color: #f59e0b;
+    z-index: 3;
+}
+
+.podium-card.rank-2 {
+    height: 220px;
+    z-index: 2;
+}
+
+.podium-card.rank-3 {
+    height: 200px;
+    z-index: 1;
+}
+
+.podium-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    background: var(--qx-green-soft);
+    color: var(--qx-green-primary);
+    font-size: 1.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid var(--qx-white);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.rank-1 .podium-avatar {
+    border-color: #fef3c7;
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.podium-badge {
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--qx-text-main);
+    color: white;
+    padding: 4px 16px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.rank-1 .podium-badge {
+    background: #f59e0b;
+}
+
+.podium-name {
+    font-weight: 800;
+    color: var(--qx-text-main);
+    margin-bottom: 4px;
+}
+
+.podium-score {
+    font-weight: 700;
+    color: var(--qx-green-primary);
+    font-size: 0.9rem;
+}

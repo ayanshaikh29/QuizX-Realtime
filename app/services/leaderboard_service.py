@@ -11,7 +11,7 @@ class LeaderboardService:
     """Leaderboard generation and management"""
     
     @staticmethod
-    def build_leaderboard_payload(quiz_id):
+    def build_leaderboard_payload(quiz_id, current_question_id=None):
         """
         Build full leaderboard payload for a quiz
         
@@ -30,11 +30,22 @@ class LeaderboardService:
                 db.case((PartialAnswer.is_correct == False, 1), else_=0)
             ).label("incorrect_count"),
             func.sum(PartialAnswer.time_taken).label("total_time"),
+            func.max(PartialAnswer.submitted_at).label("latest_submission")
         ).filter_by(quiz_id=quiz_id).group_by(PartialAnswer.student).order_by(
             func.sum(PartialAnswer.points).desc(),
-            func.sum(db.case((PartialAnswer.is_correct == True, 1), else_=0)).desc(),
-            func.sum(PartialAnswer.time_taken).asc()
+            func.max(PartialAnswer.submitted_at).asc()
         ).all()
+
+        # Get fastest answer for the current question if provided
+        fastest_student = None
+        if current_question_id:
+            fastest_ans = PartialAnswer.query.filter_by(
+                quiz_id=quiz_id,
+                question_id=current_question_id,
+                is_correct=True
+            ).order_by(PartialAnswer.time_taken.asc()).first()
+            if fastest_ans:
+                fastest_student = fastest_ans.student
         
         return [
             {
@@ -45,6 +56,8 @@ class LeaderboardService:
                 "incorrect": int(row.incorrect_count or 0),
                 "time": int(row.total_time or 0),
                 "total": total_questions,
+                "latest_submission": row.latest_submission.isoformat() if row.latest_submission else None,
+                "is_fastest": row.student == fastest_student
             }
             for idx, row in enumerate(rows)
         ]
@@ -54,13 +67,13 @@ class LeaderboardService:
         """Get simple leaderboard data (name, score)"""
         points_query = db.session.query(
             PartialAnswer.student.label('name'),
-            func.sum(PartialAnswer.points).label('score')
+            func.sum(PartialAnswer.points).label('score'),
+            func.max(PartialAnswer.submitted_at).label('latest')
         ).filter_by(quiz_id=quiz_id)\
          .group_by(PartialAnswer.student)\
          .order_by(
              func.sum(PartialAnswer.points).desc(),
-             func.sum(db.case((PartialAnswer.is_correct == True, 1), else_=0)).desc(),
-             func.sum(PartialAnswer.time_taken).asc()
+             func.max(PartialAnswer.submitted_at).asc()
          ).all()
         
         return [{"name": r.name, "score": int(r.score)} for r in points_query]

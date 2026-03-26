@@ -4,325 +4,494 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizX | Live Leaderboard</title>
+    <title>QuizX | Standings</title>
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_leaderboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/f1_leaderboard.css') }}">
 
     <style>
-        /* --- Animated Back Button Effects --- */
-        .btn-animated {
-            position: relative;
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-weight: 700;
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
+            color: #1e293b;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── ISSUE 1 FIX: Full-width leaderboard ── */
+        .main-content {
+            background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
+            min-height: 100vh;
+            flex: 1;
+            min-width: 0;        /* prevent flex overflow */
+            overflow-x: hidden;
+        }
+
+        .leaderboard-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 32px 60px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .header-section h2 {
+            font-weight: 900;
             text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .header-section p {
+            color: #64748b;
+            font-weight: 600;
             letter-spacing: 1px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
-            border: none;
-            display: inline-flex;
+            margin: 0;
+        }
+
+        /* ── Status Banner ── */
+        .status-banner {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 28px;
+            margin-bottom: 32px;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            gap: 20px;
+            border: 1px solid rgba(22, 163, 74, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
         }
 
-        /* Pulse Animation */
-        @keyframes pulse-glow {
-            0% {
-                box-shadow: 0 0 0 0 rgba(111, 191, 74, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 15px rgba(111, 191, 74, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(111, 191, 74, 0);
-            }
+        .status-banner i {
+            font-size: 30px;
+            color: #16a34a;
         }
 
-        .btn-pulse {
-            animation: pulse-glow 2s infinite;
+        .status-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #1e293b;
         }
 
-        /* Student Theme (Green) */
-        .btn-student {
-            background: #6fbf4a;
-            color: white !important;
+        .status-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
         }
 
-        /* Admin Theme (Dark/Primary) */
-        .btn-admin {
-            background: #1e293b;
-            color: white !important;
+        /* ── ISSUE 2 FIX: Final podium cards ── */
+        .final-podium-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 36px;
+            align-items: end;
         }
 
-        .btn-animated i {
+        .final-podium-card {
+            border-radius: 20px;
+            padding: 28px 20px 24px;
+            text-align: center;
+            position: relative;
+            border: 2px solid transparent;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+            animation: podiumRise 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
             transition: transform 0.3s ease;
         }
 
-        .btn-animated:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            padding-right: 40px;
+        .final-podium-card:hover { transform: translateY(-6px) !important; opacity: 1 !important; }
+
+        .final-podium-card.gold {
+            background: linear-gradient(160deg, #fffbeb, #fef3c7);
+            border-color: #f59e0b;
+            order: 2;
+            padding-top: 38px;
+            animation-delay: 0.15s;
+        }
+        .final-podium-card.silver {
+            background: linear-gradient(160deg, #f8fafc, #f1f5f9);
+            border-color: #94a3b8;
+            order: 1;
+            animation-delay: 0.05s;
+        }
+        .final-podium-card.bronze {
+            background: linear-gradient(160deg, #fff7f0, #fef3e8);
+            border-color: #cd7f32;
+            order: 3;
+            animation-delay: 0.25s;
         }
 
-        .btn-animated:hover i {
-            transform: translateX(-5px) scale(1.2);
+        @keyframes podiumRise {
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Shine streak effect */
-        .btn-animated::after {
-            content: '';
+        .podium-medal {
+            font-size: 2.8rem;
+            display: block;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+        }
+
+        .podium-rank-label {
             position: absolute;
-            top: -50%;
-            left: -60%;
-            width: 20%;
-            height: 200%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(30deg);
-            transition: all 0.6s;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f59e0b;
+            color: white;
+            font-weight: 800;
+            font-size: 0.75rem;
+            padding: 4px 14px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
         }
 
-        .btn-animated:hover::after {
-            left: 120%;
+        .silver .podium-rank-label { background: #94a3b8; }
+        .bronze .podium-rank-label { background: #b07d3a; }
+
+        .podium-card-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: white;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
         }
 
-        .student-action-footer,
-        .action-footer {
-            padding: 20px;
-            animation: fadeInUp 0.8s ease backwards;
+        .gold .podium-card-avatar   { background: linear-gradient(135deg,#fbbf24,#f59e0b); }
+        .silver .podium-card-avatar { background: linear-gradient(135deg,#94a3b8,#64748b); }
+        .bronze .podium-card-avatar { background: linear-gradient(135deg,#cd7f32,#a0622a); }
+
+        .podium-card-name {
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: #1e293b;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
+        .podium-card-score {
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 5px 16px;
+            border-radius: 50px;
+            display: inline-block;
+        }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .gold   .podium-card-score { background: #fef3c7; color: #b45309; }
+        .silver .podium-card-score { background: #f1f5f9; color: #475569; }
+        .bronze .podium-card-score { background: #fef3e8; color: #92400e; }
+
+        /* ── Return button ── */
+        .btn-return {
+            background: #1e293b;
+            color: white !important;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(30, 41, 59, 0.2);
+            text-decoration: none;
+        }
+
+        .btn-return:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            background: #0f172a;
+        }
+
+        .back-circle {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+
+        .back-circle:hover {
+            background: #f1f5f9;
+            transform: translateX(-5px);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .leaderboard-container { padding: 16px; }
+            .final-podium-grid { grid-template-columns: 1fr; }
+            .final-podium-card { order: unset !important; }
         }
     </style>
 </head>
 
 <body>
-
-    <div class="leaderboard-container">
-        <header class="leaderboard-header">
-            <button class="back-btn" onclick="window.location.href='{{ url_for('student.dashboard') }}'">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-title">
-                <h2>Live Leaderboard</h2>
-            </div>
-        </header>
-
-        <div class="container-fluid p-4">
-            <div class="status-container" id="statusMessage"></div>
-
-            <div class="podium-section" id="podiumContainer"></div>
-
-            <div class="list-section" id="playerList"></div>
-
-            <div class="empty-state" id="emptyState">
-                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; color: #94a3b8;"></i>
-                <p class="text-muted">Waiting for results...</p>
-            </div>
-
-            <div class="student-action-footer mt-4 text-center" style="display: none;">
-                <!-- Removed 'Back to Dashboard' button to keep students in quiz flow -->
-            </div>
-
-            <div class="action-footer mt-4 justify-content-center" id="actionFooter" style="display: none;">
-                <a href="{{ url_for('student.dashboard') }}" class="btn-animated btn-admin">
-                    <i class="fas fa-user-shield me-2"></i> Return to Student Dashboard
+    <div class="dashboard-wrapper d-flex">
+        <!-- ══════ SIDEBAR ══════ -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-box">
+                    <img src="{{ url_for('static', filename='log.png') }}" alt="QuizX Logo" class="logo-img">
                 </a>
             </div>
-        </div>
+
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
+                    <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.quizzes') }}" class="nav-link active">
+                    <i class="fas fa-book"></i> <span>Quizzes</span>
+                </a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link">
+                    <i class="fas fa-layer-group"></i> <span>Groups</span>
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> <span>Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ══════ MAIN CONTENT ══════ -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-title">
+                        <h4 class="fw-extrabold mb-0">Global Standings</h4>
+                    </div>
+                </div>
+
+                <div class="header-user d-flex align-items-center gap-3">
+                    <div class="text-end d-none d-sm-block">
+                        <p class="fw-extrabold mb-0" style="font-size: 0.95rem;">{{ session.username }}</p>
+                        <p class="mb-0 tiny online-dot">Online</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name={{ session.username }}&background=6fbf4a&color=fff&bold=true"
+                        class="avatar" alt="Avatar">
+                </div>
+            </header>
+
+            <div class="leaderboard-container">
+                <header class="d-flex justify-content-between align-items-center mb-5">
+                    <div class="back-circle"
+                        onclick="window.location.href='{{ url_for('admin.dashboard') if session.get('role') == 'admin' else url_for('student.dashboard') }}'">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="header-section mb-0">
+                        <h2 id="pageTitle">Live Standings</h2>
+                        <p>QUIZ #{{ quiz_id }}</p>
+                    </div>
+                    <div style="width: 50px;"></div>
+                </header>
+
+                <div id="statusMessage"></div>
+
+                <!-- ISSUE 2 FIX: Dedicated final podium section (shown only on quiz end) -->
+                <div id="podiumContainer" style="display:none;"></div>
+
+                <div id="f1Leaderboard" class="f1-leaderboard-container">
+                    <div class="f1-board">
+                        <div class="f1-header" id="liveHeader">
+                            <div class="f1-title"><i class="fas fa-flag-checkered"></i> Live Leaderboard</div>
+                            <div class="live-status-pill" id="livePill">
+                                <div class="status-dot"></div> LIVE
+                            </div>
+                        </div>
+                        <div class="f1-list"></div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5" id="actionFooter" style="display: none;">
+                    <a href="{{ url_for('admin.dashboard') if session.get('role') == 'admin' else url_for('student.dashboard') }}"
+                        class="btn-return">
+                        <i class="fas fa-home"></i> Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/f1_leaderboard.js') }}"></script>
     <script>
         const socket = io();
         const quizId = {{ quiz_id }};
         let quizStatus = "{{ quiz_status }}".toLowerCase();
-        const currentStudent = "{{ session.get('username', 'Guest') }}";
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const qindexParam = urlParams.get('qindex');
-        let isLastQuestion = false;
+        // ISSUE 2 FIX: Cache the last received leaderboard so we never render blank on quiz end
+        let lastLeaderboardData = [];
 
-        if (quizStatus === 'done' || qindexParam === 'done') {
-            isLastQuestion = true;
-            quizStatus = 'done';
-        }
+        const f1Board = new F1Leaderboard('f1Leaderboard');
 
-        socket.emit("join_quiz", { quiz_id: quizId });
+        socket.on('connect', () => {
+            socket.emit("join_quiz", { quiz_id: quizId });
+        });
 
         socket.on("load_next_question", (data) => {
             if (parseInt(data.quiz_id) !== quizId) return;
-            window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
+            if ("{{ session.get('role') }}" !== 'admin') {
+                window.location.href = `/student/quiz/${data.quiz_id}?qindex=${data.qindex}`;
+            }
         });
 
         socket.on("quiz_finished", (data) => {
             if (parseInt(data.quiz_id) !== quizId) return;
             quizStatus = 'done';
-            isLastQuestion = true;
-            renderStatusMessage();
-            setTimeout(() => fetchLeaderboard(), 500);
+            renderStatusBanner();
+            // Fetch final results — fallback to cached data if response is empty
+            fetchLeaderboard(true);
         });
 
         socket.on("leaderboard_update", (data) => {
-            const list = Array.isArray(data) ? data : data.leaderboard;
-            renderLeaderboard(list);
+            const list = data.leaderboard || data;
+            if (Array.isArray(list) && list.length > 0) lastLeaderboardData = list;
+            const isFinal = quizStatus === 'done';
+            f1Board.update(lastLeaderboardData, data.last_submitter, isFinal);
+            if (isFinal) renderFinalPodium(lastLeaderboardData);
         });
 
-        function renderStatusMessage() {
+        /* ─── Status Banner ─────────────────────────────── */
+        function renderStatusBanner() {
             const statusDiv = document.getElementById('statusMessage');
             const footerDiv = document.getElementById('actionFooter');
+            const pageTitle = document.getElementById('pageTitle');
+            const livePill  = document.getElementById('livePill');
+            const liveHeader = document.getElementById('liveHeader');
 
-            if (quizStatus === 'done' || isLastQuestion) {
+            if (quizStatus === 'done') {
+                pageTitle.textContent = "Final Standings";
+                if (livePill) livePill.style.display = 'none';
+                if (liveHeader) {
+                    liveHeader.querySelector('.f1-title').innerHTML =
+                        '<i class="fas fa-list-ol"></i> Complete Rankings';
+                }
                 statusDiv.innerHTML = `
-            <div class="status-banner final-status">
-                <i class="fas fa-flag-checkered"></i>
-                <div>
-                    <div class="status-title">Quiz Complete!</div>
-                    <div class="status-subtitle">Final Leaderboard</div>
-                </div>
-            </div>
-        `;
-                footerDiv.style.display = 'flex';
-            } else {
-                statusDiv.innerHTML = `
-            <div class="status-banner waiting-status">
-                <i class="fas fa-hourglass-half"></i>
-                <div>
-                    <div class="status-title">Waiting for Admin</div>
-                    <div class="status-subtitle">Admin will start the next question soon...</div>
-                </div>
-            </div>
-        `;
-                footerDiv.style.display = 'none';
-            }
-        }
-
-        function getInitials(name) {
-            if (!name) return '?';
-            const parts = name.split(/[-\s]/);
-            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-            return name.substring(0, 2).toUpperCase();
-        }
-
-        function isCurrentUser(studentName) {
-            return studentName === currentStudent;
-        }
-
-        function getAvatarClass(name) {
-            const len = name.length;
-            return `avatar-grad-${(len % 4) + 1}`;
-        }
-
-        function renderLeaderboard(leaderboard) {
-            if (!leaderboard || leaderboard.length === 0) {
-                document.getElementById('emptyState').style.display = 'block';
-                return;
-            }
-            document.getElementById('emptyState').style.display = 'none';
-            leaderboard.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                return a.time - b.time;
-            });
-            const top3 = leaderboard.slice(0, 3);
-            const others = leaderboard.slice(3);
-            renderPodium(top3);
-            renderOthers(others, 4);
-        }
-
-        function renderPodium(top3) {
-            const container = document.getElementById('podiumContainer');
-            container.innerHTML = '';
-            let displayOrder = [];
-            if (top3.length === 1) {
-                displayOrder = [{ data: top3[0], class: 'first', rank: 1 }];
-            } else if (top3.length === 2) {
-                displayOrder = [
-                    { data: top3[1], class: 'second', rank: 2 },
-                    { data: top3[0], class: 'first', rank: 1 }
-                ];
-            } else {
-                displayOrder = [
-                    { data: top3[1], class: 'second', rank: 2 },
-                    { data: top3[0], class: 'first', rank: 1 },
-                    { data: top3[2], class: 'third', rank: 3 }
-                ];
-            }
-            displayOrder.forEach(pos => {
-                if (!pos.data) return;
-                const p = pos.data;
-                const isUser = isCurrentUser(p.student);
-                const nameDisplay = isUser ? 'You' : p.student.split(' ')[0];
-                const totalQ = p.total || '?';
-                container.innerHTML += `
-            <div class="podium-item ${pos.class}">
-                ${pos.rank === 1 ? '<div class="crown-icon"><i class="fas fa-crown"></i></div>' : ''}
-                <div class="avatar-wrapper">
-                    <div class="podium-avatar ${getAvatarClass(p.student)}">
-                        ${getInitials(p.student)}
+                    <div class="status-banner animate__animated animate__zoomIn"
+                         style="border-color:rgba(245,158,11,0.25); background:linear-gradient(135deg,#fffbeb,#fff);">
+                        <i class="fas fa-trophy" style="color:#f59e0b;font-size:34px;"></i>
+                        <div class="flex-grow-1">
+                            <div class="status-title">🏆 Final Standings</div>
+                            <div class="status-subtitle">The quiz has concluded — champions crowned!</div>
+                        </div>
                     </div>
-                    <div class="rank-badge">${pos.rank}</div>
-                </div>
-                <div class="podium-name">${nameDisplay}</div>
-                <div class="podium-points">${p.points} <span style="font-size:0.65rem;font-weight:500;opacity:0.8;">pts</span></div>
-                <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">
-                    <i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i> ${p.correct ?? '?'}/${totalQ} correct
-                </div>
-            </div>`;
-            });
+                `;
+                footerDiv.style.display = 'block';
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="status-banner animate__animated animate__fadeIn">
+                        <i class="fas fa-stopwatch" style="color:#16a34a;"></i>
+                        <div class="flex-grow-1">
+                            <div class="status-title">Live Action</div>
+                            <div class="status-subtitle">Monitoring real-time performance…</div>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
-        function renderOthers(players, startRank) {
-            const container = document.getElementById('playerList');
-            container.innerHTML = '';
-            players.forEach((p, index) => {
-                const rank = startRank + index;
-                const isUser = isCurrentUser(p.student);
-                const totalQ = p.total || '?';
-                container.innerHTML += `
-            <div class="player-row ${isUser ? 'current-user' : ''}" style="animation-delay: ${index * 0.05}s">
-                <div class="row-rank">${rank}</div>
-                <div class="row-avatar ${getAvatarClass(p.student)}">${getInitials(p.student)}</div>
-                <div class="row-info" style="flex:1;">
-                    <div class="row-name">${isUser ? 'You' : p.student}</div>
-                    <div style="font-size:0.75rem;color:#94a3b8;"><i class="fas fa-check-circle text-success" style="font-size:0.7rem;"></i> ${p.correct ?? '?'}/${totalQ} correct</div>
-                </div>
-                <div class="row-points d-flex flex-column align-items-end">
-                    <span style="font-size:1.05rem;font-weight:700;">${p.points}</span>
-                    <span style="font-size:0.7rem;color:#94a3b8;">pts</span>
-                </div>
-            </div>`;
-            });
+        /* ─── ISSUE 2 FIX: Final Podium (top-3 highlight cards) ─── */
+        function renderFinalPodium(data) {
+            if (!data || data.length === 0) return;
+            const container = document.getElementById('podiumContainer');
+            container.style.display = 'block';
+
+            const medals  = ['🥇','🥈','🥉'];
+            const classes = ['gold','silver','bronze'];
+            // Slot order: silver (left), gold (center), bronze (right)
+            const display = [data[1], data[0], data[2]];
+            const dispCls = ['silver','gold','bronze'];
+
+            const top3 = display.map((p, idx) => {
+                if (!p) return '';
+                const realIdx = dispCls[idx] === 'gold' ? 0 : dispCls[idx] === 'silver' ? 1 : 2;
+                const initials = (p.username || p.name || '?').slice(0,2).toUpperCase();
+                const rankLabel = realIdx === 0 ? '🥇 1st Place' : realIdx === 1 ? '🥈 2nd Place' : '🥉 3rd Place';
+                return `
+                    <div class="final-podium-card ${dispCls[idx]}">
+                        <div class="podium-rank-label">${rankLabel}</div>
+                        <div class="podium-card-avatar">${initials}</div>
+                        <div class="podium-card-name">${p.username || p.name || 'Player'}</div>
+                        <span class="podium-card-score">${p.score ?? p.points ?? 0} pts</span>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = `<div class="final-podium-grid">${top3}</div>`;
         }
 
-        function fetchLeaderboard() {
+        /* ─── Fetch Leaderboard from API ─────────────────── */
+        function fetchLeaderboard(isFinalFetch = false) {
             fetch(`/student/api/leaderboard/${quizId}`)
                 .then(r => r.json())
-                .then(data => renderLeaderboard(data.leaderboard))
-                .catch(err => console.error(err));
+                .then(data => {
+                    // Use freshly fetched data; fall back to cache if empty
+                    const list = (data.leaderboard && data.leaderboard.length > 0)
+                        ? data.leaderboard
+                        : lastLeaderboardData;
+
+                    if (list.length > 0) lastLeaderboardData = list;
+
+                    const isFinal = quizStatus === 'done';
+                    f1Board.update(list, null, isFinal);
+
+                    if (isFinalFetch && isFinal) renderFinalPodium(list);
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    // On failure, still render with cached data
+                    if (isFinalFetch && quizStatus === 'done' && lastLeaderboardData.length > 0) {
+                        f1Board.update(lastLeaderboardData, null, true);
+                        renderFinalPodium(lastLeaderboardData);
+                    }
+                });
         }
 
-        renderStatusMessage();
-        fetchLeaderboard();
+        // Initial render
+        renderStatusBanner();
+        fetchLeaderboard(quizStatus === 'done');
+
+        // If quiz was already done when page loaded, show podium immediately
+        if (quizStatus === 'done') {
+            // Data will arrive via fetchLeaderboard callback
+        }
     </script>
 
 </body>

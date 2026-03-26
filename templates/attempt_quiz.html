@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/attempt_quiz.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/f1_leaderboard.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 
@@ -117,7 +118,18 @@
         </div>
     </div>
 
+    <div id="f1Leaderboard" class="f1-leaderboard-container container mb-5" style="max-width: 600px; display: none;">
+        <div class="f1-board">
+            <div class="f1-header">
+                <div class="f1-title"><i class="fas fa-flag-checkered"></i> LIVE STANDINGS</div>
+                <div class="f1-badge" style="background: var(--f1-overtake); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800;">F1 MODE</div>
+            </div>
+            <div class="f1-list"></div>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/f1_leaderboard.js') }}"></script>
     <script>
         // ═══════════════════════════════════════════════════════════════════
         // SERVER-CONTROLLED TIMER SYNCHRONISATION
@@ -136,17 +148,17 @@
         const socket = io();
 
         // ── Quiz / question constants (server-rendered, immutable) ────────
-        const quizId          = parseInt("{{ quiz.id }}");
-        const user            = "{{ session.get('username', 'Guest') }}";
-        const curIdx          = parseInt("{{ current_index }}");
-        const totalQs         = parseInt("{{ total_questions }}");
-        const isLastQuestion  = (curIdx === totalQs - 1);
-        const correctAnswer   = "{{ current_question.answer }}";
+        const quizId = parseInt("{{ quiz.id }}");
+        const user = "{{ session.get('username', 'Guest') }}";
+        const curIdx = parseInt("{{ current_index }}");
+        const totalQs = parseInt("{{ total_questions }}");
+        const isLastQuestion = (curIdx === totalQs - 1);
+        const correctAnswer = "{{ current_question.answer }}";
         const showLeaderboard = "{{ quiz.show_leaderboard_each_question }}" === "True";
-        const timerMode       = "{{ quiz.timer_mode }}";           // 'per_question' | 'overall'
-        const totalQuizTime   = parseInt("{{ quiz.total_quiz_time or 0 }}") * 60; // seconds
-        const timeLimit       = parseInt("{{ current_question.time_limit }}");
-        const quizIsActive    = {{ 'true' if quiz.is_active else 'false' }};
+        const timerMode = "{{ quiz.timer_mode }}";           // 'per_question' | 'overall'
+        const totalQuizTime = parseInt("{{ quiz.total_quiz_time or 0 }}") * 60; // seconds
+        const timeLimit = parseInt("{{ current_question.time_limit }}");
+        const quizIsActive = {{ 'true' if quiz.is_active else 'false' }};
 
         // ── Server-authoritative question start timestamp ─────────────────
         // Injected by attempt_quiz route from quiz_state[quiz_id]["question_started_at"].
@@ -163,8 +175,8 @@
         const clockOffset = serverTimeAtRender - (Date.now() / 1000);
 
         // ── Mutable state ─────────────────────────────────────────────────
-        let submitted        = false;
-        let timerInterval    = null;
+        let submitted = false;
+        let timerInterval = null;
         // questionStartTime: Date.now() (ms) when THIS student's countdown
         // began — used only to measure the student's personal response time.
         let questionStartTime = null;
@@ -175,9 +187,9 @@
         let elapsedQuizTime = parseInt(sessionStorage.getItem(`quiz_${quizId}_elapsed`) || "0");
 
         // ── DOM references ────────────────────────────────────────────────
-        const timerBadge     = document.getElementById("timerBadge");
-        const timerLabel     = document.getElementById("timerLabel");
-        const progressBar    = document.getElementById("progressBar");
+        const timerBadge = document.getElementById("timerBadge");
+        const timerLabel = document.getElementById("timerLabel");
+        const progressBar = document.getElementById("progressBar");
         const waitingOverlay = document.getElementById("waitingOverlay");
 
         // ═══════════════════════════════════════════════════════════════════
@@ -200,7 +212,7 @@
             if (timerMode === "overall") {
                 return Math.max(0, totalQuizTime - elapsedQuizTime);
             }
-            const now     = serverAdjustedNow();
+            const now = serverAdjustedNow();
             const elapsed = Math.max(0, now - questionStartTs);
             const remaining = Math.max(0, Math.floor(timeLimit - elapsed));
             console.log(
@@ -230,11 +242,11 @@
         }
 
         function updateTimerUI(remaining) {
-            const maxTime    = timerMode === "overall" ? totalQuizTime : timeLimit;
+            const maxTime = timerMode === "overall" ? totalQuizTime : timeLimit;
             const percentage = maxTime > 0 ? Math.max(0, (remaining / maxTime) * 100) : 0;
 
-            timerLabel.innerText       = formatTime(remaining);
-            progressBar.style.width    = percentage + "%";
+            timerLabel.innerText = formatTime(remaining);
+            progressBar.style.width = percentage + "%";
             progressBar.classList.remove("bg-primary", "bg-warning", "bg-danger");
             timerLabel.classList.remove("text-danger");
 
@@ -355,7 +367,7 @@
             let ts = data.question_started_at || questionStartedAt;
             if (data.server_time) {
                 const eventClockOffset = data.server_time - (Date.now() / 1000);
-                const now     = (Date.now() / 1000) + eventClockOffset;
+                const now = (Date.now() / 1000) + eventClockOffset;
                 const elapsed = Math.max(0, now - ts);
                 const remaining = Math.max(0, Math.floor(timeLimit - elapsed));
                 console.log(`[quiz_started] eventClockOffset=${eventClockOffset.toFixed(3)}s, elapsed=${elapsed.toFixed(2)}s, remaining=${remaining}s`);
@@ -486,38 +498,38 @@
             // time_taken = seconds from when the student started answering.
             // questionStartTime is set by startCountdown(), so it is always
             // after the waiting overlay is hidden — never includes wait time.
-            const rawTimeTaken  = questionStartTime
+            const rawTimeTaken = questionStartTime
                 ? Math.floor((Date.now() - questionStartTime) / 1000)
                 : 0;
             const maxAllowedTime = timerMode === "overall" ? totalQuizTime : timeLimit;
-            const timeTaken     = Math.min(rawTimeTaken, maxAllowedTime);
+            const timeTaken = Math.min(rawTimeTaken, maxAllowedTime);
 
             fetch(`/student/quiz/${quizId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({
-                    question_id:     "{{ current_question.id }}",
-                    qindex:          curIdx,
+                    question_id: "{{ current_question.id }}",
+                    qindex: curIdx,
                     selected_answer: val,
-                    time_taken:      timeTaken
+                    time_taken: timeTaken
                 })
             })
-            .then(r => r.json())
-            .then(data => {
-                socket.emit("student_submitted", {
-                    quiz_id:        quizId,
-                    student:        user,
-                    question_index: curIdx
-                });
+                .then(r => r.json())
+                .then(data => {
+                    socket.emit("student_submitted", {
+                        quiz_id: quizId,
+                        student: user,
+                        question_index: curIdx
+                    });
 
-                showAnswerFeedback(val, data.is_correct);
+                    showAnswerFeedback(val, data.is_correct);
 
-                setTimeout(() => {
-                    if (isLastQuestion) {
-                        const banner = document.querySelector(".result-banner");
-                        if (banner) banner.remove();
-                        // Show "waiting for admin" overlay after completing last question
-                        waitingOverlay.innerHTML = `
+                    setTimeout(() => {
+                        if (isLastQuestion) {
+                            const banner = document.querySelector(".result-banner");
+                            if (banner) banner.remove();
+                            // Show "waiting for admin" overlay after completing last question
+                            waitingOverlay.innerHTML = `
                             <div class="text-center" style="color:var(--text-main);">
                                 <div class="spinner-border text-primary mb-3"
                                      role="status" style="width:3rem;height:3rem;"></div>
@@ -526,29 +538,29 @@
                                     Waiting for admin to reveal the final leaderboard…
                                 </p>
                             </div>`;
-                        waitingOverlay.classList.add("active");
-                    } else {
-                        if (showLeaderboard) {
-                            window.location.href = `/student/leaderboard/live/${quizId}?qindex=${curIdx}`;
+                            waitingOverlay.classList.add("active");
                         } else {
-                            window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
+                            if (showLeaderboard) {
+                                window.location.href = `/student/leaderboard/live/${quizId}?qindex=${curIdx}`;
+                            } else {
+                                window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
+                            }
                         }
+                    }, 2500);
+                })
+                .catch(err => {
+                    console.error("Submission error:", err);
+                    submitted = false;
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
+                    if (qType === 'short_answer') {
+                        document.getElementById("shortAnswerInput").disabled = false;
+                    } else if (qType === 'checkbox') {
+                        document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
+                    } else {
+                        document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
                     }
-                }, 2500);
-            })
-            .catch(err => {
-                console.error("Submission error:", err);
-                submitted  = false;
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
-                if (qType === 'short_answer') {
-                    document.getElementById("shortAnswerInput").disabled = false;
-                } else if (qType === 'checkbox') {
-                    document.querySelectorAll("input[name='answer[]']").forEach(i => i.disabled = false);
-                } else {
-                    document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
-                }
-            });
+                });
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -556,9 +568,9 @@
         // Visual highlight of correct / wrong options after submission.
         // ═══════════════════════════════════════════════════════════════════
         function showAnswerFeedback(selectedAnswer, isCorrect) {
-            const qType      = "{{ current_question.question_type }}";
-            const normalize  = s => (s || "").trim().toLowerCase();
-            const correctList  = correctAnswer.split(',').map(normalize);
+            const qType = "{{ current_question.question_type }}";
+            const normalize = s => (s || "").trim().toLowerCase();
+            const correctList = correctAnswer.split(',').map(normalize);
             const selectedList = selectedAnswer.split(',').map(normalize);
 
             if (qType === 'short_answer') {
@@ -566,11 +578,11 @@
                 input.classList.remove("is-valid", "is-invalid");
                 if (isCorrect) {
                     input.classList.add("is-valid");
-                    input.style.borderColor     = "#10b981";
+                    input.style.borderColor = "#10b981";
                     input.style.backgroundColor = "#f0fdf4";
                 } else {
                     input.classList.add("is-invalid");
-                    input.style.borderColor     = "#ef4444";
+                    input.style.borderColor = "#ef4444";
                     input.style.backgroundColor = "#fef2f2";
                 }
             } else {
@@ -642,6 +654,12 @@
             input.addEventListener('change', function () {
                 this.parentElement.classList.toggle('selected', this.checked);
             });
+        });
+
+        // SocketIO connectivity
+        socket.on('connect', () => {
+            console.log('🔌 Connected to quiz room');
+            socket.emit("join_quiz", { quiz_id: quizId });
         });
     </script>
 </body>

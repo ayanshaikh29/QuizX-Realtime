@@ -154,6 +154,8 @@
                 <a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
                     Dashboard</a>
                 <a href="{{ url_for('admin.quizzes') }}" class="nav-link active"><i class="fas fa-book"></i> Quizzes</a>
+                <a href="{{ url_for('admin_groups.groups') }}" class="nav-link"><i class="fas fa-layer-group"></i>
+                    Groups</a>
                 <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
@@ -205,8 +207,7 @@
                         <div class="qr-section shadow-sm text-center">
                             <h5 class="fw-bold mb-4">Invite Participants</h5>
                             <div class="p-3 bg-light rounded-4 mb-4">
-                                <img src="{{ qr_base64 }}"
-                                    alt="Join QR" class="img-fluid rounded-3">
+                                <img src="{{ qr_base64 }}" alt="Join QR" class="img-fluid rounded-3">
                             </div>
                             <div class="mb-4">
                                 <span class="text-muted small d-block mb-1">JOIN CODE</span>

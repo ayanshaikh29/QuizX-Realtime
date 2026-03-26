@@ -57,7 +57,7 @@ def register_socket_events():
             quiz_state[quiz_id] = {
                 'current_qindex':      existing_state.get('current_qindex', 0),
                 'started':             True,
-                'question_started_at': start_ts,
+                'question_started_at': start_ts
             }
             print(f'  ↳ Stamped new question_started_at={start_ts:.3f}')
 
@@ -71,7 +71,7 @@ def register_socket_events():
         socketio.emit('quiz_started', {
             'quiz_id':             quiz_id,
             'question_started_at': start_ts,
-            'server_time':         server_now,
+            'server_time':         server_now
         }, room=room_name)
         print(f'📡 Emitted quiz_started → {room_name}  (ts={start_ts:.3f}, server_now={server_now:.3f})')
     
@@ -111,20 +111,50 @@ def register_socket_events():
         quiz_state[quiz_id]['question_started_at'] = new_ts
         new_qindex = quiz_state[quiz_id]['current_qindex']
 
+        # NEW: Fetch question details to emit to admin
+        questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order).all()
+        q = questions[new_qindex] if new_qindex < len(questions) else None
+        
+        question_data = None
+        if q:
+            question_data = {
+                'id': q.id,
+                'question': q.question,
+                'type': q.question_type,
+                'option1': q.option1,
+                'option2': q.option2,
+                'option3': q.option3,
+                'option4': q.option4,
+                'answer': q.answer,
+                'order': q.order
+            }
+
         print(f'📤 Moving to question {new_qindex + 1} of {total_questions} (ts={new_ts:.3f})')
 
         server_now = time.time()
+        # Emit generic load event for students
         socketio.emit(
             'load_next_question',
             {
                 'qindex':              new_qindex,
                 'quiz_id':             quiz_id,
                 'question_started_at': new_ts,
-                'server_time':         server_now,  # for client clock-offset correction
+                'server_time':         server_now,
             },
             room=room_name,
         )
-        print(f'📡 Emitted load_next_question qindex={new_qindex} → {room_name}  (ts={new_ts:.3f})')
+
+        # Emit specific question_update event for admin (as requested)
+        socketio.emit(
+            'question_update',
+            {
+                'qindex':              new_qindex,
+                'quiz_id':             quiz_id,
+                'question_data':       question_data
+            },
+            room=room_name,
+        )
+        print(f'📡 Emitted question_update qindex={new_qindex} → {room_name}')
     
     @socketio.on('admin_stop_quiz')
     def admin_stop_quiz(data):

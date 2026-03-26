@@ -542,7 +542,8 @@ def live_control(quiz_id):
         current_index=current_index,
         current_question=current_question,
         qr_base64=qr_base64,
-        join_url=join_url
+        join_url=join_url,
+        quiz_state=quiz_state,          # ← fix: was missing, template uses quiz_state.get(quiz.id, {})
     )
 
 

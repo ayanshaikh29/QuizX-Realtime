@@ -284,10 +284,10 @@ def attempt_quiz(quiz_id):
             # Update leaderboard - CRITICAL: Only for current quiz
             PointService.update_question_rank_bonuses(quiz_id, question_id)
             
-            # Build leaderboard ONLY for current quiz
-            leaderboard_list = LeaderboardService.build_leaderboard_payload(quiz_id)
+            # Build enriched leaderboard payload
+            leaderboard_list = LeaderboardService.build_leaderboard_payload(quiz_id, current_question_id=question_id)
             
-            # CRITICAL FIX: Add quiz_id to each entry for frontend filtering
+            # Add quiz_id to each entry for frontend filtering
             for entry in leaderboard_list:
                 entry['quiz_id'] = quiz_id
             
@@ -301,23 +301,20 @@ def attempt_quiz(quiz_id):
         # CRITICAL FIX: Check if THIS student has completed the quiz
         total_questions_in_quiz = Question.query.filter_by(quiz_id=quiz_id).count()
         
-        print(f"Total questions in quiz: {total_questions_in_quiz}")
-        print(f"Current question index (qindex): {qindex}")
-        
-        # FIX: Determine if this is the LAST question based on qindex
+        # Determine if this is the LAST question based on qindex
         is_last_question = (qindex == total_questions_in_quiz - 1)
         
-        print(f"Is this the last question? {is_last_question}")
-        
-        # Emit leaderboard update for everyone in THIS quiz room only if config allows
-        if quiz.show_leaderboard_each_question:
-            socketio.emit(
-                'leaderboard_update',
-                leaderboard_list,
-                room=f"quiz_{quiz_id}"
-            )
-        else:
-            print(f"Config set to bypass mid-quiz leaderboard for quiz {quiz_id}")
+        # Always emit leaderboard_update for the Admin Real-time board
+        # The admin panel will always display it, whereas students only see it if configured
+        socketio.emit(
+            'leaderboard_update',
+            {
+                'leaderboard': leaderboard_list,
+                'quiz_type_a': quiz.show_leaderboard_each_question,
+                'last_submitter': student_name if is_correct else None
+            },
+            room=f"quiz_{quiz_id}"
+        )
         
         # CRITICAL FIX: Only mark quiz as complete if this is the last question for this student
         if is_last_question:
@@ -454,6 +451,7 @@ def attempt_quiz(quiz_id):
         quiz_id=quiz_id,
         question_started_at=q_started_at,
         server_time=server_now,
+        quiz_state=quiz_state,
     )
 
 @student_bp.route('/quiz/result/<int:quiz_id>')

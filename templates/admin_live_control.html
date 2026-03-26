@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_live_control.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/f1_leaderboard.css') }}">
 
     <style>
         .main-content {
@@ -67,8 +68,7 @@
             </div>
             <div class="qr-modal-body text-center">
                 <div class="qr-main-wrapper shadow-lg mb-4">
-                    <img src="{{ qr_base64 }}"
-                        alt="Join QR Code" class="img-fluid qr-big-img">
+                    <img src="{{ qr_base64 }}" alt="Join QR Code" class="img-fluid qr-big-img">
                 </div>
                 <div class="join-info-box p-3 rounded-4 shadow-sm border mb-4">
                     <span class="d-block text-muted small mb-2">JOIN LINK</span>
@@ -144,9 +144,10 @@
 
             <div class="container-fluid p-4">
                 <div class="dashboard-content p-0">
-                    <div class="content-grid">
+                    <div class="split-layout-container">
 
-                        <div class="stats-column">
+                        <!-- TOP ROW: Stats cards — UNCHANGED -->
+                        <div class="admin-stats-row">
                             <div class="stat-card join-code-card glass-effect" data-aos="fade-up">
                                 <div class="card-header">
                                     <div class="card-icon"><i class="fas fa-key"></i></div>
@@ -162,7 +163,8 @@
                                 </div>
                             </div>
 
-                            <div class="stat-card players-card glass-effect" data-aos="fade-up" data-aos-delay="100">
+                            <div class="stat-card players-card glass-effect" data-aos="fade-up"
+                                data-aos-delay="100">
                                 <div class="card-header">
                                     <div class="card-icon pulse"><i class="fas fa-users"></i></div>
                                     <h3>Live Players</h3>
@@ -179,62 +181,42 @@
                                         <div class="progress-bar-fill" id="progressBar"></div>
                                         <div class="progress-glow" id="progressGlow"></div>
                                     </div>
-                                    <div class="progress-labels"><span>0</span><span id="maxPlayers">100</span></div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="stat-card quick-stats-card glass-effect" data-aos="fade-up"
-                                data-aos-delay="200">
-                                <div class="quick-stats-grid">
-                                    <div class="quick-stat">
-                                        <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
-                                        <div class="stat-details">
-                                            <span class="stat-value">{{ total_questions }}</span>
-                                            <span class="stat-label">Questions</span>
+                        <!-- 50/50 SPLIT: Leaderboard (left) + Question Card (right) -->
+                        <div class="lq-split-wrapper">
+
+                            <!-- LEFT 50%: Live Leaderboard -->
+                            <div class="lq-left-panel">
+                                <div class="lq-leaderboard-card glass-effect">
+                                    <div id="f1Leaderboard" class="f1-leaderboard-container">
+                                        <div class="f1-board">
+                                            <div class="f1-header">
+                                                <div class="f1-title"><i class="fas fa-trophy"></i> Live Standings</div>
+                                                <div class="live-status-pill">
+                                                    <span class="status-dot"></span>
+                                                    FASTEST UPDATES
+                                                </div>
+                                            </div>
+                                            <div class="f1-list">
+                                                <!-- Leaderboard rows will be injected here -->
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {% if quiz.is_active %}
-                            <div class="stat-card qr-card glass-effect mt-4 interactive-qr" data-aos="fade-up"
-                                data-aos-delay="300" onclick="openQRModal()">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="card-icon"><i class="fas fa-qrcode"></i></div>
-                                        <h3>Scan to Join</h3>
-                                    </div>
-                                    <div class="expand-hint"><i class="fas fa-expand-alt"></i></div>
-                                </div>
-                                <div class="qr-display text-center p-3">
-                                    <div class="qr-wrapper mb-3 shadow-sm"
-                                        style="background: white; padding: 8px; border-radius: 12px; display: inline-block; cursor: zoom-in;">
-                                        <img src="{{ qr_base64 }}"
-                                            alt="Join QR Code" class="img-fluid" style="border-radius: 4px;">
-                                    </div>
-                                    <div
-                                        class="join-link-box p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between">
-                                        <code class="text-primary small text-truncate me-2">{{ quiz.join_code }}</code>
-                                        <button class="btn btn-sm btn-outline-primary py-1 border-0"
-                                            onclick="copyJoinLink(event)" title="Copy Link">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                    <p class="text-muted tiny mt-2 mb-0"><i class="fas fa-search-plus me-1"></i>Click to
-                                        expand for projector</p>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="control-column">
-                            <div class="control-card glass-effect" data-aos="fade-up" data-aos-delay="150">
+                            <!-- RIGHT 50%: Question Card -->
+                            <div class="lq-right-panel">
+                                <div class="control-card glass-effect" data-aos="fade-up" data-aos-delay="150">
                                 {% if total_questions > 0 %}
                                 <div class="control-header">
                                     <div class="status-badge {{ 'active' if quiz.is_active else 'waiting' }}">
                                         <i
                                             class="fas {{ 'fa-play-circle' if quiz.is_active else 'fa-hourglass-half' }}"></i>
-                                        <span>{{ 'Session Active' if quiz.is_active else 'Waiting to Start' }}</span>
+                                        <span>{{ 'Session Active' if quiz.is_active else 'Waiting' }}</span>
                                     </div>
                                     <div class="question-progress">
                                         <span class="current">{{ current_index + 1 }}</span>
@@ -256,12 +238,7 @@
                                 <div class="control-main">
                                     {% if not quiz.is_active %}
                                     <div class="start-screen">
-                                        <div class="start-animation">
-                                            <div class="rocket-container">
-                                                <i class="fas fa-rocket rocket-icon"></i>
-                                                <div class="rocket-flames"></div>
-                                            </div>
-                                        </div>
+                                        <div class="start-animation"><i class="fas fa-rocket rocket-icon"></i></div>
                                         <h2 class="start-title">Ready to Launch?</h2>
                                         <p class="start-subtitle">{{ total_questions }} questions • Players are waiting
                                         </p>
@@ -272,14 +249,9 @@
                                                 <span class="btn-content"><i class="fas fa-play"></i><span>Start Live
                                                         Session</span></span>
                                             </a>
-                                            <a href="{{ url_for('admin.waiting_room', quiz_id=quiz.id) }}"
-                                                class="btn btn-outline-primary py-3 rounded-4 fw-bold border-2">
-                                                <i class="fas fa-users me-2"></i>View Waiting Room
-                                            </a>
                                         </div>
                                     </div>
                                     {% else %}
-                                    {% if current_question %}
                                     <div class="question-display">
                                         <div class="question-badge"><span>Question {{ current_index + 1 }}</span></div>
                                         <h2 class="question-text">{{ current_question.question }}</h2>
@@ -295,36 +267,28 @@
                                             {% for opt in options if opt.value %}
                                             {% set ns = namespace(is_correct=false) %}
                                             {% for ans in (current_question.answer or '').split(',') %}
-                                                {% if (ans|string|trim|lower) == (opt.value|string|trim|lower) %}
-                                                    {% set ns.is_correct = true %}
-                                                {% endif %}
+                                            {% if (ans|string|trim|lower) == (opt.value|string|trim|lower) %}
+                                            {% set ns.is_correct = true %}
+                                            {% endif %}
                                             {% endfor %}
                                             <div
                                                 class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
                                                 <span class="option-letter">{{ opt.letter }}</span>
                                                 <span class="option-text">{{ opt.value }}</span>
-                                                {% if ns.is_correct %}
-                                                <span class="correct-badge"><i class="fas fa-check"></i></span>
-                                                {% endif %}
                                             </div>
                                             {% endfor %}
                                             {% elif current_question.question_type == 'true_false' %}
-                                            {% set options = [
-                                            {'value': 'True', 'letter': 'T', 'color': 'blue'},
-                                            {'value': 'False', 'letter': 'F', 'color': 'red'}
-                                            ] %}
-                                            {% for opt in options %}
+                                            {% for opt in [{'value': 'True', 'letter': 'T', 'color': 'blue'}, {'value':
+                                            'False', 'letter': 'F', 'color': 'red'}] %}
                                             {% set ns = namespace(is_correct=false) %}
-                                            {% if ((current_question.answer or '')|string|trim|lower) == (opt.value|string|trim|lower) %}
-                                                {% set ns.is_correct = true %}
+                                            {% if ((current_question.answer or '')|string|trim|lower) ==
+                                            (opt.value|string|trim|lower) %}
+                                            {% set ns.is_correct = true %}
                                             {% endif %}
                                             <div
                                                 class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
                                                 <span class="option-letter">{{ opt.letter }}</span>
                                                 <span class="option-text">{{ opt.value | upper }}</span>
-                                                {% if ns.is_correct %}
-                                                <span class="correct-badge"><i class="fas fa-check"></i></span>
-                                                {% endif %}
                                             </div>
                                             {% endfor %}
                                             {% elif current_question.question_type == 'short_answer' %}
@@ -332,67 +296,88 @@
                                                 style="grid-column: 1 / -1;">
                                                 <p class="text-muted mb-2 text-uppercase fw-bold"
                                                     style="font-size: 0.85rem;"><i
-                                                        class="fas fa-keyboard me-2"></i>Short Answer Response Format
-                                                </p>
+                                                        class="fas fa-keyboard me-2"></i>Correct Answer:</p>
                                                 <div
                                                     class="fs-4 fw-bold text-success border border-success border-2 rounded p-3 d-inline-block bg-white shadow-sm">
-                                                    {{ current_question.answer }}
-                                                </div>
+                                                    {{ current_question.answer }}</div>
                                             </div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                    {% endif %}
 
-                                    <div class="navigation-controls">
+                                    <div class="navigation-controls mt-4">
                                         {% if quiz.show_leaderboard_each_question %}
                                         <button onclick="prevQuestion()" class="nav-btn prev-btn" {{ 'disabled' if
-                                            current_index==0 }}>
-                                            <i class="fas fa-chevron-left"></i><span>Previous</span>
-                                        </button>
-
+                                            current_index==0 }}><i
+                                                class="fas fa-chevron-left"></i><span>Previous</span></button>
                                         {% if current_index < total_questions - 1 %} <button onclick="nextQuestion()"
-                                            class="nav-btn next-btn primary">
-                                            <span>Next Question</span><i class="fas fa-chevron-right"></i>
-                                            </button>
+                                            class="nav-btn next-btn primary"><span>Next Question</span><i
+                                                class="fas fa-chevron-right"></i></button>
                                             {% else %}
-                                            <button onclick="finishQuiz()" class="nav-btn finish-btn">
-                                                <span>Finish Quiz</span><i class="fas fa-flag-checkered"></i>
-                                            </button>
+                                            <button onclick="finishQuiz()" class="nav-btn finish-btn"><span>Finish
+                                                    Quiz</span><i class="fas fa-flag-checkered"></i></button>
                                             {% endif %}
                                             {% else %}
-                                            <div class="text-center w-100 pb-3">
-                                                <div class="mb-3" style="color:#94a3b8;font-size:0.9rem;">
-                                                    <i class="fas fa-info-circle me-1"></i> Leaderboard is OFF &mdash;
-                                                    students advance automatically
-                                                </div>
-                                                <button onclick="finishQuiz()" class="nav-btn finish-btn mx-auto">
-                                                    <span>Finish Quiz</span><i class="fas fa-flag-checkered"></i>
-                                                </button>
-                                            </div>
+                                            <button onclick="finishQuiz()"
+                                                class="nav-btn finish-btn mx-auto"><span>Finish Quiz</span><i
+                                                    class="fas fa-flag-checkered"></i></button>
                                             {% endif %}
                                     </div>
                                     {% endif %}
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                                        <h3>No Questions Found</h3>
+                                        <a href="{{ url_for('admin.quizzes') }}" class="btn-add-questions"><i
+                                                class="fas fa-plus"></i> Add Questions</a>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% else %}
-                                <div class="empty-state">
-                                    <div class="empty-icon"><i class="fas fa-inbox"></i></div>
-                                    <h3>No Questions Found</h3>
-                                    <a href="{{ url_for('admin.quizzes') }}" class="btn-add-questions"><i
-                                            class="fas fa-plus"></i> Add Questions</a>
+
+                                <!-- QR Code Floating Card -->
+                                {% if quiz.is_active %}
+                                <div class="stat-card qr-card glass-effect mt-4 interactive-qr" onclick="openQRModal()">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="card-icon"><i class="fas fa-qrcode"></i></div>
+                                            <h3>Quick Join</h3>
+                                        </div>
+                                        <div class="expand-hint"><i class="fas fa-expand-alt"></i></div>
+                                    </div>
+                                    <div class="qr-display d-flex align-items-center gap-3 p-2">
+                                        <div class="qr-thumb shadow-sm"
+                                            style="background: white; padding: 4px; border-radius: 8px; width: 60px; height: 60px;">
+                                            <img src="{{ qr_base64 }}" alt="Join QR Code" class="img-fluid">
+                                        </div>
+                                        <div
+                                            class="join-link-box flex-grow-1 p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between">
+                                            <code
+                                                class="text-primary small text-truncate me-2">{{ quiz.join_code }}</code>
+                                            <button class="btn btn-sm btn-outline-primary py-1 border-0"
+                                                onclick="copyJoinLink(event)" title="Copy Link"><i
+                                                    class="fas fa-copy"></i></button>
+                                        </div>
+                                    </div>
                                 </div>
                                 {% endif %}
-                            </div>
-                        </div>
-                    </div>
+
+                                </div><!-- /control-card -->
+                            </div><!-- /lq-right-panel -->
+
+                        </div><!-- /lq-split-wrapper -->
+                    </div><!-- /split-layout-container -->
                 </div>
             </div>
-        </main>
+    </div>
+    </div>
+    </div>
+    </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.min.js"></script>
+    <script src="{{ url_for('static', filename='js/f1_leaderboard.js') }}"></script>
 
     <script>
         const CONFIG = {
@@ -410,10 +395,27 @@
             socket.emit("join_quiz", { quiz_id: CONFIG.quizId });
         });
 
+        socket.on("question_update", (data) => {
+            if (parseInt(data.quiz_id) !== CONFIG.quizId) return;
+            console.log('📝 Question update received:', data);
+
+            if (data.question_data) {
+                updateQuestionUI(data.question_data, data.qindex);
+                document.getElementById('loadingOverlay').classList.remove('active');
+                CONFIG.current_index = data.qindex;
+            }
+        });
+
+        const f1Board = new F1Leaderboard('f1Leaderboard');
+
         socket.on("leaderboard_update", (data) => {
-            const list = Array.isArray(data) ? data : (data.leaderboard || []);
-            updatePlayerCount(list.length);
-            updatePlayerAvatars(list);
+            const leaderboard = data.leaderboard;
+
+            updatePlayerCount(leaderboard.length);
+            updatePlayerAvatars(leaderboard);
+
+            // Always update admin leaderboard in the live control split-screen
+            f1Board.update(leaderboard, data.last_submitter);
         });
 
         function updatePlayerCount(count) {
@@ -436,7 +438,8 @@
         function nextQuestion() {
             document.getElementById('loadingOverlay').classList.add('active');
             socket.emit("admin_next_question", { quiz_id: CONFIG.quizId });
-            setTimeout(() => location.reload(), CONFIG.reloadDelay);
+            // Remove full reload - handled by socket listener
+            // setTimeout(() => location.reload(), CONFIG.reloadDelay);
         }
 
         function prevQuestion() {
@@ -513,6 +516,87 @@
 
         function startConfetti() {
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+
+        function updateQuestionUI(q, index) {
+            // 1. Update Badge & Counter
+            const badge = document.querySelector('.question-badge span');
+            if (badge) badge.textContent = `Question ${index + 1}`;
+
+            const currentCount = document.querySelector('.question-progress .current');
+            if (currentCount) currentCount.textContent = index + 1;
+
+            // 2. Update Question Text
+            const questionText = document.querySelector('.question-text');
+            if (questionText) questionText.textContent = q.question;
+
+            // 3. Update Timeline Dots
+            const dots = document.querySelectorAll('.timeline-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.remove('active', 'completed');
+                if (i < index) {
+                    dot.classList.add('completed');
+                    dot.innerHTML = '<i class="fas fa-check"></i>';
+                } else if (i === index) {
+                    dot.classList.add('active');
+                    dot.textContent = i + 1;
+                } else {
+                    dot.textContent = i + 1;
+                }
+            });
+
+            // 4. Update Options Grid
+            const grid = document.querySelector('.options-grid');
+            if (!grid) return;
+
+            grid.innerHTML = ''; // Clear
+
+            if (q.type === 'mcq' || q.type === 'checkbox') {
+                const optConfigs = [
+                    { val: q.option1, letter: 'A', color: 'red' },
+                    { val: q.option2, letter: 'B', color: 'blue' },
+                    { val: q.option3, letter: 'C', color: 'yellow' },
+                    { val: q.option4, letter: 'D', color: 'green' }
+                ];
+
+                const correctAnswers = (q.answer || '').split(',').map(a => a.trim().toLowerCase());
+
+                optConfigs.forEach(opt => {
+                    if (!opt.val) return;
+                    const isCorrect = correctAnswers.includes(opt.val.trim().toLowerCase());
+                    const card = document.createElement('div');
+                    card.className = `option-card ${opt.color} ${isCorrect ? 'correct' : ''}`;
+                    card.innerHTML = `
+                        <span class="option-letter">${opt.letter}</span>
+                        <span class="option-text">${opt.val}</span>
+                    `;
+                    grid.appendChild(card);
+                });
+            } else if (q.type === 'true_false') {
+                const optConfigs = [
+                    { val: 'True', letter: 'T', color: 'blue' },
+                    { val: 'False', letter: 'F', color: 'red' }
+                ];
+                const correct = (q.answer || '').trim().toLowerCase();
+
+                optConfigs.forEach(opt => {
+                    const isCorrect = correct === opt.val.toLowerCase();
+                    const card = document.createElement('div');
+                    card.className = `option-card ${opt.color} ${isCorrect ? 'correct' : ''}`;
+                    card.innerHTML = `
+                        <span class="option-letter">${opt.letter}</span>
+                        <span class="option-text">${opt.val.toUpperCase()}</span>
+                    `;
+                    grid.appendChild(card);
+                });
+            } else if (q.type === 'short_answer') {
+                grid.innerHTML = `
+                    <div class="w-100 p-4 border rounded-3 bg-light text-center" style="grid-column: 1 / -1;">
+                        <p class="text-muted mb-2 text-uppercase fw-bold" style="font-size: 0.85rem;"><i class="fas fa-keyboard me-2"></i>Correct Answer:</p>
+                        <div class="fs-4 fw-bold text-success border border-success border-2 rounded p-3 d-inline-block bg-white shadow-sm">${q.answer}</div>
+                    </div>
+                `;
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

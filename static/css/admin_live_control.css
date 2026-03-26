@@ -1960,6 +1960,146 @@ body {
     }
 }
 
+/* =====================================================
+   50/50 Leaderboard + Question Split Layout
+   (Only affects .lq-* classes — all other cards
+    including Join Players & Quiz Code are untouched)
+   ===================================================== */
+
+/* Outer container becomes a flex column so stats row
+   sits on top and the split wrapper sits below it */
+.split-layout-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── The new side-by-side wrapper ── */
+.lq-split-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;      /* both panels match the taller side */
+    gap: 24px;
+    margin-top: 24px;
+    min-height: 60vh;          /* gives both cards a comfortable base height */
+}
+
+/* Each panel takes exactly half the row */
+.lq-left-panel,
+.lq-right-panel {
+    width: 50%;
+    min-width: 0;              /* prevent flex overflow */
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── LEFT: Leaderboard card ── */
+.lq-leaderboard-card {
+    flex: 1;                   /* stretch to panel height */
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;          /* clips the inner scroll area cleanly */
+}
+
+/* The f1-leaderboard-container becomes the scrollable region */
+.lq-leaderboard-card .f1-leaderboard-container {
+    flex: 1;
+    min-height: 0;             /* critical: allows flex child to scroll */
+    overflow-y: auto;
+    /* Thin green scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.lq-leaderboard-card .f1-leaderboard-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lq-leaderboard-card .f1-leaderboard-container::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.lq-leaderboard-card .f1-leaderboard-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ── RIGHT: Question card ── */
+.lq-right-panel .control-card {
+    flex: 1;                   /* fill panel height */
+    margin-top: 0 !important; /* removes mt-4 that was needed in the old layout */
+    overflow-y: auto;
+    /* Thin green scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.lq-right-panel .control-card::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lq-right-panel .control-card::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.lq-right-panel .control-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* =====================================================
+   Responsive — tablet: narrower gap, still side-by-side
+   ===================================================== */
+@media (max-width: 1024px) {
+    .lq-split-wrapper {
+        gap: 16px;
+        min-height: 55vh;
+    }
+}
+
+/* =====================================================
+   Responsive — mobile: stack leaderboard on top,
+   question card below
+   ===================================================== */
+@media (max-width: 768px) {
+    .lq-split-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        min-height: unset;
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    /* Full width when stacked */
+    .lq-left-panel,
+    .lq-right-panel {
+        width: 100%;
+    }
+
+    /* Cap leaderboard height on mobile so it doesn't push question off-screen */
+    .lq-leaderboard-card .f1-leaderboard-container {
+        max-height: 380px;
+    }
+
+    /* Remove the bottom margin reset — not needed in stacked view */
+    .lq-right-panel .control-card {
+        margin-top: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .lq-split-wrapper {
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .lq-leaderboard-card .f1-leaderboard-container {
+        max-height: 300px;
+    }
+}
+
 /* ===========================================
    Fullscreen QR Modal & Extra Animations
    =========================================== */
