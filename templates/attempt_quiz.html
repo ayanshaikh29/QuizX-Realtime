@@ -514,8 +514,35 @@
                     time_taken: timeTaken
                 })
             })
-                .then(r => r.json())
+                .then(async r => {
+                    // FIX 1: Check for HTTP errors BEFORE parsing JSON
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    }
+
+                    // FIX 2: Handle redirects (response.redirected is true if redirected)
+                    // The fetch API follows redirects automatically, but we should detect them
+                    if (r.redirected) {
+                        console.log(`✓ Redirect detected to: ${r.url}`);
+                        window.location.href = r.url;
+                        return { _redirected: true };
+                    }
+
+                    // FIX 3: Parse JSON and check for valid response
+                    try {
+                        const data = await r.json();
+                        return data;
+                    } catch (parseErr) {
+                        console.error("JSON parse failed. Response body:", await r.text());
+                        throw new Error(`Invalid JSON response: ${parseErr.message}`);
+                    }
+                })
                 .then(data => {
+                    // Skip if already redirected
+                    if (data._redirected) return;
+
+                    console.log("✓ Submission successful:", data);
+
                     socket.emit("student_submitted", {
                         quiz_id: quizId,
                         student: user,
@@ -525,7 +552,9 @@
                     showAnswerFeedback(val, data.is_correct);
 
                     setTimeout(() => {
-                        if (isLastQuestion) {
+                        // FIX: Trust the backend's authoritative response, not the frontend's pre-computed value
+                        if (data.student_complete === true) {
+                            console.log("✓ Quiz complete - waiting for admin to show leaderboard");
                             const banner = document.querySelector(".result-banner");
                             if (banner) banner.remove();
                             // Show "waiting for admin" overlay after completing last question
@@ -540,19 +569,34 @@
                             </div>`;
                             waitingOverlay.classList.add("active");
                         } else {
+                            console.log("✓ Loading next question...");
                             if (showLeaderboard) {
                                 window.location.href = `/student/leaderboard/live/${quizId}?qindex=${curIdx}`;
                             } else {
                                 window.location.href = `/student/quiz/${quizId}?qindex=${curIdx + 1}`;
                             }
+
+                            // FIX: Fallback in case page navigation fails (defensive measure)
+                            // If page doesn't navigate within 3 seconds, clear spinner and alert user
+                            setTimeout(() => {
+                                if (document.readyState === 'loading') return;  // Page is still loading, navigation is happening
+                                console.warn("⚠️ Page navigation may have failed");
+                                submitted = false;
+                                btn.disabled = false;
+                                btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
+                                alert("Navigation to next question failed. Please click Submit again or refresh the page.");
+                            }, 3000);
                         }
                     }, 2500);
                 })
                 .catch(err => {
-                    console.error("Submission error:", err);
+                    console.error("❌ Submission error:", err);
+
+                    // FIX 4: Stop spinner and restore button state
                     submitted = false;
                     btn.disabled = false;
                     btn.innerHTML = `<i class="fas fa-paper-plane me-2"></i>SUBMIT ANSWER`;
+
                     if (qType === 'short_answer') {
                         document.getElementById("shortAnswerInput").disabled = false;
                     } else if (qType === 'checkbox') {
@@ -560,6 +604,9 @@
                     } else {
                         document.querySelectorAll("input[name='answer']").forEach(i => i.disabled = false);
                     }
+
+                    // Show user-friendly error message
+                    alert(`Error submitting answer: ${err.message}`);
                 });
         }
 

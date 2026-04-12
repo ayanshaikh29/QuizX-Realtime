@@ -600,13 +600,39 @@ def leaderboard(quiz_id):
 def history():
     """Student quiz history - REQUIRES LOGIN"""
     username = session.get('username')
+    
+    # Updated query to join with Quiz table for real titles
     quiz_history = (
-        Result.query
-        .filter_by(student=username)
+        db.session.query(
+            Result.id,
+            Result.quiz_id,
+            Quiz.title.label('quiz_title'),
+            Result.score,
+            Result.total,
+            Result.submitted_at
+        )
+        .join(Quiz, Result.quiz_id == Quiz.id)
+        .filter(Result.student == username)
         .order_by(Result.submitted_at.desc())
         .all()
     )
-    return render_template('student_history.html', history=quiz_history)
+    
+    # Calculate Analytics Summary
+    total_quizzes = len(quiz_history)
+    total_score = sum(h.score for h in quiz_history)
+    total_possible = sum(h.total for h in quiz_history)
+    avg_accuracy = (total_score / total_possible * 100) if total_possible else 0
+    pass_count = sum(1 for h in quiz_history if (h.score / h.total * 100) >= 40) if total_possible else 0
+    
+    return render_template(
+        'student_history.html', 
+        history=quiz_history,
+        stats={
+            'total_quizzes': total_quizzes,
+            'avg_accuracy': avg_accuracy,
+            'pass_count': pass_count
+        }
+    )
 
 
 # ========================================

@@ -15,7 +15,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_analytics.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_history.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_premium.css') }}">
 
     <style>
         body {
@@ -136,161 +136,190 @@
 
         <main class="main-content" id="report-content">
 
-            <header class="content-header d-flex justify-content-between align-items-center p-4">
-
-                <div>
-                    <a href="{{ url_for('student.history') }}" class="text-muted text-decoration-none">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </a>
-
-                    <h4 class="fw-bold">Quiz Attempt Summary</h4>
+            <header class="content-header shadow-sm bg-white p-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between container-fluid">
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('student.history') }}" class="btn btn-light rounded-pill me-3">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h4 class="fw-800 mb-0">Quiz Report</h4>
+                            <p class="text-muted small mb-0">{{ quiz.title }}</p>
+                        </div>
+                    </div>
+                    <button onclick="downloadPDF()" id="pdf-btn" class="btn btn-dark rounded-pill px-4 fw-bold">
+                        <i class="fas fa-file-pdf me-2"></i> Download Report
+                    </button>
                 </div>
-
-                <button onclick="downloadPDF()" id="pdf-btn" class="btn btn-pdf">
-                    <i class="fas fa-file-pdf me-2"></i> Download Report
-                </button>
-
             </header>
 
-            <div class="container-fluid p-4">
+            <div class="container-fluid px-4 pb-5">
 
                 {% set score_perc = (result.score / result.total * 100) | round(0) | int %}
 
-                <div class="row g-4 mb-4">
-
+                <div class="row g-4 mb-5">
                     <div class="col-md-3 col-6">
-                        <div class="stat-card">
+                        <div class="summary-stat-card animate-up delay-1">
+                            <i class="fas fa-list-ol"></i>
                             <h3>{{ result.total }}</h3>
                             <p>Total Questions</p>
                         </div>
                     </div>
-
                     <div class="col-md-3 col-6">
-                        <div class="stat-card">
+                        <div class="summary-stat-card animate-up delay-2">
+                            <i class="fas fa-check-circle text-success"></i>
                             <h3>{{ result.score }}</h3>
-                            <p>Correct</p>
+                            <p>Correct Answers</p>
                         </div>
                     </div>
-
                     <div class="col-md-3 col-6">
-                        <div class="stat-card">
+                        <div class="summary-stat-card animate-up delay-3">
+                            <i class="fas fa-clock text-info"></i>
                             <h3>{{ total_time_str }}</h3>
-                            <p>Time</p>
+                            <p>Time Taken</p>
                         </div>
                     </div>
-
                     <div class="col-md-3 col-6">
-                        <div class="stat-card">
+                        <div class="summary-stat-card animate-up delay-4">
+                            <i class="fas fa-bullseye text-warning"></i>
                             <h3>{{ score_perc }}%</h3>
-                            <p>Score</p>
+                            <p>Accuracy Score</p>
                         </div>
                     </div>
-
                 </div>
 
 
                 <div class="row">
-
                     <div class="col-lg-8">
-
-                        <h5 class="fw-bold mb-4">Question Review</h5>
+                        <h5 class="fw-800 mb-4 text-dark">Question Wise Review</h5>
 
                         {% for q in questions %}
-
                         {% set ans_data = answers_map.get(q.id) %}
                         {% set selected = ans_data.selected_answer if ans_data else None %}
+                        {% set is_correct = ans_data.is_correct if ans_data else False %}
 
-                        <div class="question-card">
-
-                            <h6 class="text-muted">Question {{ loop.index }}</h6>
-                            <h5 class="fw-bold mb-3">{{ q.question }}</h5>
-
-                            {% if q.question_type == 'mcq' or q.question_type == 'checkbox' %}
-                            {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
-                            {% if q.question_type == 'checkbox' %}
-                            {% set correct_list = (q.correct_answers or "").split(',') %}
-                            {% set selected_list = (selected or "").split(',') %}
-                            {% set is_this_correct = (opt in correct_list) %}
-                            {% set student_picked_this = (opt in selected_list) %}
-                            {% else %}
-                            {% set is_this_correct = (opt == q.answer) %}
-                            {% set student_picked_this = (selected == opt) %}
-                            {% endif %}
-                            <div
-                                class="option-item {{ 'correct' if is_this_correct else 'wrong-selected' if student_picked_this else '' }}">
-                                <span class="option-letter">{{ ["A", "B", "C", "D"][loop.index0] }}</span>
-                                <span>{{ opt }}</span>
-                                {% if student_picked_this and not is_this_correct %}
-                                <span class="badge bg-danger ms-auto"><i class="fas fa-times me-1"></i>Your
-                                    Answer</span>
-                                {% elif student_picked_this and is_this_correct %}
-                                <span class="badge bg-success ms-auto"><i class="fas fa-check me-1"></i>Your
-                                    Answer</span>
+                        <div class="question-review-card animate-up" style="animation-delay: {{ 0.2 + loop.index0 * 0.1 }}s">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="q-badge">Question {{ loop.index }}</span>
+                                {% if ans_data %}
+                                <span class="badge {{ 'bg-success' if is_correct else 'bg-danger' }} rounded-pill px-3">
+                                    <i class="fas {{ 'fa-check-circle' if is_correct else 'fa-times-circle' }} me-1"></i>
+                                    {{ 'Correct' if is_correct else 'Incorrect' }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill px-3">Unanswered</span>
                                 {% endif %}
                             </div>
-                            {% endfor %}
-                            {% elif q.question_type == 'true_false' %}
-                            {% for opt in ['True', 'False'] %}
-                            {% set is_this_correct = (opt == q.answer) %}
-                            {% set student_picked_this = (selected == opt) %}
-                            <div
-                                class="option-item {{ 'correct' if is_this_correct else 'wrong-selected' if student_picked_this else '' }}">
-                                <span class="option-letter">{{ ["T", "F"][loop.index0] }}</span>
-                                <span>{{ opt | upper }}</span>
-                                {% if student_picked_this and not is_this_correct %}
-                                <span class="badge bg-danger ms-auto"><i class="fas fa-times me-1"></i>Your
-                                    Answer</span>
-                                {% elif student_picked_this and is_this_correct %}
-                                <span class="badge bg-success ms-auto"><i class="fas fa-check me-1"></i>Your
-                                    Answer</span>
+                            
+                            <h4 class="q-text">{{ q.question }}</h4>
+
+                            <div class="options-container mt-4">
+                                {% if q.question_type == 'mcq' or q.question_type == 'checkbox' %}
+                                    {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
+                                        {% if q.question_type == 'checkbox' %}
+                                            {% set correct_list = (q.answer or "").split(',') | map('trim') | list %}
+                                            {% set selected_list = (selected or "").split(',') | map('trim') | list %}
+                                            {% set is_this_correct = (opt in correct_list) %}
+                                            {% set student_picked_this = (opt in selected_list) %}
+                                        {% else %}
+                                            {% set is_this_correct = (opt == q.answer) %}
+                                            {% set student_picked_this = (selected == opt) %}
+                                        {% endif %}
+
+                                        <div class="option-box {{ 'correct' if is_this_correct else 'wrong' if student_picked_this and not is_this_correct else '' }}">
+                                            <span class="fw-bold me-3 text-muted">{{ ["A", "B", "C", "D"][loop.index0] }}.</span>
+                                            <span>{{ opt }}</span>
+                                            
+                                            {% if student_picked_this %}
+                                            <div class="option-icon">
+                                                <i class="fas {{ 'fa-check' if is_this_correct else 'fa-times' }}"></i>
+                                            </div>
+                                            {% elif is_this_correct %}
+                                            <div class="option-icon" style="background: #dcfce7; color: #166534;">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+
+                                {% elif q.question_type == 'true_false' %}
+                                    {% for opt in ['True', 'False'] %}
+                                        {% set is_this_correct = (opt == q.answer) %}
+                                        {% set student_picked_this = (selected == opt) %}
+                                        <div class="option-box {{ 'correct' if is_this_correct else 'wrong' if student_picked_this and not is_this_correct else '' }}">
+                                            <span class="fw-bold me-3 text-muted">{{ 'T' if opt == 'True' else 'F' }}.</span>
+                                            <span>{{ opt | upper }}</span>
+                                            
+                                            {% if student_picked_this %}
+                                            <div class="option-icon">
+                                                <i class="fas {{ 'fa-check' if is_this_correct else 'fa-times' }}"></i>
+                                            </div>
+                                            {% elif is_this_correct %}
+                                            <div class="option-icon" style="background: #dcfce7; color: #166534;">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+
+                                {% elif q.question_type == 'short_answer' %}
+                                    <div class="p-4 rounded-4 {{ 'bg-success-subtle border-success' if is_correct else 'bg-danger-subtle border-danger' if selected else 'bg-light' }} border-2 border mb-3">
+                                        <label class="tiny fw-800 text-uppercase text-muted d-block mb-2">Your Answer</label>
+                                        <div class="h5 fw-bold mb-0 {{ 'text-success' if is_correct else 'text-danger' if selected else 'text-muted' }}">
+                                            {{ selected if selected else "No answer provided" }}
+                                        </div>
+                                    </div>
+                                    {% if not is_correct %}
+                                    <div class="p-4 rounded-4 bg-white border-2 border border-success">
+                                        <label class="tiny fw-800 text-uppercase text-success d-block mb-2">Correct Answer</label>
+                                        <div class="h5 fw-bold mb-0 text-success">{{ q.answer }}</div>
+                                    </div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
-                            {% endfor %}
-                            {% elif q.question_type == 'short_answer' %}
-                            {% set is_correct = (selected and selected|lower == q.answer|lower) %}
-                            <div
-                                class="p-3 border rounded-3 mb-3 {{ 'border-success bg-success bg-opacity-10' if is_correct else 'border-danger bg-danger bg-opacity-10' if selected else 'bg-light' }}">
-                                <div class="text-uppercase text-muted small fw-bold mb-1">Your Answer</div>
-                                <div
-                                    class="fs-5 {{ 'text-success fw-bold' if is_correct else 'text-danger fw-bold' if selected else 'text-muted fst-italic' }}">
-                                    {{ selected if selected else "No answer provided" }}
-                                </div>
-                            </div>
-                            {% if not is_correct %}
-                            <div class="p-3 border border-success rounded-3 bg-white mt-2">
-                                <div class="text-uppercase text-success small fw-bold mb-1"><i
-                                        class="fas fa-lightbulb me-1"></i>Correct Answer</div>
-                                <div class="fs-5 fw-bold">{{ q.answer }}</div>
+                            
+                            {% if ans_data and ans_data.time_taken %}
+                            <div class="mt-4 pt-3 border-top d-flex align-items-center">
+                                <span class="tiny fw-bold text-muted"><i class="far fa-clock me-1"></i> Time Taken: {{ ans_data.time_taken }}s</span>
+                                {% if q.points %}
+                                <span class="ms-auto badge bg-light text-dark border fw-bold">{{ q.points }} Points</span>
+                                {% endif %}
                             </div>
                             {% endif %}
-                            {% endif %}
-
                         </div>
-
                         {% endfor %}
-
                     </div>
-
 
                     <div class="col-lg-4">
-
-                        <div class="stat-card">
-
-                            <h5 class="text-center mb-3">Accuracy</h5>
-
-                            <div class="chart-container-sm">
+                        <div class="premium-chart-container animate-up sticky-top" style="top: 100px; z-index: 10;">
+                            <h5 class="fw-800 mb-4 text-center">Score Accuracy</h5>
+                            <div class="chart-container-sm mb-4">
                                 <canvas id="accuracyChart"></canvas>
                             </div>
-
-                            <div class="text-center mt-3">
-                                <h3>{{ score_perc }}%</h3>
-                                <p>Overall Accuracy</p>
+                            <div class="text-center p-3 rounded-4 bg-light">
+                                <div class="h1 fw-800 mb-0 text-primary">{{ score_perc }}%</div>
+                                <div class="stat-label text-dark">Overall Accuracy</div>
                             </div>
-
+                            
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small fw-bold text-muted">Correct</span>
+                                    <span class="small fw-bold text-success">{{ result.score }}</span>
+                                </div>
+                                <div class="progress rounded-pill mb-3" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {{ score_perc }}%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small fw-bold text-muted">Incorrect</span>
+                                    <span class="small fw-bold text-danger">{{ result.total - result.score }}</span>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ 100 - score_perc }}%"></div>
+                                </div>
+                            </div>
                         </div>
-
                     </div>
-
                 </div>
 
             </div>
@@ -304,44 +333,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
-
         document.addEventListener("DOMContentLoaded", function () {
-
             const ctx = document.getElementById("accuracyChart");
-
             if (!ctx) return;
 
-            const correct = {{ result.score }}
-        };
-        const incorrect = {{ result.total - result.score }};
+            const correct = {{ result.score }};
+            const incorrect = {{ result.total - result.score }};
 
-        new Chart(ctx, {
-            type: "doughnut",
-            data: {
-                labels: ["Correct", "Incorrect"],
-                datasets: [{
-                    data: [correct, incorrect],
-                    backgroundColor: ["#6fbf4a", "#ef4444"]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: "70%"
-            }
+            new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Correct", "Incorrect"],
+                    datasets: [{
+                        data: [correct, incorrect],
+                        backgroundColor: ["#10b981", "#ef4444"],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "75%",
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: "'Plus Jakarta Sans', sans-serif",
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         });
 
-});
-
-
         function downloadPDF() {
-
             const btn = document.getElementById("pdf-btn");
             const sidebar = document.querySelector(".sidebar");
             const element = document.getElementById("report-content");
 
             btn.disabled = true;
-            btn.innerHTML = "Generating...";
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating...';
 
             document.body.classList.add("pdf-mode");
 
@@ -349,42 +386,28 @@
             sidebar.style.display = "none";
 
             setTimeout(() => {
-
                 html2pdf().set({
-
                     margin: 10,
-
                     filename: "Quiz_Report_{{ quiz.title | replace(' ','_') }}.pdf",
-
                     image: { type: "jpeg", quality: 1 },
-
                     html2canvas: {
                         scale: 3,
                         useCORS: true,
                         backgroundColor: "#ffffff"
                     },
-
                     jsPDF: {
                         unit: "mm",
                         format: "a4",
                         orientation: "portrait"
                     }
-
                 }).from(element).save().then(() => {
-
                     btn.disabled = false;
-                    btn.innerHTML = "Download Report";
-
+                    btn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Download Report';
                     sidebar.style.display = originalSidebar;
-
                     document.body.classList.remove("pdf-mode");
-
                 });
-
             }, 1200);
-
         }
-
     </script>
 
     {% include 'components/chat_widget.html' %}

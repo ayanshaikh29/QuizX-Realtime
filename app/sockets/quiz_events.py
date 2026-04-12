@@ -125,7 +125,7 @@ def register_socket_events():
                 'option2': q.option2,
                 'option3': q.option3,
                 'option4': q.option4,
-                'answer': q.answer,
+                'answer': q.correct_answers if q.question_type == 'checkbox' else q.answer,
                 'order': q.order
             }
 

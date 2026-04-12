@@ -1,0 +1,317 @@
+/* student_premium.css - Premium UI/UX for QuizX Student Dashboard */
+:root {
+    --primary: #6fbf4a;
+    --primary-light: rgba(99, 102, 241, 0.1);
+    --secondary: #ec4899;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #6fbf4a;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --glass: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background-color: #f1f5f9;
+}
+
+/* Glassmorphism Cards */
+.history-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+.history-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.history-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: var(--primary);
+    opacity: 0.8;
+}
+
+.history-card.card-pass::before {
+    background: var(--success);
+}
+
+.history-card.card-fail::before {
+    background: var(--danger);
+}
+
+/* Score Circle */
+.score-circle {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 3px solid white;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+}
+
+.pill-pass {
+    background: rgba(16, 185, 129, 0.1);
+    color: #065f46;
+}
+
+.pill-fail {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+}
+
+.status-pill-advanced {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Analytics Header */
+.analytics-header {
+    background: linear-gradient(135deg, #6fbf4a 0%, #6fbf4a 100%);
+    border-radius: 24px;
+    padding: 40px;
+    color: white;
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.2);
+    margin-bottom: 40px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 20px;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* Summary Page Styles */
+.summary-stat-card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    border: 1px solid #eff6ff;
+}
+
+.summary-stat-card i {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: var(--primary);
+}
+
+.summary-stat-card h3 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.summary-stat-card p {
+    color: #64748b;
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Question Review Premium */
+.question-review-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.q-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.q-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.option-box {
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 2px solid #f1f5f9;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    position: relative;
+    cursor: default;
+}
+
+.option-box.correct {
+    background: #f0fdf4;
+    border-color: #4ade80;
+}
+
+.option-box.wrong {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+
+.option-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.correct .option-icon {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.wrong .option-icon {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Charts */
+.premium-chart-container {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    height: 100%;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-up {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.delay-1 {
+    animation-delay: 0.1s;
+}
+
+.delay-2 {
+    animation-delay: 0.2s;
+}
+
+.delay-3 {
+    animation-delay: 0.3s;
+}
+
+/* PDF and Print Refinements */
+@media print {
+
+    .sidebar,
+    .content-header button,
+    .btn-primary,
+    .badge,
+    .sticky-top {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    .question-review-card {
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #eee !important;
+    }
+
+    .premium-chart-container {
+        box-shadow: none !important;
+        border: 1px solid #eee !important;
+    }
+}
+
+.pdf-mode .sidebar,
+.pdf-mode .content-header button,
+.pdf-mode .btn-primary,
+.pdf-mode .badge,
+.pdf-mode .sticky-top {
+    display: none !important;
+}
+
+.pdf-mode .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+}
+
+.pdf-mode .question-review-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+}
+
+.pdf-mode .premium-chart-container {
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+}
+
+.fw-800 {
+    font-weight: 800;
+}
+
+.tiny {
+    font-size: 0.75rem;
+    font-weight: 700;
+}

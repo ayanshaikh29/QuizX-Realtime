@@ -12,8 +12,25 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_history.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_premium.css') }}">
+    
+    <style>
+        .fw-800 { font-weight: 800; }
+        .tiny { font-size: 0.75rem; }
+        .fs-xs { font-size: 0.7rem; }
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+    </style>
 </head>
 
 <body style="background: #f8fafc;">
@@ -27,85 +44,126 @@
                 </a>
             </div>
             <nav class="sidebar-nav">
-                <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i>
-                    Dashboard</a>
-                <a href="{{ url_for('student.quizzes') }}" class="nav-link"><i class="fas fa-play-circle"></i> Live
-                    Quizzes</a>
-                <a href="{{ url_for('student.history') }}" class="nav-link active"><i class="fas fa-history"></i> My
-                    History</a>
+                <a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="{{ url_for('student.quizzes') }}" class="nav-link"><i class="fas fa-play-circle"></i> Live Quizzes</a>
+                <a href="{{ url_for('student.history') }}" class="nav-link active"><i class="fas fa-history"></i> My History</a>
                 <a href="{{ url_for('auth.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
-                <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i>
-                    Logout</a>
+                <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </aside>
 
         <main class="main-content">
-            <header class="content-header">
-                <div class="d-flex align-items-center">
-                    <button class="mobile-toggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="header-title">
-                        <h4 class="fw-bold mb-0">Performance Analytics</h4>
-                        <p class="text-muted small mb-0">Deep dive into your past achievements</p>
+            <header class="content-header shadow-sm bg-white p-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between container-fluid">
+                    <div class="d-flex align-items-center">
+                        <button class="mobile-toggle btn btn-light me-3 d-lg-none">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h4 class="fw-800 mb-0">My Performance</h4>
+                            <p class="text-muted small mb-0">Track your learning journey and achievements</p>
+                        </div>
+                    </div>
+                    <div class="user-profile-sm d-none d-md-flex align-items-center">
+                        <div class="text-end me-3">
+                            <p class="mb-0 fw-bold">{{ session.get('username') }}</p>
+                            <p class="mb-0 tiny text-muted">Student</p>
+                        </div>
+                        <div class="avatar-circle">
+                            {{ session.get('username')[0] | upper if session.get('username') else 'S' }}
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div class="container-fluid p-4">
+            <div class="container-fluid px-4 pb-5">
                 {% if history %}
+                <!-- Analytics Summary Header -->
+                <div class="analytics-header animate-up">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6 mb-4 mb-lg-0">
+                            <h2 class="fw-800 mb-2">Welcome Back!</h2>
+                            <p class="lead opacity-75 mb-0">You've completed <strong>{{ stats.total_quizzes }}</strong> quizzes with an average accuracy of <strong>{{ stats.avg_accuracy | round(1) }}%</strong>.</p>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="row g-3">
+                                <div class="col-4">
+                                    <div class="stat-item">
+                                        <div class="stat-value">{{ stats.total_quizzes }}</div>
+                                        <div class="stat-label">Attempts</div>
+                                    </div>
+                                </div>
+                                <div class="col-4 border-start border-end border-white border-opacity-25">
+                                    <div class="stat-item">
+                                        <div class="stat-value">{{ stats.avg_accuracy | round(0) }}%</div>
+                                        <div class="stat-label">Avg. Score</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-item">
+                                        <div class="stat-value">{{ stats.pass_count }}</div>
+                                        <div class="stat-label">Passed</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0 text-dark">Recent Attempts</h5>
+                    <div class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill fw-600 border">
+                        <i class="fas fa-filter me-2 text-primary"></i> All Records
+                    </div>
+                </div>
+
                 <div class="row g-4">
                     {% for h in history %}
                     {% set percentage = (h.score / h.total * 100) if h.total else 0 %}
-                    <div class="col-xl-4 col-md-6 delay-{{ loop.index if loop.index < 4 else 1 }}">
-                        <a href="{{ url_for('student.quiz_summary', quiz_id=h.quiz_id) }}" class="text-decoration-none">
-                            <div class="history-card">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="score-circle">
-                                        {{ percentage | round(0) }}%
-                                    </div>
-                                    {% if percentage >= 40 %}
-                                    <span class="status-pill-advanced pill-pass">PASSED</span>
-                                    {% else %}
-                                    <span class="status-pill-advanced pill-fail">RE-TAKE</span>
-                                    {% endif %}
+                    <div class="col-xl-4 col-md-6 animate-up delay-{{ loop.index if loop.index < 4 else 1 }}">
+                        <div class="history-card {{ 'card-pass' if percentage >= 40 else 'card-fail' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="score-circle">
+                                    {{ percentage | round(0) }}%
                                 </div>
-
-                                <h5 class="fw-extrabold mb-1">Quiz #{{ h.quiz_id }}</h5>
-                                <p class="text-muted tiny fw-bold">
-                                    <i class="far fa-calendar-alt me-1"></i>
-                                    {% if h.submitted_at %}
-                                    {{ h.submitted_at.strftime('%d %B %Y') }}
-                                    {% else %}
-                                    Not Available
-                                    {% endif %}
-                                </p>
-
-                                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                                    <div>
-                                        <p class="text-muted tiny mb-0">Points Earned</p>
-                                        <h6 class="fw-bold mb-0 text-dark">{{ h.score }} / {{ h.total }}</h6>
-                                    </div>
-                                    <span class="btn btn-sm rounded-pill px-3 fw-bold"
-                                        style="background: var(--primary-light); color: var(--primary);">
-                                        Details <i class="fas fa-chevron-right ms-1"></i>
-                                    </span>
-                                </div>
+                                {% if percentage >= 40 %}
+                                <span class="status-pill-advanced pill-pass"><i class="fas fa-check-circle me-1"></i> PASSED</span>
+                                {% else %}
+                                <span class="status-pill-advanced pill-fail"><i class="fas fa-exclamation-circle me-1"></i> RE-TAKE</span>
+                                {% endif %}
                             </div>
-                        </a>
+
+                            <h5 class="fw-800 mb-2">{{ h.quiz_title }}</h5>
+                            <p class="text-muted small mb-0 d-flex align-items-center">
+                                <i class="far fa-calendar-alt me-2 text-primary"></i>
+                                {{ h.submitted_at.strftime('%d %B %Y') if h.submitted_at else 'N/A' }}
+                                <span class="mx-2">•</span>
+                                <i class="far fa-clock me-2 text-primary"></i>
+                                {{ h.submitted_at.strftime('%I:%M %p') if h.submitted_at else 'N/A' }}
+                            </p>
+
+                            <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="tiny text-muted fw-bold text-uppercase mb-1">Raw Score</p>
+                                    <h5 class="fw-bold mb-0">{{ h.score }} <span class="text-muted fw-normal">/ {{ h.total }}</span></h5>
+                                </div>
+                                <a href="{{ url_for('student.quiz_summary', quiz_id=h.quiz_id) }}" class="btn btn-primary rounded-pill px-3 fw-bold btn-sm shadow-sm">
+                                    Full Report <i class="fas fa-arrow-right ms-2 fs-xs"></i>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon mx-auto"><i class="fas fa-history"></i></div>
-                    <h4 class="fw-bold">No History Found</h4>
-                    <p class="text-muted">You haven't completed any quizzes yet. Start your journey today!</p>
-                    <a href="{{ url_for('student.quizzes') }}"
-                        class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-lg">
-                        Join Your First Quiz
+                <div class="empty-state text-center py-5">
+                    <div class="empty-icon mx-auto mb-4" style="font-size: 4rem; color: #cbd5e1;"><i class="fas fa-history"></i></div>
+                    <h3 class="fw-800">No History Yet</h3>
+                    <p class="text-muted mx-auto" style="max-width: 400px;">Your journey at QuizX is just beginning! Take your first quiz to see your performance analytics here.</p>
+                    <a href="{{ url_for('student.quizzes') }}" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold mt-4 shadow-lg">
+                        Explore Live Quizzes
                     </a>
                 </div>
                 {% endif %}

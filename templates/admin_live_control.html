@@ -1,3 +1,8 @@
+<!--
+  Admin Live Control Center
+  Real-time quiz management interface for administrators to monitor and control ongoing quiz sessions.
+  Features: live leaderboard, question navigation, player tracking, QR code sharing, and WebSocket communication.
+-->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -256,26 +261,27 @@
                                         <div class="question-badge"><span>Question {{ current_index + 1 }}</span></div>
                                         <h2 class="question-text">{{ current_question.question }}</h2>
                                         <div class="options-grid">
-                                            {% if current_question.question_type == 'mcq' or
-                                            current_question.question_type == 'checkbox' %}
+                                            {% if current_question.question_type == 'mcq' or current_question.question_type == 'checkbox' %}
                                             {% set options = [
-                                            {'value': current_question.option1, 'letter': 'A', 'color': 'red'},
-                                            {'value': current_question.option2, 'letter': 'B', 'color': 'blue'},
-                                            {'value': current_question.option3, 'letter': 'C', 'color': 'yellow'},
-                                            {'value': current_question.option4, 'letter': 'D', 'color': 'green'}
+                                                {'val': current_question.option1, 'letter': 'A', 'color': 'red'},
+                                                {'val': current_question.option2, 'letter': 'B', 'color': 'blue'},
+                                                {'val': current_question.option3, 'letter': 'C', 'color': 'yellow'},
+                                                {'val': current_question.option4, 'letter': 'D', 'color': 'green'}
                                             ] %}
-                                            {% for opt in options if opt.value %}
-                                            {% set ns = namespace(is_correct=false) %}
-                                            {% for ans in (current_question.answer or '').split(',') %}
-                                            {% if (ans|string|trim|lower) == (opt.value|string|trim|lower) %}
-                                            {% set ns.is_correct = true %}
-                                            {% endif %}
-                                            {% endfor %}
-                                            <div
-                                                class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
-                                                <span class="option-letter">{{ opt.letter }}</span>
-                                                <span class="option-text">{{ opt.value }}</span>
-                                            </div>
+                                            
+                                            {% set answers_source = current_question.correct_answers if current_question.question_type == 'checkbox' else current_question.answer %}
+                                            
+                                            {% for opt in options if opt.val %}
+                                                {% set ns = namespace(is_correct=false) %}
+                                                {% for ans in ((answers_source or '') | string).split(',') %}
+                                                    {% if (ans|string|trim|lower) == (opt.val|string|trim|lower) %}
+                                                        {% set ns.is_correct = true %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                <div class="option-card {{ opt.color }} {{ 'correct' if ns.is_correct else '' }}">
+                                                    <span class="option-letter">{{ opt.letter }}</span>
+                                                    <span class="option-text">{{ opt.val }}</span>
+                                                </div>
                                             {% endfor %}
                                             {% elif current_question.question_type == 'true_false' %}
                                             {% for opt in [{'value': 'True', 'letter': 'T', 'color': 'blue'}, {'value':
@@ -596,6 +602,30 @@
                         <div class="fs-4 fw-bold text-success border border-success border-2 rounded p-3 d-inline-block bg-white shadow-sm">${q.answer}</div>
                     </div>
                 `;
+            }
+
+            // 5. Update Navigation Controls
+            const navControls = document.querySelector('.navigation-controls');
+            if (navControls) {
+                const totalQs = parseInt("{{ total_questions }}");
+                const showLeaderboardEach = ("{{ quiz.show_leaderboard_each_question }}" === "True");
+                const isLast = (index >= totalQs - 1);
+                
+                let prevHtml = '';
+                if (showLeaderboardEach) {
+                    const disabledStr = (index === 0) ? 'disabled' : '';
+                    prevHtml = `<button onclick="prevQuestion()" class="nav-btn prev-btn" ${disabledStr}><i class="fas fa-chevron-left"></i><span>Previous</span></button>`;
+                }
+                
+                if (showLeaderboardEach) {
+                    if (!isLast) {
+                        navControls.innerHTML = prevHtml + `<button onclick="nextQuestion()" class="nav-btn next-btn primary"><span>Next Question</span><i class="fas fa-chevron-right"></i></button>`;
+                    } else {
+                        navControls.innerHTML = prevHtml + `<button onclick="finishQuiz()" class="nav-btn finish-btn"><span>Finish Quiz</span><i class="fas fa-flag-checkered"></i></button>`;
+                    }
+                } else {
+                    navControls.innerHTML = `<button onclick="finishQuiz()" class="nav-btn finish-btn mx-auto"><span>Finish Quiz</span><i class="fas fa-flag-checkered"></i></button>`;
+                }
             }
         }
 
