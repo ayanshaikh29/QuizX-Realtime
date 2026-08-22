@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 2cm 1.5cm 2.5cm 1.5cm;
+        @frame footer {
+            -pdf-frame-content: page-footer;
+            bottom: 0.5cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+            height: 1.5cm;
+        }
+    }
+
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 10px;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+
+    /* ── Header Banner ── */
+    .header-banner {
+        background-color: #1e293b;
+        color: #ffffff;
+        padding: 18px 24px;
+        margin: -10px -5px 20px -5px;
+    }
+    .header-banner h1 {
+        font-size: 20px;
+        margin: 0 0 4px 0;
+        color: #ffffff;
+    }
+    .header-banner .subtitle {
+        font-size: 12px;
+        color: #94a3b8;
+        margin: 0 0 2px 0;
+    }
+    .header-banner .meta {
+        font-size: 9px;
+        color: #64748b;
+        margin: 0;
+    }
+    .green-bar {
+        height: 3px;
+        background-color: #6fbf4a;
+        margin: 0 -5px 20px -5px;
+    }
+
+    /* ── Info Box ── */
+    .info-table {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .info-table td {
+        padding: 6px 10px;
+        font-size: 9px;
+        vertical-align: top;
+    }
+    .info-label {
+        color: #64748b;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 8px;
+        letter-spacing: 0.5px;
+    }
+    .info-value {
+        font-weight: bold;
+        color: #1e293b;
+        font-size: 11px;
+    }
+
+    /* ── Section Title ── */
+    .section-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #1e293b;
+        margin: 22px 0 4px 0;
+        padding-bottom: 4px;
+        border-bottom: 2px solid #6fbf4a;
+    }
+
+    /* ── Stats Grid ── */
+    .stats-grid {
+        width: 100%;
+        margin-bottom: 18px;
+    }
+    .stats-grid td {
+        width: 25%;
+        text-align: center;
+        padding: 12px 8px;
+    }
+    .stat-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 8px;
+    }
+    .stat-number {
+        font-size: 22px;
+        font-weight: bold;
+        color: #1e293b;
+        display: block;
+        margin-bottom: 2px;
+    }
+    .stat-label {
+        font-size: 8px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+    }
+
+    /* ── Performance Bar ── */
+    .perf-row {
+        margin-bottom: 18px;
+    }
+    .perf-bar-outer {
+        width: 100%;
+        height: 14px;
+        background-color: #f1f5f9;
+        border-radius: 7px;
+    }
+    .perf-bar-inner {
+        height: 14px;
+        border-radius: 7px;
+    }
+    .perf-bar-green { background-color: #22c55e; }
+    .perf-bar-amber { background-color: #f59e0b; }
+    .perf-bar-red { background-color: #ef4444; }
+    .perf-labels {
+        width: 100%;
+        margin-top: 3px;
+    }
+    .perf-labels td {
+        font-size: 8px;
+        color: #64748b;
+    }
+
+    /* ── Data Table ── */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 18px;
+    }
+    .data-table th {
+        background-color: #1e293b;
+        color: #ffffff;
+        font-size: 8px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 6px;
+        text-align: left;
+    }
+    .data-table th.center { text-align: center; }
+    .data-table td {
+        padding: 7px 6px;
+        font-size: 9px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #fafbfc;
+    }
+    .data-table .num { text-align: center; font-weight: bold; color: #64748b; }
+    .data-table .center { text-align: center; }
+
+    /* ── Difficulty Badges ── */
+    .diff-easy {
+        background-color: #dcfce7;
+        color: #16a34a;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 8px;
+        font-weight: bold;
+    }
+    .diff-medium {
+        background-color: #fef3c7;
+        color: #d97706;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 8px;
+        font-weight: bold;
+    }
+    .diff-hard {
+        background-color: #fee2e2;
+        color: #dc2626;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 8px;
+        font-weight: bold;
+    }
+
+    /* ── Score Indicator ── */
+    .score-high { color: #16a34a; font-weight: bold; }
+    .score-mid { color: #d97706; font-weight: bold; }
+    .score-low { color: #dc2626; font-weight: bold; }
+
+    /* ── Progress Bar in Table ── */
+    .mini-bar-outer {
+        width: 60px;
+        height: 6px;
+        background-color: #f1f5f9;
+        border-radius: 3px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .mini-bar-fill {
+        height: 6px;
+        border-radius: 3px;
+        display: block;
+    }
+
+    /* ── Footer ── */
+    .footer-content {
+        font-size: 8px;
+        color: #94a3b8;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 6px;
+    }
+
+    /* ── Page break control ── */
+    .no-break {
+        page-break-inside: avoid;
+    }
+</style>
+</head>
+<body>
+
+    <!-- ═══ HEADER BANNER ═══ -->
+    <div class="header-banner">
+        <h1>QuizX Analytics Report</h1>
+        <p class="subtitle">{{ quiz.title }}</p>
+        <p class="meta">Generated by {{ admin_name }} on {{ generated_at }}</p>
+    </div>
+    <div class="green-bar"></div>
+
+    <!-- ═══ QUIZ INFO ═══ -->
+    <table class="info-table">
+        <tr>
+            <td>
+                <span class="info-label">Quiz Title</span><br>
+                <span class="info-value">{{ quiz.title }}</span>
+            </td>
+            <td>
+                <span class="info-label">Total Questions</span><br>
+                <span class="info-value">{{ stats.total_questions }}</span>
+            </td>
+            <td>
+                <span class="info-label">Total Participants</span><br>
+                <span class="info-value">{{ stats.total_participants }}</span>
+            </td>
+            <td>
+                <span class="info-label">Report Date</span><br>
+                <span class="info-value">{{ generated_at }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ═══ SUMMARY STATISTICS ═══ -->
+    <div class="section-title">Summary Statistics</div>
+
+    <table class="stats-grid">
+        <tr>
+            <td>
+                <div class="stat-box">
+                    <span class="stat-number">{{ stats.total_participants }}</span>
+                    <span class="stat-label">Total Participants</span>
+                </div>
+            </td>
+            <td>
+                <div class="stat-box">
+                    <span class="stat-number">{{ stats.avg_score }}%</span>
+                    <span class="stat-label">Average Accuracy</span>
+                </div>
+            </td>
+            <td>
+                <div class="stat-box">
+                    <span class="stat-number">{{ stats.avg_time }}s</span>
+                    <span class="stat-label">Avg Response Time</span>
+                </div>
+            </td>
+            <td>
+                <div class="stat-box">
+                    <span class="stat-number">{{ stats.pass_rate }}%</span>
+                    <span class="stat-label">Pass Rate (≥50%)</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ═══ PERFORMANCE OVERVIEW ═══ -->
+    <div class="no-break">
+        <div class="section-title">Performance Overview</div>
+        <table class="info-table">
+            <tr>
+                <td><span class="info-label">Highest Score</span><br><span class="info-value score-high">{{ stats.highest_score }}%</span></td>
+                <td><span class="info-label">Lowest Score</span><br><span class="info-value score-low">{{ stats.lowest_score }}%</span></td>
+                <td><span class="info-label">Total Correct</span><br><span class="info-value">{{ stats.correct_answers }} / {{ stats.total_answers }}</span></td>
+            </tr>
+        </table>
+        <div class="perf-row">
+            <table style="width:100%">
+                <tr>
+                    <td style="width:100%">
+                        <div class="perf-bar-outer">
+                            <div class="perf-bar-inner {% if stats.avg_score >= 70 %}perf-bar-green{% elif stats.avg_score >= 40 %}perf-bar-amber{% else %}perf-bar-red{% endif %}"
+                                 style="width: {{ stats.avg_score }}%"></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <table class="perf-labels">
+                <tr>
+                    <td style="text-align:left">0%</td>
+                    <td style="text-align:center">Overall Accuracy: {{ stats.avg_score }}%</td>
+                    <td style="text-align:right">100%</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ TOP PERFORMERS ═══ -->
+    <div class="section-title">Student Rankings</div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="center" style="width:30px">Rank</th>
+                <th>Student Name</th>
+                <th class="center">Score</th>
+                <th class="center">Accuracy</th>
+                <th class="center">Points</th>
+                <th class="center">Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in all_students %}
+            <tr>
+                <td class="num">{{ loop.index }}</td>
+                <td style="font-weight:bold">{{ s.username }}</td>
+                <td class="center">{{ s.score }}/{{ s.total }}</td>
+                <td class="center">
+                    <span class="{% if s.pct >= 70 %}score-high{% elif s.pct >= 40 %}score-mid{% else %}score-low{% endif %}">
+                        {{ s.pct }}%
+                    </span>
+                </td>
+                <td class="center" style="font-weight:bold">{{ s.points }}</td>
+                <td class="center">{{ s.time_str }}</td>
+            </tr>
+            {% endfor %}
+            {% if not all_students %}
+            <tr><td colspan="6" class="center" style="color:#94a3b8;padding:16px">No participants yet</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- ═══ QUESTION ANALYSIS ═══ -->
+    <div class="section-title">Question-by-Question Analysis</div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="center" style="width:24px">#</th>
+                <th>Question</th>
+                <th class="center">Type</th>
+                <th class="center">Success Rate</th>
+                <th class="center">Correct</th>
+                <th class="center">Wrong</th>
+                <th class="center">Avg Time</th>
+                <th class="center">Difficulty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for q in questions_data %}
+            <tr>
+                <td class="num">{{ q.order }}</td>
+                <td style="max-width:200px">{{ q.text[:80] }}{% if q.text|length > 80 %}...{% endif %}</td>
+                <td class="center" style="font-size:8px">{{ q.type }}</td>
+                <td class="center">
+                    <span class="{% if q.success_rate >= 70 %}score-high{% elif q.success_rate >= 40 %}score-mid{% else %}score-low{% endif %}">
+                        {{ q.success_rate }}%
+                    </span>
+                </td>
+                <td class="center score-high">{{ q.correct }}</td>
+                <td class="center score-low">{{ q.wrong }}</td>
+                <td class="center">{{ q.avg_time }}s</td>
+                <td class="center">
+                    <span class="diff-{{ q.difficulty|lower }}">{{ q.difficulty }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- ═══ FOOTER ═══ -->
+    <div id="page-footer">
+        <div class="footer-content">
+            QuizX Analytics Report &mdash; {{ quiz.title }} &mdash; Generated {{ generated_at }}
+        </div>
+    </div>
+
+</body>
+</html>

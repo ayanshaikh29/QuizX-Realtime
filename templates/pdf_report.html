@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 1.5cm 2cm;
+        @frame footer {
+            -pdf-frame-content: page-footer;
+            bottom: 0;
+            margin-left: 2cm;
+            margin-right: 2cm;
+            height: 1.2cm;
+        }
+    }
+
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        color: #1e293b;
+        line-height: 1.5;
+    }
+
+    /* ── HEADER BANNER ── */
+    .report-header {
+        background-color: #5ba33a;
+        color: white;
+        padding: 22px 28px;
+        border-radius: 8px;
+        margin-bottom: 22px;
+    }
+    .report-header h1 {
+        font-size: 22px;
+        margin: 0 0 2px 0;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .report-header .brand {
+        font-size: 11px;
+        opacity: 0.8;
+        margin: 0;
+    }
+
+    /* ── INFO ROW ── */
+    .info-table {
+        width: 100%;
+        margin-bottom: 20px;
+        border-collapse: collapse;
+    }
+    .info-table td {
+        padding: 8px 12px;
+        font-size: 11px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .info-label {
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 9px;
+        letter-spacing: 0.5px;
+        width: 130px;
+    }
+    .info-value {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-row {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 22px;
+    }
+    .summary-cell {
+        width: 25%;
+        text-align: center;
+        padding: 16px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+    }
+    .summary-number {
+        font-size: 24px;
+        font-weight: 800;
+        display: block;
+        margin-bottom: 2px;
+    }
+    .summary-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .color-green { color: #5ba33a; }
+    .color-blue  { color: #2563eb; }
+    .color-purple { color: #7c3aed; }
+    .color-red   { color: #ef4444; }
+    .color-amber { color: #d97706; }
+
+    /* ── PERFORMANCE BAR ── */
+    .perf-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 22px;
+    }
+    .perf-section h3 {
+        font-size: 13px;
+        font-weight: 800;
+        margin: 0 0 12px 0;
+        color: #1e293b;
+    }
+    .bar-track {
+        background-color: #f1f5f9;
+        height: 14px;
+        border-radius: 7px;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    .bar-fill {
+        height: 14px;
+        border-radius: 7px;
+    }
+    .bg-green { background-color: #5ba33a; }
+    .bg-amber { background-color: #f59e0b; }
+    .bg-red   { background-color: #ef4444; }
+
+    .perf-stats {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .perf-stats td {
+        padding: 6px 0;
+        font-size: 11px;
+    }
+    .perf-stats .label-cell {
+        color: #64748b;
+        font-weight: 600;
+        width: 50%;
+    }
+    .perf-stats .value-cell {
+        text-align: right;
+        font-weight: 700;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 24px 0 14px 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #5ba33a;
+    }
+
+    /* ── QUESTION BLOCK ── */
+    .q-block {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 14px;
+        page-break-inside: avoid;
+    }
+    .q-header {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+    .q-header td {
+        vertical-align: top;
+    }
+    .q-number {
+        font-size: 9px;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .q-text {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 4px 0 0 0;
+    }
+    .q-status-correct {
+        background-color: #dcfce7;
+        color: #15803d;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 10px;
+        text-transform: uppercase;
+    }
+    .q-status-wrong {
+        background-color: #fee2e2;
+        color: #dc2626;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 10px;
+        text-transform: uppercase;
+    }
+    .q-status-skip {
+        background-color: #f1f5f9;
+        color: #64748b;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 10px;
+        text-transform: uppercase;
+    }
+
+    /* ── OPTIONS TABLE ── */
+    .opts-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .opts-table td {
+        padding: 7px 10px;
+        font-size: 11px;
+        border-bottom: 1px solid #f8fafc;
+        vertical-align: middle;
+    }
+    .opt-letter {
+        width: 28px;
+        height: 28px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 10px;
+        color: #64748b;
+        background-color: #f1f5f9;
+        border-radius: 6px;
+    }
+    .opt-correct {
+        background-color: #f0fdf4;
+        border-left: 3px solid #5ba33a;
+    }
+    .opt-wrong {
+        background-color: #fef2f2;
+        border-left: 3px solid #ef4444;
+    }
+    .opt-tag {
+        font-size: 8px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .tag-correct { background-color: #dcfce7; color: #15803d; }
+    .tag-wrong   { background-color: #fee2e2; color: #dc2626; }
+
+    /* ── SHORT ANSWER ── */
+    .short-ans-box {
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-top: 4px;
+        font-size: 11px;
+    }
+    .sa-correct { background-color: #f0fdf4; border: 1px solid #bbf7d0; }
+    .sa-wrong   { background-color: #fef2f2; border: 1px solid #fecaca; }
+    .sa-skip    { background-color: #f8fafc; border: 1px solid #e2e8f0; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+        text-align: center;
+        font-size: 8px;
+        color: #94a3b8;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 6px;
+    }
+</style>
+</head>
+<body>
+
+<!-- ═══════ PAGE FOOTER (appears on every page) ═══════ -->
+<div id="page-footer">
+    <p class="page-footer">QuizX Report &bull; Generated for {{ student_name }} &bull; {{ date_str }}</p>
+</div>
+
+<!-- ═══════ REPORT HEADER ═══════ -->
+<div class="report-header">
+    <p class="brand">QUIZX &mdash; QUIZ PERFORMANCE REPORT</p>
+    <h1>{{ quiz.title }}</h1>
+</div>
+
+<!-- ═══════ STUDENT & QUIZ INFO ═══════ -->
+<table class="info-table">
+    <tr>
+        <td class="info-label">Student Name</td>
+        <td class="info-value">{{ student_name }}</td>
+        <td class="info-label">Date Attempted</td>
+        <td class="info-value">{{ date_str }}</td>
+    </tr>
+    <tr>
+        <td class="info-label">Quiz Title</td>
+        <td class="info-value">{{ quiz.title }}</td>
+        <td class="info-label">Time Taken</td>
+        <td class="info-value">{{ total_time_str }}</td>
+    </tr>
+</table>
+
+<!-- ═══════ SUMMARY STATS ═══════ -->
+<table class="summary-row">
+    <tr>
+        <td class="summary-cell">
+            <span class="summary-number">{{ result.total }}</span>
+            <span class="summary-label">Total Questions</span>
+        </td>
+        <td class="summary-cell">
+            <span class="summary-number color-green">{{ result.score }}</span>
+            <span class="summary-label">Correct Answers</span>
+        </td>
+        <td class="summary-cell">
+            <span class="summary-number color-red">{{ result.total - result.score }}</span>
+            <span class="summary-label">Incorrect</span>
+        </td>
+        <td class="summary-cell">
+            {% if score_pct >= 70 %}
+            <span class="summary-number color-green">{{ score_pct }}%</span>
+            {% elif score_pct >= 40 %}
+            <span class="summary-number color-amber">{{ score_pct }}%</span>
+            {% else %}
+            <span class="summary-number color-red">{{ score_pct }}%</span>
+            {% endif %}
+            <span class="summary-label">Accuracy</span>
+        </td>
+    </tr>
+</table>
+
+<!-- ═══════ PERFORMANCE OVERVIEW ═══════ -->
+<div class="perf-section">
+    <h3>Performance Overview</h3>
+    <div class="bar-track">
+        <div class="bar-fill {% if score_pct >= 70 %}bg-green{% elif score_pct >= 40 %}bg-amber{% else %}bg-red{% endif %}"
+             style="width: {{ score_pct }}%;"></div>
+    </div>
+    <table class="perf-stats">
+        <tr>
+            <td class="label-cell">Score</td>
+            <td class="value-cell">{{ result.score }} / {{ result.total }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Points Earned</td>
+            <td class="value-cell">{{ result.total_points or 0 }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Accuracy</td>
+            <td class="value-cell">{{ score_pct }}%</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Result Status</td>
+            <td class="value-cell">
+                {% if score_pct >= 40 %}
+                <span style="color: #15803d; font-weight: 800;">PASSED</span>
+                {% else %}
+                <span style="color: #dc2626; font-weight: 800;">FAILED</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell">Time Taken</td>
+            <td class="value-cell">{{ total_time_str }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ═══════ QUESTION ANALYSIS ═══════ -->
+<h2 class="section-title">Detailed Question Analysis</h2>
+
+{% for q in questions %}
+{% set ans_data = answers_map.get(q.id) %}
+{% set selected = ans_data.selected_answer if ans_data else None %}
+
+<div class="q-block">
+    <table class="q-header">
+        <tr>
+            <td style="width: 85%;">
+                <span class="q-number">Question {{ loop.index }} of {{ questions|length }}</span>
+                <p class="q-text">{{ q.question }}</p>
+            </td>
+            <td style="text-align: right;">
+                {% if ans_data %}
+                    {% if ans_data.is_correct %}
+                    <span class="q-status-correct">&#10003; Correct</span>
+                    {% else %}
+                    <span class="q-status-wrong">&#10007; Incorrect</span>
+                    {% endif %}
+                {% else %}
+                <span class="q-status-skip">&mdash; Skipped</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    {% if q.question_type == 'mcq' or q.question_type == 'checkbox' %}
+    <table class="opts-table">
+        {% for opt in [q.option1, q.option2, q.option3, q.option4] if opt %}
+        {% if q.question_type == 'checkbox' %}
+            {% set correct_list = (q.correct_answers or "").split(',') %}
+            {% set selected_list = (selected or "").split(',') %}
+            {% set is_this_correct = (opt in correct_list) %}
+            {% set student_picked = (opt in selected_list) %}
+        {% else %}
+            {% set is_this_correct = (opt == q.answer) %}
+            {% set student_picked = (selected == opt) %}
+        {% endif %}
+        <tr class="{% if is_this_correct %}opt-correct{% elif student_picked %}opt-wrong{% endif %}">
+            <td style="width: 35px;"><span class="opt-letter">{{ ["A","B","C","D"][loop.index0] }}</span></td>
+            <td>{{ opt }}</td>
+            <td style="width: 80px; text-align: right;">
+                {% if is_this_correct %}
+                <span class="opt-tag tag-correct">&#10003; Answer</span>
+                {% elif student_picked %}
+                <span class="opt-tag tag-wrong">&#10007; Your Pick</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% elif q.question_type == 'true_false' %}
+    <table class="opts-table">
+        {% for opt in ['True', 'False'] %}
+        {% set is_this_correct = (opt == q.answer) %}
+        {% set student_picked = (selected == opt) %}
+        <tr class="{% if is_this_correct %}opt-correct{% elif student_picked %}opt-wrong{% endif %}">
+            <td style="width: 35px;"><span class="opt-letter">{{ ["T","F"][loop.index0] }}</span></td>
+            <td>{{ opt }}</td>
+            <td style="width: 80px; text-align: right;">
+                {% if is_this_correct %}
+                <span class="opt-tag tag-correct">&#10003; Answer</span>
+                {% elif student_picked %}
+                <span class="opt-tag tag-wrong">&#10007; Your Pick</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% elif q.question_type == 'short_answer' %}
+    {% set is_correct_sa = (selected and selected|lower|trim == q.answer|lower|trim) %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="width: 50%; padding-right: 6px;">
+                <div class="short-ans-box {% if not selected %}sa-skip{% elif is_correct_sa %}sa-correct{% else %}sa-wrong{% endif %}">
+                    <span style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">Your Answer</span><br>
+                    <strong>{{ selected if selected else 'Not answered' }}</strong>
+                </div>
+            </td>
+            <td style="width: 50%; padding-left: 6px;">
+                <div class="short-ans-box sa-correct">
+                    <span style="font-size: 9px; font-weight: 700; color: #15803d; text-transform: uppercase;">Correct Answer</span><br>
+                    <strong style="color: #15803d;">{{ q.answer }}</strong>
+                </div>
+            </td>
+        </tr>
+    </table>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- ═══════ END NOTE ═══════ -->
+<div style="text-align: center; margin-top: 30px; padding: 16px; border-top: 2px solid #e2e8f0;">
+    <p style="font-size: 10px; color: #94a3b8; margin: 0;">
+        This report was generated by <strong style="color: #5ba33a;">QuizX</strong> &mdash; Realtime Quiz Platform
+    </p>
+</div>
+
+</body>
+</html>
