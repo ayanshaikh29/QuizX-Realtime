@@ -79,6 +79,7 @@ class AIService:
                 {"role": "user", "content": message},
             ],
             "temperature": 0.7,
+            "max_tokens": 1000,
         }
 
         headers = {
@@ -410,6 +411,7 @@ class AIService:
                 {"role": "user", "content": user_message},
             ],
             "temperature": 0.4, # Lower temperature for structural stability
+            "max_tokens": 2000,
         }
 
         headers = {
