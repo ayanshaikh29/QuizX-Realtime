@@ -52,7 +52,7 @@ def create_app(config_name=None):
             'SOCKETIO_CORS_ALLOWED_ORIGINS', "*"
         ),
         async_mode=app.config.get(
-            'SOCKETIO_ASYNC_MODE', "eventlet"
+            'SOCKETIO_ASYNC_MODE', "threading"
         )
     )
 
