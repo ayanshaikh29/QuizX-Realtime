@@ -144,7 +144,10 @@ def create_app(config_name=None):
             print(">>> Database columns verified/added")
 
         except Exception as e:
-            db.session.rollback()
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             print(">>> DB Auto Fix Error:", e)
 
     return app
