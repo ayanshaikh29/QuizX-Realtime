@@ -87,6 +87,10 @@ def create_app(config_name=None):
     # Safe to keep, but can be removed after migration stabilizes
     with app.app_context():
         try:
+            # Ensure tables are created in new database
+            from app import models
+            db.create_all()
+
             db.session.execute(text("""
                 ALTER TABLE quiz
                 ADD COLUMN IF NOT EXISTS show_leaderboard_each_question BOOLEAN DEFAULT FALSE;
